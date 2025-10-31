@@ -1,7 +1,6 @@
 NAME = transcendance
 
 DOCKER_COMPOSE = docker compose
-COMPOSE_FILE = docker-compose.yml
 
 GREEN = \033[0;32m
 RESET = \033[0m
@@ -13,19 +12,19 @@ all: up
 
 up:
 	@echo "$(GREEN)🔼 Starting containers...$(RESET)"
-	$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) up
+	$(DOCKER_COMPOSE) up 
 
 down:
 	@echo "$(GREEN)🔽 Stopping containers...$(RESET)"
-	$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) down
+	$(DOCKER_COMPOSE) down
 
 build:
 	@echo "$(GREEN)🏗️  Building all images...$(RESET)"
-	$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) build
+	$(DOCKER_COMPOSE) build
 
 clean:
 	@echo "$(GREEN)🧹 Removing containers...$(RESET)"
-	$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) down --remove-orphans
+	$(DOCKER_COMPOSE) down --remove-orphans
 
 fclean: clean
 	@echo "$(GREEN)🧨 Removing images...$(RESET)"
