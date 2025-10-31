@@ -1,0 +1,15 @@
+{
+  "name": "transcendance-frontend",
+  "version": "1.0.0",
+  "scripts": {
+    "build-css": "tailwindcss -i ./src/style.css -o ./dist/style.css --minify",
+    "dev": "tailwindcss -i ./src/style.css -o ./dist/style.css --watch",
+    "build-ts": "tsc --outDir dist"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.13",
+    "postcss": "^8.3.0",
+    "tailwindcss": "^3.3.3",
+    "typescript": "^5.1.6"
+  }
+}
