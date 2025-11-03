@@ -23,4 +23,4 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./frontend/srcs:/usr/share/nginx/html/src/languages
+      - ./frontend/src:/usr/share/nginx/html/src/languages
