@@ -7,14 +7,14 @@
   },
   "dependencies": {
     "@fastify/cors": "^8.5.0",
-	"@fastify/jwt": "^5.0.0",
-	"@fastify/multipart": "^7.3.0",
-	"@fastify/websocket": "^8.0.0",
+    "@fastify/jwt": "^10.0.0",
+    "@fastify/multipart": "^9.3.0",
+    "@fastify/websocket": "^8.0.0",
+    "bcrypt": "^5.1.1",
+    "better-sqlite3": "^9.0.0",
     "fastify": "^4.28.1",
-	"bcrypt": "^5.1.1",
-	"sqlite3": "^5.1.6",
-	"better-sqlite3": "^9.0.0",
-	"node-cron": "^3.0.0"
+    "node-cron": "^3.0.0",
+    "sqlite3": "^5.1.6"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

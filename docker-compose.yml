@@ -5,11 +5,12 @@ services:
     container_name: backend
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     volumes:
       - ./backend/data:/app/data
       - ./backend/uploads:/app/uploads
       - ./backend/srcs:/app/srcs
-    env_file: .env
 
   frontend:
     build:
