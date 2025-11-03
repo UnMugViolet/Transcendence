@@ -1,6 +1,23 @@
-.env
-backend/data/
-
+# Node modules
 node_modules/
 
+# Environment variables
+.env
+
+# Npm files
+.npm*
 package-lock.json
+
+# Project specifics
+backend/data/
+frontend/dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+
+

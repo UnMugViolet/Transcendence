@@ -3,6 +3,7 @@ services:
     build:
       context: ./backend
     container_name: backend
+    restart: unless-stopped
     ports:
       - "3000:3000"
     env_file:
@@ -10,12 +11,13 @@ services:
     volumes:
       - ./backend/data:/app/data
       - ./backend/uploads:/app/uploads
-      - ./backend/srcs:/app/srcs
+      - ./backend/srcs:/app/srcs:cached
 
   frontend:
     build:
       context: ./frontend
     container_name: frontend
+    restart: unless-stopped
     ports:
       - "8080:80"
     depends_on:

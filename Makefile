@@ -1,6 +1,7 @@
-APP_NAME = Transcendance
-IP = localhost
-PORT = 8080
+APP_NAME 	= Transcendance
+IP 			= localhost
+PORT 		= 8080
+BACK_PORT 	= 3000
 
 DOCKER_COMPOSE = docker compose
 
@@ -19,13 +20,14 @@ help: ## Outputs this help screen
 ## —— App handling ——————————————————————————————————————————————————————————————
 
 up: ## Launch the docker services
-	@echo "$(YELLOW) $(BOLD) Starting up containers...$(RESET)"
 ifeq ($(wildcard .env),)
 	@echo "$(RED) .env file not found! Please create one based on .env.example $(RESET)"
 	@exit 1
 endif
+	@echo "$(YELLOW) $(BOLD) Starting up containers...$(RESET)"
 	$(DOCKER_COMPOSE) up -d 
 	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) http://$(IP):$(PORT) $(RESET)"
+	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) http://$(IP):$(BACK_PORT) $(RESET)"
 
 down: ## Stop the docker services
 	@echo "$(CYAN) $(BOLD) Stopping containers...$(RESET)"
@@ -33,7 +35,7 @@ down: ## Stop the docker services
 
 build: ## Build all docker images 
 	@echo "$(YELLOW) $(BOLD)  Building all images...$(RESET)"
-	$(DOCKER_COMPOSE) build
+	$(DOCKER_COMPOSE) build --no-cache
 
 push: ## Push all docker images to the registry
 	@echo "$(BOLD) Pushing all images...$(RESET)"
@@ -43,28 +45,27 @@ push: ## Push all docker images to the registry
 ## —— Dev utils ——————————————————————————————————————————————————————————————
 
 logs: ## Show the logs of all containers
-	$(DOCKER_COMPOSE) logs -f
+	@$(DOCKER_COMPOSE) logs -f
 
 install: ## Install project dependencies
 	@echo "$(GREEN) Installing backend dependencies...$(RESET)"
-	cd backend && npm install
+	@cd backend && npm install
 	@echo "$(GREEN) Installing frontend dependencies...$(RESET)"
-	cd frontend && npm install
+	@cd frontend && npm install
 
 ## —— Cleaning up ——————————————————————————————————————————————————————————————
 
 clean: ## Remove all containers
 	@echo "$(GREEN)🧹 Removing containers...$(RESET)"
-	$(DOCKER_COMPOSE) down --remove-orphans
+	@$(DOCKER_COMPOSE) down --remove-orphans
+	
 
 fclean: clean ## Remove all containers, images and volumes
-	@echo "$(RED) Removing all related images...$(RESET)"
-	docker image prune -af
-	@echo "$(RED)Removing all volumes...$(RESET)"
-	docker volume prune -f
+	@echo "$(RED) Removing all related images and volumes...$(RESET)"
+	@$(DOCKER_COMPOSE) down --volumes --rmi all
 
 ## —— Rebuild ————————————————————————————————————————————————————————————————
 
-re: fclean all ## Rebuild the whole project
+re: fclean build all ## Rebuild the whole project
 
 .PHONY: all help up down build push clean fclean re 

@@ -1,11 +1,16 @@
 import Database from 'better-sqlite3';
 import fs from 'fs';
+import path from 'path';
 
-if (!fs.existsSync('./data')) {
-	fs.mkdirSync('./data');
+// Ensure the database directory exists
+const dbPath = process.env.DB_PATH || './data/database.db';
+const dbDir = path.dirname(dbPath);
+
+if (!fs.existsSync(dbDir)) {
+	fs.mkdirSync(dbDir, { recursive: true });
 }
 
-const db = new Database(process.env.DB_PATH);
+const db = new Database(dbPath);
 
 db.prepare(`CREATE TABLE IF NOT EXISTS users (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
