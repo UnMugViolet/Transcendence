@@ -12,8 +12,7 @@ RUN npm install
 # Copier le reste du projet
 COPY . .
 
-RUN npm run build-css
-RUN npm run build-ts
+RUN npm run dev
 
 FROM nginx:alpine
 
