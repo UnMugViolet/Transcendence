@@ -3,11 +3,11 @@ import fastifyCors from '@fastify/cors';
 import fastifyjwt from '@fastify/jwt';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
+import 'dotenv/config';
 
 
 import path from 'path';
 import cron from 'node-cron';
-
 
 import db from './db.js';
 import chat from './routes/chat.js';
