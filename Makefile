@@ -22,8 +22,8 @@ help: ## Outputs this help screen
 up: ## Launch the docker services
 	@echo "$(YELLOW) $(BOLD) Starting up containers...$(RESET)"
 	$(DOCKER_COMPOSE) up -d 
-	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) http://$(IP):$(PORT) $(RESET)"
-	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) http://$(IP):$(BACK_PORT) $(RESET)"
+	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) https://$(IP):$(PORT) $(RESET)"
+	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) https://$(IP):$(BACK_PORT) $(RESET)"
 
 down: ## Stop the docker services
 	@echo "$(CYAN) $(BOLD) Stopping containers...$(RESET)"
