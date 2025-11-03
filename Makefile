@@ -20,10 +20,6 @@ help: ## Outputs this help screen
 ## —— App handling ——————————————————————————————————————————————————————————————
 
 up: ## Launch the docker services
-ifeq ($(wildcard .env),)
-	@echo "$(RED) .env file not found! Please create one based on .env.example $(RESET)"
-	@exit 1
-endif
 	@echo "$(YELLOW) $(BOLD) Starting up containers...$(RESET)"
 	$(DOCKER_COMPOSE) up -d 
 	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) http://$(IP):$(PORT) $(RESET)"

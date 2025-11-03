@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Ensure the database directory exists
-const dbPath = process.env.DB_PATH || './data/database.db';
+const dbPath = process.env.DB_PATH || '../data/database.db';
 const dbDir = path.dirname(dbPath);
 
 if (!fs.existsSync(dbDir)) {
