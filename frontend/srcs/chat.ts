@@ -222,7 +222,7 @@ export function openChatWindow(friendId: number, friendName: string, friendPfp: 
 	const userInfo = document.createElement("div");
 	userInfo.className = "flex items-center gap-2";
 	const img = document.createElement("img");
-	img.src = `${BACKEND_URL}/uploads/${friendPfp}`;
+	img.src = `${BACKEND_URL}/img/${friendPfp}`;
     img.className = "w-8 h-8 rounded-full object-cover";
     img.style.objectPosition = "center";
 	const name = document.createElement("span");

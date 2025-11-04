@@ -10,7 +10,7 @@ function startLogoAnimation() {
   if (!logo) return;
 
   let frame = 0;
-  const frames = ["/upload/notif/walkie-talkie.png", "/upload/notif/walkie-talkie1.png", "/upload/notif/walkie-talkie2.png"];
+  const frames = ["/img/notif/walkie-talkie.png", "/img/notif/walkie-talkie1.png", "/img/notif/walkie-talkie2.png"];
 
   if (notifAnimationInterval) clearInterval(notifAnimationInterval);
 
@@ -30,13 +30,12 @@ function stopLogoAnimation() {
     notifAnimationInterval = null;
   }
 
-  logo.src = "/upload/notif/walkie-talkie2.png"; // remettre à l'état initial
+  logo.src = "/img/notif/walkie-talkie2.png"; // TODO - refresh to default image
   logo.classList.remove("animate-pulse");
 }
 
 
 export function initNotifications() {
-  console.log("🔔 Initialisation notifications");
 
   const notifBtn = document.querySelector("#notifications button");
   const notifPopup = document.getElementById("notifPopup");
@@ -62,7 +61,7 @@ export function initNotifications() {
     }
   });
   loadNotifications();
-  setInterval(loadNotifications, 5000); // recharge toutes les 5s
+  setInterval(loadNotifications, 5000); // Reload every 5 seconds
 }
 
 export async function loadNotifications() {
@@ -88,15 +87,17 @@ export async function loadNotifications() {
 		stopLogoAnimation();
 	}
 
-    // 🔹 Met à jour le badge rouge
+  // Update badge
   const notifBadge = document.getElementById("notifBadge");
 
   if (notifBadge) {
     if (data.requests.length > 0) {
       notifBadge.textContent = data.requests.length;
       notifBadge.classList.remove("hidden");
+      notifBadge.classList.add("flex");
     } else {
       notifBadge.classList.add("hidden");
+      notifBadge.classList.remove("flex");
     }
   }
 
@@ -113,11 +114,11 @@ export async function loadNotifications() {
       const li = document.createElement("li");
       li.className = "flex justify-between items-center bg-gray-700 p-2 rounded";
 
-      // Profil + nom
+      // Profil + name
       const left = document.createElement("div");
       left.className = "flex items-center gap-2";
       const img = document.createElement("img");
-      img.src = `${BACKEND_URL}/uploads/${req.requester_pfp}` || `${BACKEND_URL}/uploads/default.png`;
+      img.src = `${BACKEND_URL}/img/${req.requester_pfp}` || `${BACKEND_URL}/img/default.png`;
       img.className = "w-8 h-8 rounded-full";
       img.style.objectFit = "cover";
       img.style.objectPosition = "center";
@@ -126,7 +127,7 @@ export async function loadNotifications() {
       left.appendChild(img);
       left.appendChild(span);
 
-      // Boutons
+      // Buttons
       const actions = document.createElement("div");
       actions.className = "flex gap-2";
       const acceptBtn = document.createElement("button");

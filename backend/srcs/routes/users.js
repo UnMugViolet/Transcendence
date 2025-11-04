@@ -6,8 +6,8 @@ import { checkName, checkPassword } from '../utils.js';
 
 async function usersRoutes(fastify) {
 
-	if (!fs.existsSync('./uploads')) {
-		fs.mkdirSync('./uploads');
+	if (!fs.existsSync('./img')) {
+		fs.mkdirSync('./img');
 	}
 
 	fastify.get('/profile', { preHandler: fastify.authenticate }, async (request) => {
@@ -106,7 +106,7 @@ async function usersRoutes(fastify) {
 		const oldFilename = db.prepare('SELECT profile_picture FROM users WHERE id = ?').get(userId).profile_picture;
 		if (oldFilename && oldFilename !== 'default.jpg') {
 			try {
-				fs.unlinkSync(`./uploads/${oldFilename}`);
+				fs.unlinkSync(`./img/${oldFilename}`);
 			} catch (err) {
 				console.error('Failed to delete old profile picture:', err);
 			}
@@ -115,7 +115,7 @@ async function usersRoutes(fastify) {
 		const ext = file.mimetype.split('/')[1];
 		const filename = `${userId}_${Date.now()}.${ext}`;
 
-		await pump(file.file, fs.createWriteStream(`./uploads/${filename}`));
+		await pump(file.file, fs.createWriteStream(`./img/${filename}`));
 
 		db.prepare(`UPDATE users SET profile_picture = ? WHERE id = ?`).run(filename, userId);
 

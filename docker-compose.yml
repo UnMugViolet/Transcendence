@@ -10,7 +10,7 @@ services:
       - .env
     volumes:
       - ./backend/data:/app/data
-      - ./backend/uploads:/app/uploads
+      - ./backend/img:/app/img
       - ./backend/srcs:/app/srcs
 
   frontend:

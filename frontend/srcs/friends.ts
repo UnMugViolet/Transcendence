@@ -173,7 +173,7 @@ export async function loadFriends() {
       left.className = "flex items-center gap-2";
 
       const img = document.createElement("img");
-      img.src = `${BACKEND_URL}/uploads/${friend.friend_pfp}`;
+      img.src = `${BACKEND_URL}/img/${friend.friend_pfp}`;
       img.className = "w-8 h-8 rounded-full object-cover";
       img.style.objectPosition = "center";
 

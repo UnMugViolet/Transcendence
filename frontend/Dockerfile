@@ -27,7 +27,7 @@ FROM nginx:alpine
 
 COPY --from=builder /app/index.html /usr/share/nginx/html
 COPY --from=builder /app/dist /usr/share/nginx/html
-COPY --from=builder /app/upload /usr/share/nginx/html/upload
+COPY --from=builder /app/img /usr/share/nginx/html/img
 
 # Copy the generated self-signed certificate into the nginx image
 COPY --from=builder /app/ssl/selfsigned.crt /etc/ssl/certs/selfsigned.crt

@@ -34,8 +34,8 @@ fastify.register(fastifyMultipart, {
 });
 
 fastify.register(fastifyStatic, {
-  root: path.join(process.cwd(), 'uploads'),
-  prefix: '/uploads/',
+  root: path.join(process.cwd(), 'img'),
+  prefix: '/img/',
 });
 
 fastify.decorate('db', db);

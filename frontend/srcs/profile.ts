@@ -112,7 +112,7 @@ formProfile?.addEventListener("submit", async (e) => {
 			});
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error || i18n.t("errorPp"));
-			if (userAvatar) userAvatar.src = `${BACKEND_URL}/uploads/${data.filename}`;
+			if (userAvatar) userAvatar.src = `${BACKEND_URL}/img/${data.filename}`;
 			sessionStorage.setItem("profilePicture", data.filename);
 		}
 
@@ -145,7 +145,7 @@ export async function openFriendProfile(friendId: number) {
 		const data = await res.json();
 		if (!res.ok) throw new Error(data.error || i18n.t("errorProfile"));
 
-		if (friendProfileAvatar) friendProfileAvatar.src = data.profile_picture ? `${BACKEND_URL}/uploads/${data.profile_picture}` : "/default_avatar.png";
+		if (friendProfileAvatar) friendProfileAvatar.src = data.profile_picture ? `${BACKEND_URL}/img/${data.profile_picture}` : "/default_avatar.png";
 		if (friendProfileName) friendProfileName.textContent = data.name || i18n.t("unknownUser");
 		if (friendProfileStatus) friendProfileStatus.textContent = data.is_online ? i18n.t("online1") : i18n.t("offline");
 

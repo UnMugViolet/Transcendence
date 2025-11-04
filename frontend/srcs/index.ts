@@ -11,9 +11,11 @@ import { i18n } from "./i18n.js";
 
 function openModal(id: string) {
   document.getElementById(id)?.classList.remove("hidden");
+  document.getElementById(id)?.classList.add("flex");
 }
 function closeModal(id: string) {
   document.getElementById(id)?.classList.add("hidden");
+  document.getElementById(id)?.classList.remove("flex");
 }
 
 document.getElementById("btnSignUp")?.addEventListener("click", () => openModal("modalSignUp"));
@@ -62,16 +64,19 @@ function setLoggedInState(username: string, profilePicture: string) {
   const btnLogout = document.getElementById("btnLogout");
 
   authButtons?.classList.add("hidden");
+
   btnLogout?.classList.remove("hidden");
+  btnLogout?.classList.add("flex");
 
   if (userInfo) {
     userInfo.classList.remove("hidden");
+    userInfo.classList.add("flex");
     const welcomeMessage = document.getElementById("welcomeMessage");
     if (welcomeMessage) welcomeMessage.textContent = username;
 
     const userAvatar = document.getElementById("userAvatar") as HTMLImageElement | null;
     if (userAvatar && profilePicture) {
-      userAvatar.src = `${BACKEND_URL}/uploads/${profilePicture}`;
+      userAvatar.src = `${BACKEND_URL}/img/${profilePicture}`;
       userAvatar.addEventListener("click", () => {
         const profileModal = document.getElementById("modalProfile");
         if (profileModal) profileModal.classList.remove("hidden");
@@ -247,7 +252,7 @@ langDropdown.querySelectorAll("button[data-lang]").forEach((btn) => {
     const lang = btn.getAttribute("data-lang")!;
     await i18n.loadLanguage(lang);
     localStorage.setItem("lang", lang);
-    currentFlag.src = `upload/flags/${lang}.png`;
+    currentFlag.src = `img/flags/${lang}.png`;
     currentLangText.textContent = lang.toUpperCase();
     langDropdown.classList.add("hidden");
   });

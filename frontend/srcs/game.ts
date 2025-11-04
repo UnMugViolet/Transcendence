@@ -67,9 +67,14 @@ export async function leaveGame(options: { navigate?: boolean; closeSocket?: boo
 		started = false;
 		// hide local lobby options when leaving
 		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
-		if (lobbyLocalOptions) lobbyLocalOptions.classList.add('hidden');
 		const lobby = document.getElementById('lobby');
-		if (lobby) lobby.classList.add('hidden');
+
+		if (lobbyLocalOptions) {
+			lobbyLocalOptions.classList.add('hidden');
+		}
+		if (lobby) {
+			lobby.classList.add('hidden');
+		} 
 		const startBtn = document.getElementById('btnStart'); if (startBtn) startBtn.classList.add('hidden');
 		const backBtn = document.getElementById('backToMenu'); if (backBtn) backBtn.classList.add('hidden');
 	}
@@ -261,7 +266,10 @@ start?.addEventListener("click", async () => {
 
 		// hide local lobby options when the game actually starts
 		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
-		if (lobbyLocalOptions) lobbyLocalOptions.classList.add('hidden');
+
+		if (lobbyLocalOptions) {
+			lobbyLocalOptions.classList.add('hidden');
+		}
 
 		navigateTo('viewGame');
 	} catch (err) {
@@ -271,6 +279,7 @@ start?.addEventListener("click", async () => {
 		if (startMessage) {
 			startMessage.textContent = messageText;
 			startMessage.classList.remove('hidden');
+			startMessage.classList.add('flex');
 		}
 	}
 });
@@ -460,10 +469,13 @@ async function joinGame(mode: string) {
 
 		// Show/hide local lobby options depending on mode
 		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
-		if (mode === '1v1Offline') {
-			if (lobbyLocalOptions) lobbyLocalOptions.classList.remove('hidden');
-		} else {
-			if (lobbyLocalOptions) lobbyLocalOptions.classList.add('hidden');
+
+		if (mode === '1v1Offline' && lobbyLocalOptions) {
+			lobbyLocalOptions.classList.remove('hidden');
+			lobbyLocalOptions.classList.add('flex');
+		}
+		else if (lobbyLocalOptions) {
+			lobbyLocalOptions.classList.add('hidden');
 		}
 
 		start?.classList.remove("hidden");
