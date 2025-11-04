@@ -1,7 +1,7 @@
 import db from '../db.js';
 import { clients } from './chat.js';
 import WebSocket from 'ws';
-import { posYPlayer1, posYPlayer2, player1Score, player2Score, ballX, ballY, gameId } from '../../frontend/src/game.js';
+import { posYPlayer1, posYPlayer2, player1Score, player2Score, ballX, ballY, gameId } from '../../frontend/srcs/game.js';
 
 const botToken = fastify.jwt.sign({ id: -1, name : 'Botty', type : 'access' });
 const botSocket = new WebSocket(`ws://localhost:3000/ws?token=${botToken}`);

@@ -32,9 +32,9 @@ COPY --from=builder /app/ssl/selfsigned.crt /etc/ssl/certs/selfsigned.crt
 COPY --from=builder /app/ssl/selfsigned.key  /etc/ssl/private/selfsigned.key
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY src/languages /usr/share/nginx/html/languages
+COPY srcs/languages /usr/share/nginx/html/languages
 # Exposer un port (si nécessaire pour dev server)
-EXPOSE 443
+EXPOSE 80
 
 # Commande par défaut : builder le CSS
 CMD ["nginx", "-g", "daemon off;"]

@@ -2,12 +2,12 @@
   "name": "transcendance-frontend",
   "version": "1.0.0",
   "scripts": {
-    "css": "postcss src/style.css -o dist/style.css",
-    "tailwind": "tailwindcss -i src/style.css -o dist/style.css --watch",
+    "css": "postcss srcs/style.css -o dist/style.css",
+    "tailwind": "tailwindcss -i srcs/style.css -o dist/style.css --watch",
     "build-ts": "tsc --outDir dist",
     "build-css": "concurrently  \"npm run css\" \"npm run tailwind\"",
     "dev": "concurrently \"npm run build-ts\" \"npm run build-css\" ",
-    "build-tailwind": "tailwindcss -i src/style.css -o dist/style.css"
+    "build-tailwind": "tailwindcss -i srcs/style.css -o dist/style.css"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.13",
