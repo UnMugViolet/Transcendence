@@ -1,13 +1,11 @@
 import { BACKEND_URL } from "./config.js";
 import { initNotifications } from "./notif.js";
-import { loadFriends } from "./friends.js";
-import { setSidebarEnabled } from "./friends.js";
-import { initChatSocket } from "./chat.js";
-import { closeChatSocket } from "./chat.js";
-import { initPongBtns } from "./game.js";
-import { navigateTo } from "./game.js";
-import { gameId } from "./game.js";
+import { loadFriends, setSidebarEnabled } from "./friends.js";
+import { initChatSocket, closeChatSocket } from "./chat.js";
+import { initPongBtns, navigateTo, gameId } from "./game.js";
 import { i18n } from "./i18n.js";
+import { populateLanguageDropdown, updateLanguageButton, initLanguageButton } from "./langs.js";
+
 
 function openModal(id: string) {
   document.getElementById(id)?.classList.remove("hidden");
@@ -29,34 +27,43 @@ const langButton = document.getElementById("langButton")!;
 const langDropdown = document.getElementById("langDropdown")!;
 const currentFlag = document.getElementById("currentFlag") as HTMLImageElement;
 const currentLangText = langButton.querySelector("span")!;
+const availableLangs = ["en", "fr", "ch"];
 
 async function main() {
   const savedLang = localStorage.getItem('lang') || 'en';
+  console.log('Saved language:', savedLang);
   await i18n.init(savedLang);
   // console.log('Lang loaded:', savedLang, Object.keys(i18n['translations'][savedLang]));
 
   i18n.updateDOM();
+  
+  // Initialize the language button with current language
+  initLanguageButton();
 
   document.getElementById('btn-fr')?.addEventListener('click', async () => {
     await i18n.loadLanguage('fr');
     i18n.updateDOM();
     localStorage.setItem('lang', 'fr');
+    updateLanguageButton('fr');
   });
 
   document.getElementById('btn-en')?.addEventListener('click', async () => {
     await i18n.loadLanguage('en');
     i18n.updateDOM();
     localStorage.setItem('lang', 'en');
+    updateLanguageButton('en');
   });
 
   document.getElementById('btn-ch')?.addEventListener('click', async () => {
     await i18n.loadLanguage('ch');
     i18n.updateDOM();
     localStorage.setItem('lang', 'ch');
+    updateLanguageButton('ch');
   });
 }
 
 main();
+populateLanguageDropdown(availableLangs);
 
 function setLoggedInState(username: string, profilePicture: string) {
   const authButtons = document.getElementById("authButtons");
@@ -239,14 +246,14 @@ langButton.addEventListener("click", () => {
   langDropdown.classList.toggle("hidden");
 });
 
-// Fermer le menu quand on clique ailleurs
+// Close lang dropdown when clicking outside
 document.addEventListener("click", (e) => {
   if (!langButton.contains(e.target as Node) && !langDropdown.contains(e.target as Node)) {
     langDropdown.classList.add("hidden");
   }
 });
 
-// Gérer le changement de langue
+// Handle the language change
 langDropdown.querySelectorAll("button[data-lang]").forEach((btn) => {
   btn.addEventListener("click", async () => {
     const lang = btn.getAttribute("data-lang")!;

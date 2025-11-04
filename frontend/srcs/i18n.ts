@@ -6,13 +6,13 @@ class I18n {
   private missingKeys: Set<string> = new Set();
 
   constructor() {
-    // expose for debugging from the console
     (window as any).i18n = this;
   }
 
-  async init(defaultLang: string = "en") {
-    this.currentLang = defaultLang;
-    await this.loadLanguage(defaultLang);
+  async init(currentLang: string = 'en') {
+    this.currentLang = currentLang || 'en';
+
+    await this.loadLanguage(this.currentLang);
     // ensure DOM is updated after language is loaded
     this.updateDOM();
     // also update DOM when page loads (in case init was called before DOM was ready)
@@ -70,6 +70,27 @@ class I18n {
       }
     }
     return key;
+  }
+
+  // helper for debugging
+  getLoadedLanguages() {
+    return Object.keys(this.translations);
+  }
+
+  // helper to get current language
+  getCurrentLanguage() {
+    return this.currentLang;
+  }
+
+  // helper to get raw translation for a key in the current language
+  getTranslation(key: string) {
+    return this.translations[this.currentLang]?.[key];
+  }
+
+  // debug helper: list all keys for a language
+  listKeys(lang?: string) {
+    const l = lang || this.currentLang;
+    return Object.keys(this.translations[l] || {});
   }
 
   updateDOM() {

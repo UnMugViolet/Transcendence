@@ -61,27 +61,19 @@
           </ul>
         </div>
       </div>
-      <!-- Sélecteur de langue -->
+      <!-- Language selector -->
       <div id="languageMenu" class="relative">
         <button id="langButton" class="flex items-center gap-2 bg-transparent text-amber-100 hover:text-white">
-          <img id="currentFlag" src="img/flags/en.png" alt="lang" class="w-6 h-6 rounded-full border border-amber-100" />
+          <img id="currentFlag" src=`"img/flags/${}.png"` alt="lang" class="w-6 h-6 rounded-full border border-amber-100" />
           <span class="uppercase text-sm">EN</span>
           <svg class="w-4 h-4 text-amber-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
           </svg>
         </button>
 
-        <!-- Menu déroulant -->
+        <!-- Dropdown -->
         <div id="langDropdown" class="hidden absolute right-0 mt-2 w-28 bg-rose-900 text-amber-100 rounded shadow-lg z-50">
-          <button data-lang="en" class="flex items-center gap-2 px-3 py-2 hover:bg-rose-800 w-full text-left">
-            <img src="img/flags/en.png" alt="EN" class="w-5 h-5 rounded-full border border-amber-100" /> EN
-          </button>
-          <button data-lang="fr" class="flex items-center gap-2 px-3 py-2 hover:bg-rose-800 w-full text-left">
-            <img src="img/flags/fr.png" alt="FR" class="w-5 h-5 rounded-full border border-amber-100" /> FR
-          </button>
-          <button data-lang="ch" class="flex items-center gap-2 px-3 py-2 hover:bg-rose-800 w-full text-left">
-            <img src="img/flags/ch.png" alt="CH" class="w-5 h-5 rounded-full border border-amber-100" /> CH
-          </button>
+          <!-- Dynamically generated language buttons in lang.ts-->
         </div>
       </div>
 
@@ -204,6 +196,7 @@
   <!-- MODALE Sign Up -->
   <div id="modalSignUp" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
     <div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
+      <button id="closeSignUp" class="w-full flex justify-end h-5 text-black text-2xl transition-colors duration-200 hover:text-zinc-800"> ✕ </button>
       <h2 data-i18n="signUp" class="text-xl font-bold mb-4"></h2>
       <form id="formSignUp" class="flex flex-col gap-4">
         <input type="text" id="usernameSignUp" data-i18n-placeholder="username" class="border p-2 rounded" />
@@ -218,13 +211,13 @@
         <button data-i18n="register" type="submit" class="bg-green-500 text-white p-2 rounded hover:bg-green-600"></button>
       </form>
       <p id="messageSignUp" class="text-red-500 mt-2"></p>
-      <button data-i18n="close" id="closeSignUp" type="button" class="mt-4 text-sm text-gray-500 hover:underline"></button>
     </div>
   </div>
 
   <!-- MODALE Sign In -->
   <div id="modalSignIn" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
     <div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
+      <button id="closeSignIn" class="w-full flex justify-end h-5 text-black text-2xl transition-colors duration-200 hover:text-zinc-800"> ✕ </button>
       <h2 data-i18n="signIn" class="text-xl font-bold mb-4"></h2>
       <form id="formSignIn" class="flex flex-col gap-4">
         <input type="text" id="usernameSignIn" data-i18n-placeholder="username" class="border p-2 rounded" />
@@ -236,11 +229,10 @@
         <button data-i18n="signIn" type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"></button>
       </form>
       <p id="messageSignIn" class="text-red-500 mt-2"></p>
-      <button data-i18n="close" id="closeSignIn" type="button" class="mt-4 text-sm text-gray-500 hover:underline"></button>
     </div>
   </div>
 
-  <!-- Sidebar amis -->
+  <!-- Sidebar friends -->
   <div id="sidebarHandle" class="fixed top-1/3 left-0 z-50 bg-rose-950 text-amber-100 px-2 py-4 rounded-r cursor-pointer transition-transform duration-300">
   🔫
   </div>
@@ -345,5 +337,6 @@
 <script type="module" src="friends.js" defer></script>
 <script type="module" src="game.js" defer></script>
 <script type="module" src="profile.js" defer></script>
+<script type="module" src="langs.js" defer></script>
 </body>
 </html>
