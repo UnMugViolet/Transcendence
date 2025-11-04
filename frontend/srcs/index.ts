@@ -31,7 +31,7 @@ const currentLangText = langButton.querySelector("span")!;
 async function main() {
   const savedLang = localStorage.getItem('lang') || 'en';
   await i18n.init(savedLang);
-  console.log('Lang loaded:', savedLang, Object.keys(i18n['translations'][savedLang]));
+  // console.log('Lang loaded:', savedLang, Object.keys(i18n['translations'][savedLang]));
 
   i18n.updateDOM();
 

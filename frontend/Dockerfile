@@ -19,6 +19,8 @@ RUN apt-get update && apt-get install -y openssl \
 
 COPY . .
 
+RUN npm run build-ts
+
 CMD ["npm", "run", "dev"]
 
 FROM nginx:alpine
