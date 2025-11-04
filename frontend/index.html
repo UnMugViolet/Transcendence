@@ -2,345 +2,360 @@
 <html lang="en">
 
 <head>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne+Mono&display=swap" rel="stylesheet">
-  <link href="/style.css" rel="stylesheet">
-  <link href="css/animations.css" rel="stylesheet">
-  <link rel="icon" href="img/favicon.ico" />
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Transcendence</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Syne+Mono&display=swap" rel="stylesheet">
+	<link href="/style.css" rel="stylesheet">
+	<link href="css/animations.css" rel="stylesheet">
+	<link rel="icon" href="img/favicon.ico" />
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Transcendence</title>
 
 </head>
 
 <body class="min-h-screen flex flex-col bg-cover bg-center" style="background-image: url('img/bg/mars.jpg');">
-    <!-- Barre en haut -->
-  <div class="flex items-center justify-between h-16 p-4 bg-rose-950 bg-opacity-90 shadow z-50">
-
-    <!-- Partie gauche : avatar + username -->
-    <div class="flex items-center gap-4">
-      <h1 class="uppercase text-4xl text-amber-100 font-bold" style="font-family: 'Syne Mono', cursive;">Transcendence</h1>
-      <div id="userInfo" class="hidden items-center gap-2">
-        <img id="userAvatar" class="w-12 h-12 rounded-full object-cover" src=""/>
-        <span id="welcomeMessage" class="text-amber-100 font-semibold"></span>
-      </div>
-    </div>
-
-    <!-- Partie droite : boutons -->
-    <div class="flex items-center gap-2">
-      <div id="authButtons" class="hidden justify-end p-4 gap-2">
-        <button id="btnSignIn" data-i18n="signIn" class="bg-purple-600 text-amber-100 px-4 py-2 rounded hover:bg-purple-500">
-        </button>
-        <button id="btnSignUp" data-i18n="signUp" class="bg-orange-700 text-amber-100 px-4 py-2 rounded hover:bg-orange-600">
-        </button>
-      </div>
-
-      <div id="notifications" class="hidden relative cursor-pointer mx-10">
-        <button class="flex items-center justify-center w-15 h-15 relative">
-          <img id="notifLogo" src="img/notif/walkie-talkie2.png" alt="Notifications" class="w-10 h-10">
-          <!-- Badge rouge -->
-          <span id="notifBadge"
-                class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 items-center justify-center rounded-full pointer-events-none">
-            0
-          </span>
-        </button>
-
-        <!-- Popup pour toutes les notifications -->
-        <div id="notifPopup" class="hidden absolute right-0 mt-2 w-72 bg-gray-800 text-white rounded shadow-lg z-50">
-          <ul id="notifList" class="flex flex-col p-2 gap-2 max-h-60 overflow-y-auto">
-            <!-- Notifications listées ici -->
-          </ul>
-        </div>
-      </div>
-      <!-- Language selector -->
-      <div id="languageMenu" class="relative">
-        <button id="langButton" class="flex items-center gap-2 bg-transparent text-amber-100 hover:text-white">
-          <img id="currentFlag" src=`"img/flags/${}.png"` alt="lang" class="w-6 h-6 rounded-full border border-amber-100" />
-          <span class="uppercase text-sm">EN</span>
-          <svg class="w-4 h-4 text-amber-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        <!-- Dropdown -->
-        <div id="langDropdown" class="hidden absolute right-0 mt-2 w-28 bg-rose-900 text-amber-100 rounded shadow-lg z-50">
-          <!-- Dynamically generated language buttons in lang.ts-->
-        </div>
-      </div>
-
-      <button id="btnLogout" data-i18n="logout" class="hidden bg-rose-600 text-amber-100 px-4 py-2 rounded hover:bg-rose-500">
-      </button>
-    </div>
-  </div>
-
-  <div id="viewGame" class="view relative flex justify-center mt-20 flex-wrap lg:flex-nowrap gap-4">
-    <!-- Zone Pong -->
-    <div id="pongContainer" class="w-full lg:w-3/4 max-w-4xl p-4 bg-rose-950 bg-opacity-80 rounded-lg shadow-lg">
-      <canvas id="pongCanvas" class="bg-black bg-opacity-50 rounded w-full h-[600px]"></canvas>
-    </div>
-
-    <!-- 💬 Global chat -->
-    <div id="gameChat"
-      class="w-full lg:w-80 bg-black bg-opacity-70 text-amber-100 flex flex-col border border-rose-950 rounded-2xl shadow-lg overflow-hidden">
-      <div data-i18n="globalChat"
-        class="p-3 text-lg font-bold border-b border-rose-950 bg-rose-950 rounded-t-2xl flex justify-between items-center">
-      </div>
-
-      <!-- Messages added dynamically-->
-      <div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-2 text-sm" />
-
-      <!-- Input -->
-      <form id="chatForm" class="p-3 border-t border-rose-950 flex bg-rose-950 rounded-b-2xl">
-        <input id="chatInput" type="text" autocomplete="off" data-i18n-placeholder="messagePlaceholder"
-          class="flex-1 bg-amber-100 text-black p-2 rounded-l outline-none" />
-        <button type="submit" class="bg-red-500 px-4 rounded-r hover:bg-red-400">
-          ➤
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Menu Pong -->
-  <div id="pongMenu" class="view fixed inset-0 flex flex-col items-center justify-center gap-4 z-20 px-4"
-    style="pointer-events: auto;">
-    <h2 id="menuTitle" class="text-5xl sm:text-6xl md:text-7xl text-amber-100 font-bold text-center leading-tight"
-      style="font-family: 'Syne Mono', cursive;">
-      <span class="prompt">&gt</span> <span id="typedText"></span>
-      <span id="cursor" class="inline-block w-4 sm:w-6 h-10 sm:h-16 bg-amber-100 ml-1"></span>
-    </h2>
-    <span data-i18n="click" class="text-lg sm:text-2xl text-amber-200 font-mono mb-2 animate-pulse text-center"></span>
-    <div class="flex flex-wrap justify-center gap-6 mt-4">
-      <button id="btnOffline"
-        class="group w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-full bg-amber-100 hover:bg-red-500 flex flex-col items-center justify-center shadow-lg transform transition-transform duration-200 hover:scale-110">
-        <img src="img/btn/joystick.png" alt="Offline" class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
-        <span data-i18n="local"
-          class="mt-3 text-sm sm:text-base font-semibold text-red-500 group-hover:text-amber-100 transition-colors duration-200">
-        </span>
-      </button>
-      <button id="btnOnline"
-        class="group w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-full bg-amber-100 hover:bg-red-500 flex flex-col items-center justify-center shadow-lg transform transition-transform duration-200 hover:scale-110">
-        <img src="img/btn/mars.png" alt="Online" class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
-        <span data-i18n="online"
-          class="mt-3 text-sm sm:text-base font-semibold text-red-500 group-hover:text-amber-100 transition-colors duration-200">
-        </span>
-      </button>
-      <button id="btnTournament"
-        class="group w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-full bg-amber-100 hover:bg-red-500 flex flex-col items-center justify-center shadow-lg transform transition-transform duration-200 hover:scale-110">
-        <img src="img/btn/astronomy.png" alt="Tournament" class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
-        <span data-i18n="tournament"
-          class="mt-3 text-sm sm:text-base font-semibold text-red-500 group-hover:text-amber-100 transition-colors duration-200">
-        </span>
-      </button>
-      <button id="btnIA"
-        class="group w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-40 rounded-full bg-amber-100 hover:bg-red-500 flex flex-col items-center justify-center shadow-lg transform transition-transform duration-200 hover:scale-110">
-        <img src="img/btn/robot.png" alt="AI" class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
-        <span data-i18n="ai"
-          class="mt-3 text-sm sm:text-base font-semibold text-red-500 group-hover:text-amber-100 transition-colors duration-200">
-        </span>
-      </button>
-    </div>
-  </div>
-  <script>
-    const title = "MENU";
-    const typedText = document.getElementById('typedText');
-    const cursor = document.getElementById('cursor');
-    let titleIndex = 0;
-    function typeTitle() {
-      if (titleIndex <= title.length) {
-        typedText.textContent = title.slice(0, titleIndex);
-        titleIndex++;
-        setTimeout(typeTitle, 200);
-      }
-    }
-
-    setInterval(() => {
-      cursor.style.visibility = cursor.style.visibility === 'hidden' ? 'visible' : 'hidden';
-    }, 500);
-
-    typeTitle();
-  </script>
-
-  <div id="lobby" class="view fixed inset-0 flex flex-col items-center justify-center z-30 gap-4">
-    <div id="lobbyLocalOptions" class="hidden flex-col items-center gap-2">
-      <label data-i18n="player2" for="lobbyPlayer2Name" class="text-amber-100"></label>
-      <input id="lobbyPlayer2Name" type="text" placeholder="Player 2 Name"
-        class="p-2 rounded bg-amber-100 text-black w-56" />
-    </div>
-    <button data-i18n="start" id="btnStart"
-      class="hidden text-white px-6 py-3 text-2xl font-bold bg-green-500 rounded hover:bg-green-600 shadow-lg transition-transform duration-200 hover:scale-105">
-    </button>
-    <button data-i18n="back" id="backToMenu"
-      class="hidden text-white px-6 py-3 text-2xl font-bold bg-red-500 rounded hover:bg-red-600 shadow-lg transition-transform duration-200 hover:scale-105">
-    </button>
-
-    <p id="startMessage" class="text-red-500 mt-2 hidden"></p>
-
-    <span id="goodBye" data-i18n="thanks"
-      class="hidden sm:text-6xl md:text-7xl text-amber-100 font-bold text-center leading-tight"
-      style="font-family: 'Syne Mono', cursive;"></span>
-  </div>
 
 
-  <!-- MODALE Sign Up -->
-  <div id="modalSignUp" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
-    <div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
-      <button id="closeSignUp"
-        class="w-full flex justify-end h-5 text-black text-2xl transition-colors duration-200 hover:text-zinc-800"> ✕
-      </button>
-      <h2 data-i18n="signUp" class="text-xl font-bold mb-4"></h2>
-      <form id="formSignUp" class="flex flex-col gap-4">
-        <input type="text" id="usernameSignUp" data-i18n-placeholder="username" class="border p-2 rounded" />
-        <input type="password" id="passwordSignUp" data-i18n-placeholder="password" class="border p-2 rounded" />
-        <input type="password" id="passwordSignUpConfirm" data-i18n-placeholder="confirmPassword"
-          class="border p-2 rounded" />
+	<header class="flex items-center justify-between h-16 p-4 bg-rose-950 bg-opacity-90 shadow z-50">
+		<!-- Partie gauche : avatar + username -->
+		<div class="flex items-center gap-4">
+			<h1 class="uppercase text-4xl text-amber-100 font-bold" style="font-family: 'Syne Mono', cursive;">
+				Transcendence</h1>
+			<div id="userInfo" class="hidden items-center gap-2">
+				<img id="userAvatar" class="w-12 h-12 rounded-full object-cover" src="" />
+				<span id="welcomeMessage" class="text-amber-100 font-semibold"></span>
+			</div>
+		</div>
 
-        <label class="flex items-center gap-2 text-sm">
-          <input data-i18n="stayConnected" type="checkbox" id="staySignUp" class="h-4 w-4" />
-          <span data-i18n="stayConnected"></span>
-        </label>
+		<!-- Partie droite : boutons -->
+		<div class="flex items-center gap-2">
+			<div id="authButtons" class="hidden justify-end p-4 gap-2">
+				<button id="btnSignIn" data-i18n="signIn"
+					class="bg-purple-600 text-amber-100 px-4 py-2 rounded hover:bg-purple-500">
+				</button>
+				<button id="btnSignUp" data-i18n="signUp"
+					class="bg-orange-700 text-amber-100 px-4 py-2 rounded hover:bg-orange-600">
+				</button>
+			</div>
 
-        <button data-i18n="register" type="submit"
-          class="bg-green-500 text-white p-2 rounded hover:bg-green-600"></button>
-      </form>
-      <p id="messageSignUp" class="text-red-500 mt-2"></p>
-    </div>
-  </div>
+			<div id="notifications" class="hidden relative cursor-pointer mx-10">
+				<button class="flex items-center justify-center w-15 h-15 relative">
+					<img id="notifLogo" src="img/notif/walkie-talkie2.png" alt="Notifications" class="w-10 h-10">
+					<!-- Badge rouge -->
+					<span id="notifBadge"
+						class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 items-center justify-center rounded-full pointer-events-none">
+						0
+					</span>
+				</button>
 
-  <!-- MODALE Sign In -->
-  <div id="modalSignIn" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
-    <div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
-      <button id="closeSignIn"
-        class="w-full flex justify-end h-5 text-black text-2xl transition-colors duration-200 hover:text-zinc-800"> ✕
-      </button>
-      <h2 data-i18n="signIn" class="text-xl font-bold mb-4"></h2>
-      <form id="formSignIn" class="flex flex-col gap-4">
-        <input type="text" id="usernameSignIn" data-i18n-placeholder="username" class="border p-2 rounded" />
-        <input type="password" id="passwordSignIn" data-i18n-placeholder="password" class="border p-2 rounded" />
-        <label class="flex items-center gap-2 text-sm">
-          <input type="checkbox" id="staySignIn" groupclass="h-4 w-4" />
-          <span data-i18n="stayConnected"></span>
-        </label>
-        <button data-i18n="signIn" type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"></button>
-      </form>
-      <p id="messageSignIn" class="text-red-500 mt-2"></p>
-    </div>
-  </div>
+				<!-- Popup pour toutes les notifications -->
+				<div id="notifPopup"
+					class="hidden absolute right-0 mt-2 w-72 bg-gray-800 text-white rounded shadow-lg z-50">
+					<ul id="notifList" class="flex flex-col p-2 gap-2 max-h-60 overflow-y-auto">
+						<!-- Notifications listées ici -->
+					</ul>
+				</div>
+			</div>
+			<!-- Language selector -->
+			<div id="languageMenu" class="relative">
+				<button id="langButton" class="flex items-center gap-2 bg-transparent text-amber-100 hover:text-white">
+					<img id="currentFlag" src="img/flags/en.png" alt="EN"
+						class="w-6 h-6 rounded-full border border-amber-100" />
+					<span class="uppercase text-sm">EN</span>
+					<svg class="w-4 h-4 text-amber-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+					</svg>
+				</button>
 
-  <!-- Sidebar friends -->
-  <div id="sidebarHandle"
-    class="fixed top-1/3 left-0 z-50 bg-rose-950 text-amber-100 px-2 py-4 rounded-r cursor-pointer transition-transform duration-300">
-    🔫
-  </div>
-  <div id="sidebar"
-    class="bg-rose-950 text-amber-100 w-64 min-h-screen p-4 transform -translate-x-full transition-transform duration-300 fixed top-16 left-0 z-40">
-    <h2 data-i18n="friends" class="text-amber-100 text-xl font-bold mb-4"></h2>
-    <input type="text" id="friendSearch" data-i18n-placeholder="searchUsername"
-      class="w-full p-2 mb-4 bg-amber-100 rounded border text-black" />
-    <div id="searchResults" class="mt-2"></div>
-    <ul id="friendsList" class="space-y-2">
-    </ul>
-  </div>
-  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-30"></div>
+				<!-- Dropdown -->
+				<div id="langDropdown"
+					class="hidden absolute right-0 mt-2 w-28 bg-rose-900 text-amber-100 rounded shadow-lg z-50">
+					<!-- Dynamically generated language buttons in lang.ts-->
+				</div>
+			</div>
 
-  <!-- 🔹 Modal Profil -->
-  <div id="modalProfile" class="hidden fixed inset-0 items-center justify-center bg-black bg-opacity-50 z-50">
-    <div class="bg-white rounded-lg shadow-lg w-96 p-6 relative">
-      <button id="closeProfile" class="absolute top-2 right-2 text-gray-500 hover:text-black">✖</button>
-      <h2 data-i18n="editProfile" class="text-xl font-bold mb-4"></h2>
-
-      <form id="formProfile" class="space-y-4">
-        <!-- Avatar -->
-        <div class="flex flex-col items-center mb-4">
-          <div class="relative">
-            <img id="profilePicturePreview" src="" alt="Profile picture"
-              class="w-24 h-24 rounded-full object-cover border-2 border-gray-300" />
-            <button type="button" id="editProfilePictureBtn"
-              class="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow hover:bg-gray-100"
-              data-i18n-title="editPp">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-2.828 0L9 13zm0 0V17h4" />
-              </svg>
-            </button>
-            <input type="file" id="profilePictureInput" accept="image/*" class="hidden" />
-          </div>
-        </div>
-
-        <!-- Username -->
-        <div>
-          <label data-i18n="username" class="block mb-1 font-medium"></label>
-          <input type="text" id="profileNameInput" class="w-full border p-2 rounded" />
-        </div>
-
-        <!-- Password -->
-        <div>
-          <label data-i18n="newPassword" class="block mb-1 font-medium"></label>
-          <input type="password" id="profilePasswordInput" class="w-full border p-2 rounded" />
-          <input type="password" id="profilePasswordConfirm" data-i18n-placeholder="confirmPassword"
-            class="w-full border p-2 rounded mt-2" />
-        </div>
-
-        <button data-i18n="save" type="submit"
-          class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-400 w-full">
-        </button>
-
-        <p id="profileMessage" class="text-center text-sm mt-2"></p>
-      </form>
-    </div>
-  </div>
-
-  <!-- 🔹 Modal Profil Ami -->
-  <div id="modalFriendProfile" class="hidden fixed inset-0 items-center justify-center bg-black bg-opacity-50 z-50">
-    <div class="bg-white rounded-lg shadow-lg w-96 p-6 relative">
-      <button id="closeFriendProfile" class="absolute top-2 right-2 text-gray-500 hover:text-black">✖</button>
-      <h2 data-i18n="friendProfile" class="text-xl font-bold mb-4"></h2>
-
-      <div class="flex flex-col items-center mb-4">
-        <img id="friendProfileAvatar" src="" alt="Avatar"
-          class="w-24 h-24 rounded-full object-cover border-2 border-gray-300 mb-2" />
-        <span id="friendProfileName" class="font-semibold text-lg"></span>
-        <span id="friendProfileStatus" class="text-gray-500 text-sm"></span>
-      </div>
-
-      <p id="friendProfileBio" class="text-center text-gray-700 mb-4"></p>
-    </div>
-  </div>
+			<button id="btnLogout" data-i18n="logout"
+				class="hidden bg-rose-600 text-amber-100 px-4 py-2 rounded hover:bg-rose-500">
+			</button>
+		</div>
+	</header>
 
 
-  <div id="modalGamePause" class="hidden fixed left-0 right-0 top-1/4 items-start justify-center z-50">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-      <h2 data-i18n="pause" class="text-xl font-bold text-center mb-4"></h2>
-      <p data-i18n="disconnected1"></p>
-      <p class="mb-4" data-i18n="waitReconnection"></p>
-      <div id="pauseTimer" class="text-center text-lg font-mono mb-2">00:10</div>
-      <div class="w-full h-2 bg-gray-200 rounded overflow-hidden">
-        <div class="h-full bg-blue-500 animate-loader" style="width: 40%;"></div>
-      </div>
-    </div>
-  </div>
+	<!-- MODALE Sign Up -->
+	<div id="modalSignUp" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+		<div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
+			<button id="closeSignUp"
+				class="w-full flex justify-end h-5 text-black text-2xl transition-colors duration-200 hover:text-zinc-800">
+				✕
+			</button>
+			<h2 data-i18n="signUp" class="text-xl font-bold mb-4"></h2>
+			<form id="formSignUp" class="flex flex-col gap-4">
+				<input type="text" id="usernameSignUp" data-i18n-placeholder="username" class="border p-2 rounded" />
+				<input type="password" id="passwordSignUp" data-i18n-placeholder="password"
+					class="border p-2 rounded" />
+				<input type="password" id="passwordSignUpConfirm" data-i18n-placeholder="confirmPassword"
+					class="border p-2 rounded" />
 
-  <div id="modalReconnect" class="hidden fixed left-0 right-0 top-1/4 items-start justify-center z-50">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-      <h2 data-i18n="reconnection" class="text-xl font-bold text-center mb-4"></h2>
-      <p data-i18n="disconnected2"></p>
-      <p class="mb-4 text-center" data-i18n="reconnect?"></p>
-      <div class="flex justify-center gap-4">
-        <button id="btnReconnectYes" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-400"
-          data-i18n="yes"></button>
-        <button id="btnReconnectNo" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-400"
-          data-i18n="no"></button>
-      </div>
-    </div>
-  </div>
+				<label class="flex items-center gap-2 text-sm">
+					<input data-i18n="stayConnected" type="checkbox" id="staySignUp" class="h-4 w-4" />
+					<span data-i18n="stayConnected"></span>
+				</label>
 
-  <!-- Scripts -->
-  <script type="module" src="index.js" defer></script>
-  <script type="module" src="friends.js" defer></script>
-  <script type="module" src="game.js" defer></script>
-  <script type="module" src="profile.js" defer></script>
-  <script type="module" src="langs.js" defer></script>
+				<button data-i18n="register" type="submit"
+					class="bg-green-500 text-white p-2 rounded hover:bg-green-600"></button>
+			</form>
+			<p id="messageSignUp" class="text-red-500 mt-2"></p>
+		</div>
+	</div>
+
+	<!-- MODALE Sign In -->
+	<div id="modalSignIn" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+		<div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
+			<button id="closeSignIn"
+				class="w-full flex justify-end h-5 text-black text-2xl transition-colors duration-200 hover:text-zinc-800">
+				✕
+			</button>
+			<h2 data-i18n="signIn" class="text-xl font-bold mb-4"></h2>
+			<form id="formSignIn" class="flex flex-col gap-4">
+				<input type="text" id="usernameSignIn" data-i18n-placeholder="username" class="border p-2 rounded" />
+				<input type="password" id="passwordSignIn" data-i18n-placeholder="password"
+					class="border p-2 rounded" />
+				<label class="flex items-center gap-2 text-sm">
+					<input type="checkbox" id="staySignIn" class="h-4 w-4" />
+					<span data-i18n="stayConnected"></span>
+				</label>
+				<button data-i18n="signIn" type="submit"
+					class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"></button>
+			</form>
+			<p id="messageSignIn" class="text-red-500 mt-2"></p>
+		</div>
+	</div>
+
+
+	<div id="viewGame" class="view relative flex justify-center mt-20 flex-wrap lg:flex-nowrap gap-4">
+		<!-- Zone Pong -->
+		<div id="pongContainer" class="w-full lg:w-3/4 max-w-4xl p-4 bg-rose-950 bg-opacity-80 rounded-lg shadow-lg">
+			<canvas id="pongCanvas" class="bg-black bg-opacity-50 rounded w-full h-[600px]"></canvas>
+		</div>
+
+		<!-- 💬 Global chat -->
+		<div id="gameChat"
+			class="w-full lg:w-80 bg-black bg-opacity-70 text-amber-100 flex flex-col border border-rose-950 rounded-2xl shadow-lg overflow-hidden">
+			<div data-i18n="globalChat"
+				class="p-3 text-lg font-bold border-b border-rose-950 bg-rose-950 rounded-t-2xl flex justify-between items-center">
+			</div>
+
+			<!-- Messages added dynamically-->
+			<div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-2 text-sm"></div>
+
+			<!-- Input -->
+			<form id="chatForm" class="p-3 border-t border-rose-950 flex bg-rose-950 rounded-b-2xl">
+				<input id="chatInput" type="text" autocomplete="off" data-i18n-placeholder="messagePlaceholder"
+					class="flex-1 bg-amber-100 text-black p-2 rounded-l outline-none" />
+				<button type="submit" class="bg-red-500 px-4 rounded-r hover:bg-red-400">
+					➤
+				</button>
+			</form>
+		</div>
+	</div>
+
+	<!-- Menu Pong -->
+	<div id="pongMenu" class="view fixed inset-0 flex flex-col items-center justify-center gap-4 z-20 px-4"
+		style="pointer-events: auto;">
+		<h2 id="menuTitle" class="text-5xl sm:text-6xl md:text-7xl text-amber-100 font-bold text-center leading-tight"
+			style="font-family: 'Syne Mono', cursive;">
+			<span class="prompt">&gt</span> <span id="typedText"></span>
+			<span id="cursor" class="inline-block w-4 sm:w-6 h-10 sm:h-16 bg-amber-100 ml-1"></span>
+		</h2>
+		<span data-i18n="click"
+			class="text-lg sm:text-2xl text-amber-200 font-mono mb-2 animate-pulse text-center"></span>
+		<div class="flex flex-wrap justify-center gap-6 mt-4">
+			<button id="btnOffline"
+				class="group w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-full bg-amber-100 hover:bg-red-500 flex flex-col items-center justify-center shadow-lg transform transition-transform duration-200 hover:scale-110">
+				<img src="img/btn/joystick.png" alt="Offline" class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
+				<span data-i18n="local"
+					class="mt-3 text-sm sm:text-base font-semibold text-red-500 group-hover:text-amber-100 transition-colors duration-200">
+				</span>
+			</button>
+			<button id="btnOnline"
+				class="group w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-full bg-amber-100 hover:bg-red-500 flex flex-col items-center justify-center shadow-lg transform transition-transform duration-200 hover:scale-110">
+				<img src="img/btn/mars.png" alt="Online" class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
+				<span data-i18n="online"
+					class="mt-3 text-sm sm:text-base font-semibold text-red-500 group-hover:text-amber-100 transition-colors duration-200">
+				</span>
+			</button>
+			<button id="btnTournament"
+				class="group w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-full bg-amber-100 hover:bg-red-500 flex flex-col items-center justify-center shadow-lg transform transition-transform duration-200 hover:scale-110">
+				<img src="img/btn/astronomy.png" alt="Tournament" class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
+				<span data-i18n="tournament"
+					class="mt-3 text-sm sm:text-base font-semibold text-red-500 group-hover:text-amber-100 transition-colors duration-200">
+				</span>
+			</button>
+			<button id="btnIA"
+				class="group w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-40 rounded-full bg-amber-100 hover:bg-red-500 flex flex-col items-center justify-center shadow-lg transform transition-transform duration-200 hover:scale-110">
+				<img src="img/btn/robot.png" alt="AI" class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
+				<span data-i18n="ai"
+					class="mt-3 text-sm sm:text-base font-semibold text-red-500 group-hover:text-amber-100 transition-colors duration-200">
+				</span>
+			</button>
+		</div>
+	</div>
+
+	<script>
+		const title = "MENU";
+		const typedText = document.getElementById('typedText');
+		const cursor = document.getElementById('cursor');
+		let titleIndex = 0;
+		function typeTitle() {
+			if (titleIndex <= title.length) {
+				typedText.textContent = title.slice(0, titleIndex);
+				titleIndex++;
+				setTimeout(typeTitle, 200);
+			}
+		}
+
+		setInterval(() => {
+			cursor.style.visibility = cursor.style.visibility === 'hidden' ? 'visible' : 'hidden';
+		}, 500);
+
+		typeTitle();
+	</script>
+
+	<div id="lobby" class="view fixed inset-0 flex flex-col items-center justify-center z-30 gap-4">
+		<div id="lobbyLocalOptions" class="hidden flex-col items-center gap-2">
+			<label data-i18n="player2" for="lobbyPlayer2Name" class="text-amber-100"></label>
+			<input id="lobbyPlayer2Name" type="text" placeholder="Player 2 Name"
+				class="p-2 rounded bg-amber-100 text-black w-56" />
+		</div>
+		<button data-i18n="start" id="btnStart"
+			class="hidden text-white px-6 py-3 text-2xl font-bold bg-green-500 rounded hover:bg-green-600 shadow-lg transition-transform duration-200 hover:scale-105">
+		</button>
+		<button data-i18n="back" id="backToMenu"
+			class="hidden text-white px-6 py-3 text-2xl font-bold bg-red-500 rounded hover:bg-red-600 shadow-lg transition-transform duration-200 hover:scale-105">
+		</button>
+
+		<p id="startMessage" class="text-red-500 mt-2 hidden"></p>
+
+		<span id="goodBye" data-i18n="thanks"
+			class="hidden sm:text-6xl md:text-7xl text-amber-100 font-bold text-center leading-tight"
+			style="font-family: 'Syne Mono', cursive;"></span>
+	</div>
+
+	<!-- Sidebar friends -->
+	<div id="sidebarHandle"
+		class="fixed top-1/3 left-0 z-50 bg-rose-950 text-amber-100 px-2 py-4 rounded-r cursor-pointer transition-transform duration-300">
+		🔫
+	</div>
+	<div id="sidebar"
+		class="bg-rose-950 text-amber-100 w-64 min-h-screen p-4 transform -translate-x-full transition-transform duration-300 fixed top-16 left-0 z-40">
+		<h2 data-i18n="friends" class="text-amber-100 text-xl font-bold mb-4"></h2>
+		<input type="text" id="friendSearch" data-i18n-placeholder="searchUsername"
+			class="w-full p-2 mb-4 bg-amber-100 rounded border text-black" />
+		<div id="searchResults" class="mt-2"></div>
+		<ul id="friendsList" class="space-y-2">
+		</ul>
+	</div>
+	<div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-30"></div>
+
+	<!-- 🔹 Modal Profil -->
+	<div id="modalProfile" class="hidden fixed inset-0 items-center justify-center bg-black bg-opacity-50 z-50">
+		<div class="bg-white rounded-lg shadow-lg w-96 p-6 relative">
+			<button id="closeProfile" class="absolute top-2 right-2 text-gray-500 hover:text-black">✖</button>
+			<h2 data-i18n="editProfile" class="text-xl font-bold mb-4"></h2>
+
+			<form id="formProfile" class="space-y-4">
+				<!-- Avatar -->
+				<div class="flex flex-col items-center mb-4">
+					<div class="relative">
+						<img id="profilePicturePreview" src="" alt="Profile picture"
+							class="w-24 h-24 rounded-full object-cover border-2 border-gray-300" />
+						<button type="button" id="editProfilePictureBtn"
+							class="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow hover:bg-gray-100"
+							data-i18n-title="editPp">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none"
+								viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+									d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-2.828 0L9 13zm0 0V17h4" />
+							</svg>
+						</button>
+						<input type="file" id="profilePictureInput" accept="image/*" class="hidden" />
+					</div>
+				</div>
+
+				<!-- Username -->
+				<div>
+					<label data-i18n="username" class="block mb-1 font-medium"></label>
+					<input type="text" id="profileNameInput" class="w-full border p-2 rounded" />
+				</div>
+
+				<!-- Password -->
+				<div>
+					<label data-i18n="newPassword" class="block mb-1 font-medium"></label>
+					<input type="password" id="profilePasswordInput" class="w-full border p-2 rounded" />
+					<input type="password" id="profilePasswordConfirm" data-i18n-placeholder="confirmPassword"
+						class="w-full border p-2 rounded mt-2" />
+				</div>
+
+				<button data-i18n="save" type="submit"
+					class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-400 w-full">
+				</button>
+
+				<p id="profileMessage" class="text-center text-sm mt-2"></p>
+			</form>
+		</div>
+	</div>
+
+	<!-- 🔹 Modal Profil Ami -->
+	<div id="modalFriendProfile" class="hidden fixed inset-0 items-center justify-center bg-black bg-opacity-50 z-50">
+		<div class="bg-white rounded-lg shadow-lg w-96 p-6 relative">
+			<button id="closeFriendProfile" class="absolute top-2 right-2 text-gray-500 hover:text-black">✖</button>
+			<h2 data-i18n="friendProfile" class="text-xl font-bold mb-4"></h2>
+
+			<div class="flex flex-col items-center mb-4">
+				<img id="friendProfileAvatar" src="" alt="Avatar"
+					class="w-24 h-24 rounded-full object-cover border-2 border-gray-300 mb-2" />
+				<span id="friendProfileName" class="font-semibold text-lg"></span>
+				<span id="friendProfileStatus" class="text-gray-500 text-sm"></span>
+			</div>
+
+			<p id="friendProfileBio" class="text-center text-gray-700 mb-4"></p>
+		</div>
+	</div>
+
+
+	<div id="modalGamePause" class="hidden fixed left-0 right-0 top-1/4 items-start justify-center z-50">
+		<div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+			<h2 data-i18n="pause" class="text-xl font-bold text-center mb-4"></h2>
+			<p data-i18n="disconnected1"></p>
+			<p class="mb-4" data-i18n="waitReconnection"></p>
+			<div id="pauseTimer" class="text-center text-lg font-mono mb-2">00:10</div>
+			<div class="w-full h-2 bg-gray-200 rounded overflow-hidden">
+				<div class="h-full bg-blue-500 animate-loader" style="width: 40%;"></div>
+			</div>
+		</div>
+	</div>
+
+	<div id="modalReconnect" class="hidden fixed left-0 right-0 top-1/4 items-start justify-center z-50">
+		<div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+			<h2 data-i18n="reconnection" class="text-xl font-bold text-center mb-4"></h2>
+			<p data-i18n="disconnected2"></p>
+			<p class="mb-4 text-center" data-i18n="reconnect?"></p>
+			<div class="flex justify-center gap-4">
+				<button id="btnReconnectYes" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-400"
+					data-i18n="yes"></button>
+				<button id="btnReconnectNo" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-400"
+					data-i18n="no"></button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Scripts -->
+	<script type="module" src="index.js" defer></script>
+	<script type="module" src="friends.js" defer></script>
+	<script type="module" src="game.js" defer></script>
+	<script type="module" src="profile.js" defer></script>
+	<script type="module" src="langs.js" defer></script>
 </body>
 
 </html>

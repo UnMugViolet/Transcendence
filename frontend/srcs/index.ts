@@ -3,67 +3,48 @@ import { initNotifications } from "./notif.js";
 import { loadFriends, setSidebarEnabled } from "./friends.js";
 import { initChatSocket, closeChatSocket } from "./chat.js";
 import { initPongBtns, navigateTo, gameId } from "./game.js";
-import { i18n } from "./i18n.js";
 import { populateLanguageDropdown, updateLanguageButton, initLanguageButton } from "./langs.js";
-
+import { i18n } from "./i18n.js";
 
 function openModal(id: string) {
-  document.getElementById(id)?.classList.remove("hidden");
-  document.getElementById(id)?.classList.add("flex");
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+  } else {
+    console.error(`Modal ${id} not found`);
+  }
 }
+
 function closeModal(id: string) {
-  document.getElementById(id)?.classList.add("hidden");
-  document.getElementById(id)?.classList.remove("flex");
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  } else {
+    console.error(`Modal ${id} not found`);
+  }
 }
 
-document.getElementById("btnSignUp")?.addEventListener("click", () => openModal("modalSignUp"));
-document.getElementById("btnSignIn")?.addEventListener("click", () => openModal("modalSignIn"));
 
-// --- gestion fermeture ---
-document.getElementById("closeSignUp")?.addEventListener("click", () => closeModal("modalSignUp"));
-document.getElementById("closeSignIn")?.addEventListener("click", () => closeModal("modalSignIn"));
-
-const langButton = document.getElementById("langButton")!;
-const langDropdown = document.getElementById("langDropdown")!;
-const currentFlag = document.getElementById("currentFlag") as HTMLImageElement;
-const currentLangText = langButton.querySelector("span")!;
-const availableLangs = ["en", "fr", "ch"];
+const langButton: HTMLElement | null = document.getElementById("langButton")!;
+const langDropdown: HTMLElement | null = document.getElementById("langDropdown");
+let currentFlag: HTMLElement | null = document.getElementById("currentFlag");
+const currentLangText: HTMLElement | null = langButton.querySelector("span")!;
+const availableLangs: string[] = ["en", "fr", "ch"];
 
 async function main() {
-  const savedLang = localStorage.getItem('lang') || 'en';
-  console.log('Saved language:', savedLang);
+  const savedLang = localStorage.getItem("lang") || "en";
   await i18n.init(savedLang);
-  // console.log('Lang loaded:', savedLang, Object.keys(i18n['translations'][savedLang]));
 
+  // Internationalization setup
   i18n.updateDOM();
-  
-  // Initialize the language button with current language
   initLanguageButton();
-
-  document.getElementById('btn-fr')?.addEventListener('click', async () => {
-    await i18n.loadLanguage('fr');
-    i18n.updateDOM();
-    localStorage.setItem('lang', 'fr');
-    updateLanguageButton('fr');
-  });
-
-  document.getElementById('btn-en')?.addEventListener('click', async () => {
-    await i18n.loadLanguage('en');
-    i18n.updateDOM();
-    localStorage.setItem('lang', 'en');
-    updateLanguageButton('en');
-  });
-
-  document.getElementById('btn-ch')?.addEventListener('click', async () => {
-    await i18n.loadLanguage('ch');
-    i18n.updateDOM();
-    localStorage.setItem('lang', 'ch');
-    updateLanguageButton('ch');
-  });
+  populateLanguageDropdown(availableLangs);
 }
 
 main();
-populateLanguageDropdown(availableLangs);
+
 
 function setLoggedInState(username: string, profilePicture: string) {
   const authButtons = document.getElementById("authButtons");
@@ -81,7 +62,9 @@ function setLoggedInState(username: string, profilePicture: string) {
     const welcomeMessage = document.getElementById("welcomeMessage");
     if (welcomeMessage) welcomeMessage.textContent = username;
 
-    const userAvatar = document.getElementById("userAvatar") as HTMLImageElement | null;
+    const userAvatar = document.getElementById(
+      "userAvatar"
+    ) as HTMLImageElement | null;
     if (userAvatar && profilePicture) {
       userAvatar.src = `${BACKEND_URL}/img/${profilePicture}`;
       userAvatar.addEventListener("click", () => {
@@ -98,7 +81,7 @@ function setLoggedInState(username: string, profilePicture: string) {
   setSidebarEnabled(true);
   initNotifications();
   loadFriends();
-  navigateTo('pongMenu', true);
+  navigateTo("pongMenu", true);
   handleRoute();
 }
 
@@ -107,7 +90,10 @@ export function getToken() {
 }
 
 function getRefreshToken() {
-  return sessionStorage.getItem("refreshToken") || localStorage.getItem("refreshToken");
+  return (
+    sessionStorage.getItem("refreshToken") ||
+    localStorage.getItem("refreshToken")
+  );
 }
 
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
@@ -136,7 +122,7 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
     const data = await refreshRes.json();
     token = data.newAccessToken;
     // Store the new token in localStorage (or sessionStorage as needed)
-    if (localStorage.getItem("refreshToken")){
+    if (localStorage.getItem("refreshToken")) {
       localStorage.setItem("token", token || "");
     } else {
       sessionStorage.setItem("token", token || "");
@@ -157,7 +143,9 @@ async function fetchUserProfile() {
     const data = await res.json();
     if (res.ok && data.user) {
       setLoggedInState(data.user.name, data.user.profile_picture);
-      const storage = localStorage.getItem("token") ? localStorage : sessionStorage;
+      const storage = localStorage.getItem("token")
+        ? localStorage
+        : sessionStorage;
       storage.setItem("userId", data.user.id.toString());
     }
   } catch (error) {
@@ -167,15 +155,25 @@ async function fetchUserProfile() {
 }
 
 // 🔹 soumission Sign Up
-const formSignUp = document.getElementById("formSignUp") as HTMLFormElement | null;
+const formSignUp = document.getElementById(
+  "formSignUp"
+) as HTMLFormElement | null;
 formSignUp?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const username = (document.getElementById("usernameSignUp") as HTMLInputElement).value.trim();
-  const password = (document.getElementById("passwordSignUp") as HTMLInputElement).value.trim();
-  const passwordConfirm = (document.getElementById("passwordSignUpConfirm") as HTMLInputElement).value.trim();
+  const username = (
+    document.getElementById("usernameSignUp") as HTMLInputElement
+  ).value.trim();
+  const password = (
+    document.getElementById("passwordSignUp") as HTMLInputElement
+  ).value.trim();
+  const passwordConfirm = (
+    document.getElementById("passwordSignUpConfirm") as HTMLInputElement
+  ).value.trim();
   const messageEl = document.getElementById("messageSignUp") as HTMLElement;
-  const stayConnected = (document.getElementById("staySignUp") as HTMLInputElement).checked;
+  const stayConnected = (
+    document.getElementById("staySignUp") as HTMLInputElement
+  ).checked;
 
   if (password !== passwordConfirm) {
     messageEl.textContent = i18n.t("passwordMismatch");
@@ -186,7 +184,11 @@ formSignUp?.addEventListener("submit", async (e) => {
     const res = await fetch(`${BACKEND_URL}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: username, pass: password, stayConnect: stayConnected }),
+      body: JSON.stringify({
+        name: username,
+        pass: password,
+        stayConnect: stayConnected,
+      }),
     });
 
     const data = await res.json();
@@ -208,20 +210,32 @@ formSignUp?.addEventListener("submit", async (e) => {
 });
 
 // 🔹 soumission Sign In
-const formSignIn = document.getElementById("formSignIn") as HTMLFormElement | null;
+const formSignIn = document.getElementById(
+  "formSignIn"
+) as HTMLFormElement | null;
 formSignIn?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const username = (document.getElementById("usernameSignIn") as HTMLInputElement).value.trim();
-  const password = (document.getElementById("passwordSignIn") as HTMLInputElement).value.trim();
+  const username = (
+    document.getElementById("usernameSignIn") as HTMLInputElement
+  ).value.trim();
+  const password = (
+    document.getElementById("passwordSignIn") as HTMLInputElement
+  ).value.trim();
   const messageEl = document.getElementById("messageSignIn") as HTMLElement;
-  const stayConnected = (document.getElementById("staySignIn") as HTMLInputElement).checked;
+  const stayConnected = (
+    document.getElementById("staySignIn") as HTMLInputElement
+  ).checked;
 
   try {
     const res = await fetch(`${BACKEND_URL}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: username, pass: password, stayConnect: stayConnected }),
+      body: JSON.stringify({
+        name: username,
+        pass: password,
+        stayConnect: stayConnected,
+      }),
     });
 
     const data = await res.json();
@@ -243,28 +257,47 @@ formSignIn?.addEventListener("submit", async (e) => {
 });
 
 langButton.addEventListener("click", () => {
+  if (langDropdown == null) {
+    return;
+  }
   langDropdown.classList.toggle("hidden");
 });
 
 // Close lang dropdown when clicking outside
 document.addEventListener("click", (e) => {
-  if (!langButton.contains(e.target as Node) && !langDropdown.contains(e.target as Node)) {
+  if (langDropdown == null || langButton == null) return;
+
+  if (
+    !langButton.contains(e.target as Node) &&
+    !langDropdown.contains(e.target as Node)
+  ) {
     langDropdown.classList.add("hidden");
   }
 });
 
 // Handle the language change
-langDropdown.querySelectorAll("button[data-lang]").forEach((btn) => {
-  btn.addEventListener("click", async () => {
-    const lang = btn.getAttribute("data-lang")!;
-    await i18n.loadLanguage(lang);
-    localStorage.setItem("lang", lang);
-    currentFlag.src = `img/flags/${lang}.png`;
-    currentLangText.textContent = lang.toUpperCase();
-    langDropdown.classList.add("hidden");
-  });
-});
+if (langDropdown != null) {
+  langDropdown.querySelectorAll("button[data-lang]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const lang = btn.getAttribute("data-lang");
 
+      if (
+        currentFlag == null ||
+        !currentFlag.hasOwnProperty("src") ||
+        lang == null
+      )
+        return;
+
+      let image = currentFlag as HTMLImageElement;
+
+      await i18n.loadLanguage(lang);
+      localStorage.setItem("lang", lang);
+      image.src = `img/flags/${lang}.png`;
+      currentLangText.textContent = lang.toUpperCase();
+      langDropdown.classList.add("hidden");
+    });
+  });
+}
 
 function logout() {
   const authButtons = document.getElementById("authButtons");
@@ -286,8 +319,12 @@ function logout() {
   const chatWindows = document.querySelectorAll("[id^='chat-window-']");
   chatWindows.forEach((win) => win.remove());
 
-  const inputName = document.getElementById("usernameSignIn") as HTMLInputElement | null;
-  const inputPass = document.getElementById("passwordSignIn") as HTMLInputElement | null;
+  const inputName = document.getElementById(
+    "usernameSignIn"
+  ) as HTMLInputElement | null;
+  const inputPass = document.getElementById(
+    "passwordSignIn"
+  ) as HTMLInputElement | null;
   if (inputName) inputName.value = "";
   if (inputPass) inputPass.value = "";
 
@@ -307,12 +344,14 @@ function showView(viewId: string) {
   const token = getToken();
   if (!token) {
     const allViews = document.querySelectorAll(".view");
-    allViews.forEach(view => (view as HTMLDivElement).classList.add("hidden"));
+    allViews.forEach((view) =>
+      (view as HTMLDivElement).classList.add("hidden")
+    );
     return;
   }
 
   const views = document.querySelectorAll(".view");
-  views.forEach(view => (view as HTMLDivElement).classList.add("hidden"));
+  views.forEach((view) => (view as HTMLDivElement).classList.add("hidden"));
 
   const targetView = document.getElementById(viewId);
   if (targetView) targetView.classList.remove("hidden");
@@ -341,10 +380,35 @@ window.addEventListener("hashchange", handleRoute);
 document.addEventListener("DOMContentLoaded", async () => {
   const savedLang = localStorage.getItem("lang") || "en";
   await i18n.init(savedLang);
-  
+
+  // Ensure modals start hidden
+  const modalSignUp = document.getElementById("modalSignUp");
+  const modalSignIn = document.getElementById("modalSignIn");
+  if (modalSignUp) {
+    modalSignUp.classList.add("hidden");
+    modalSignUp.classList.remove("flex");
+  }
+  if (modalSignIn) {
+    modalSignIn.classList.add("hidden");
+    modalSignIn.classList.remove("flex");
+  }
+
+  // Setup event listeners after DOM is loaded
+  document.getElementById("btnSignUp")?.addEventListener("click", () => {
+    console.log("Sign Up button clicked");
+    openModal("modalSignUp");
+  });
+  document.getElementById("btnSignIn")?.addEventListener("click", () => {
+    console.log("Sign In button clicked");
+    openModal("modalSignIn");
+  });
+  document.getElementById("closeSignUp")?.addEventListener("click", () => closeModal("modalSignUp"));
+  document.getElementById("closeSignIn")?.addEventListener("click", () => closeModal("modalSignIn"));
+  document.getElementById("btnLogout")?.addEventListener("click", logout);
+
   const token = getToken();
   const authButtons = document.getElementById("authButtons");
-  
+
   if (token) {
     fetchUserProfile().then(() => {
       initChatSocket(token, () => {
@@ -361,7 +425,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-// 🔹 Logout event listener
-document.getElementById("btnLogout")?.addEventListener("click", logout);
-
-
+// Remove this duplicate line since it's now in DOMContentLoaded
+// document.getElementById("btnLogout")?.addEventListener("click", logout);
