@@ -5,7 +5,11 @@ module.exports = {
     "./index.html"
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        'syne-mono': ['"Syne Mono"', 'monospace'],
+      },
+    },
   },
   plugins: [],
 }

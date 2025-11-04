@@ -45,11 +45,7 @@ class I18n {
       }
     }
 
-    console.warn(
-      "i18n: no language file found for",
-      lang,
-      "- falling back to keys"
-    );
+    console.warn("i18n: no language file found for", lang, "- falling back to keys");
     this.translations[lang] = {};
     this.currentLang = lang;
     this.updateDOM();
@@ -65,32 +61,14 @@ class I18n {
     if (hasTriedToLoad) {
       const mk = `${this.currentLang}:${key}`;
       if (!this.missingKeys.has(mk)) {
-        console.warn(`i18n: missing translation for ${key} lang=${this.currentLang}`);
         this.missingKeys.add(mk);
       }
     }
     return key;
   }
 
-  // helper for debugging
-  getLoadedLanguages() {
-    return Object.keys(this.translations);
-  }
-
-  // helper to get current language
-  getCurrentLanguage() {
-    return this.currentLang;
-  }
-
-  // helper to get raw translation for a key in the current language
-  getTranslation(key: string) {
-    return this.translations[this.currentLang]?.[key];
-  }
-
-  // debug helper: list all keys for a language
-  listKeys(lang?: string) {
-    const l = lang || this.currentLang;
-    return Object.keys(this.translations[l] || {});
+  getTranslations() {
+    return this.translations;
   }
 
   updateDOM() {
