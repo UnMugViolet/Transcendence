@@ -11,7 +11,7 @@ services:
     volumes:
       - ./backend/data:/app/data
       - ./backend/uploads:/app/uploads
-      - ./backend/srcs:/app/srcs:cached
+      - ./backend/srcs:/app/srcs
 
   frontend:
     build:
