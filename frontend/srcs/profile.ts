@@ -3,33 +3,40 @@ import { i18n } from "./i18n.js";
 
 
 // User profile modal elements
-const profileModal = document.getElementById("modalProfile");
-const closeProfileBtn = document.getElementById("closeProfile");
-const formProfile = document.getElementById("formProfile") as HTMLFormElement | null;
-const profilePicturePreview = document.getElementById("profilePicturePreview") as HTMLImageElement | null;
-const editProfilePictureBtn = document.getElementById("editProfilePictureBtn");
-const profilePictureInput = document.getElementById("profilePictureInput") as HTMLInputElement | null;
-const userAvatar = document.getElementById("userAvatar") as HTMLImageElement | null;
-const messageEl = document.getElementById("profileMessage") as HTMLParagraphElement;
+const profileModal: HTMLElement | null = document.getElementById("modalProfile");
+const closeProfileBtn: HTMLElement | null = document.getElementById("closeProfile");
+const formProfile: HTMLFormElement | null = document.getElementById("formProfile") as HTMLFormElement;
+const profilePicturePreview: HTMLImageElement | null = document.getElementById("profilePicturePreview") as HTMLImageElement;
+const editProfilePictureBtn: HTMLElement | null = document.getElementById("editProfilePictureBtn");
+const profilePictureInput: HTMLInputElement | null = document.getElementById("profilePictureInput") as HTMLInputElement;
+const userAvatar: HTMLImageElement | null = document.getElementById("userAvatar") as HTMLImageElement;
+const messageEl: HTMLParagraphElement | null = document.getElementById("profileMessage") as HTMLParagraphElement;
 
 // Friend profile modal elements
-const friendProfileModal = document.getElementById("modalFriendProfile");
-const closeFriendProfileBtn = document.getElementById("closeFriendProfile");
-const friendProfileAvatar = document.getElementById("friendProfileAvatar") as HTMLImageElement;
-const friendProfileName = document.getElementById("friendProfileName");
-const friendProfileStatus = document.getElementById("friendProfileStatus");
-const friendProfileBio = document.getElementById("friendProfileBio");
-const friendAddBtn = document.getElementById("friendAddBtn");
-const friendInviteBtn = document.getElementById("friendInviteBtn");
+const friendProfileModal: HTMLElement | null = document.getElementById("modalFriendProfile");
+const closeFriendProfileBtn: HTMLElement | null = document.getElementById("closeFriendProfile");
+const friendProfileAvatar: HTMLImageElement | null = document.getElementById("friendProfileAvatar") as HTMLImageElement;
+const friendProfileName: HTMLElement | null = document.getElementById("friendProfileName");
+const friendProfileStatus: HTMLElement | null = document.getElementById("friendProfileStatus");
+const friendProfileBio: HTMLElement | null = document.getElementById("friendProfileBio");
+const friendAddBtn: HTMLElement | null = document.getElementById("friendAddBtn");
+const friendInviteBtn: HTMLElement | null = document.getElementById("friendInviteBtn");
 
 editProfilePictureBtn?.addEventListener("click", () => {
   profilePictureInput?.click();
 });
 
 document.getElementById("userAvatar")?.addEventListener("click", () => {
-	if (profileModal) profileModal.classList.remove("hidden");
+	if (profileModal) {
+		profileModal.classList.remove("hidden");
+	}
 	// Affiche l'avatar dans le modal
-	const modalAvatar = document.getElementById("profilePicturePreview") as HTMLImageElement | null;
+	if (profilePicturePreview && userAvatar) {
+		profilePicturePreview.src = userAvatar.src;
+	}
+	const modalAvatar: HTMLImageElement | null = profilePicturePreview;
+	if (!userAvatar)
+		return;
 	const avatarSrc = userAvatar?.src;
 	if (modalAvatar && avatarSrc) {
 		modalAvatar.src = avatarSrc;
@@ -40,9 +47,10 @@ document.getElementById("userAvatar")?.addEventListener("click", () => {
 	}
 });
 
-// Met à jour l'aperçu de l'image dans le modal dès qu'un nouveau fichier est sélectionné
+// Update profile picture preview on file selection
 profilePictureInput?.addEventListener("change", () => {
-	const file = profilePictureInput.files?.[0];
+	const file: File | undefined = profilePictureInput.files?.[0];
+
 	if (file && profilePicturePreview) {
 		const reader = new FileReader();
 		reader.onload = (e) => {
@@ -53,7 +61,9 @@ profilePictureInput?.addEventListener("change", () => {
 });
 
 closeProfileBtn?.addEventListener("click", () => {
-  if (profileModal) profileModal.classList.add("hidden");
+  if (profileModal) {
+	profileModal.classList.add("hidden");
+  }
 });
 
 formProfile?.addEventListener("submit", async (e) => {
@@ -64,7 +74,7 @@ formProfile?.addEventListener("submit", async (e) => {
 	const name = (document.getElementById("profileNameInput") as HTMLInputElement).value;
 	const password = (document.getElementById("profilePasswordInput") as HTMLInputElement).value;
 	const passwordConfirm = (document.getElementById("profilePasswordConfirm") as HTMLInputElement).value;
-	const pictureInput = document.getElementById("profilePictureInput") as HTMLInputElement;
+	const pictureInput: HTMLInputElement | null = document.getElementById("profilePictureInput") as HTMLInputElement;
 
 	try {
 		if (name) {
@@ -78,7 +88,7 @@ formProfile?.addEventListener("submit", async (e) => {
 			});
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error || i18n.t("errorName"));
-			const welcomeMessage = document.getElementById("welcomeMessage");
+			const welcomeMessage: HTMLElement | null = document.getElementById("welcomeMessage");
 			if (welcomeMessage) welcomeMessage.textContent = name;
 			sessionStorage.setItem("username", name);
 		}
