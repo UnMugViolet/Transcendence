@@ -1,9 +1,8 @@
-import { BACKEND_URL } from "./config.js";
-import { ws as socket } from "./chat.js";
-import { handleRoute } from "./index.js";
-import { getToken } from "./index.js";
-import { initChatSocket } from "./chat.js";
-import { i18n } from "./i18n.js";
+import { BACKEND_URL } from "../utils/config.js";
+import { ws as socket } from "../user/chat.js";
+import { handleRoute, getToken } from "../index.js";
+import { initChatSocket } from "../user/chat.js";
+import { i18n } from "../utils/i18n.js";
 
 const pong = document.getElementById('pongCanvas') as HTMLCanvasElement;
 const pongMenu = document.getElementById('pongMenu') as HTMLDivElement;

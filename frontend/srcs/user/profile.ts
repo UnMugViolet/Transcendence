@@ -1,5 +1,5 @@
-import { BACKEND_URL } from "./config.js";
-import { i18n } from "./i18n.js";
+import { BACKEND_URL } from "../utils/config.js";
+import { i18n } from "../utils/i18n.js";
 
 
 // User profile modal elements

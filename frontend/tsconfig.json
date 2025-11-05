@@ -6,7 +6,12 @@
     "strict": true,
     "esModuleInterop": true,
     "outDir": "dist",
-    "rootDir": "srcs"
+    "rootDir": "srcs",
+    "preserveConstEnums": true,
+    "declaration": false,
+    "removeComments": false,
+    "sourceMap": true
   },
-  "include": ["srcs"]
+  "include": ["srcs/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

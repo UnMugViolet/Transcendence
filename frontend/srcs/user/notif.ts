@@ -1,7 +1,7 @@
-import { BACKEND_URL } from "./config.js";
+import { BACKEND_URL } from "../utils/config.js";
 import { respondFriendRequest } from "./friends.js";
 import { loadFriends } from "./friends.js";
-import { i18n } from "./i18n.js";
+import { i18n } from "../utils/i18n.js";
 
 let notifAnimationInterval: number | null = null;
 
@@ -17,7 +17,7 @@ function startLogoAnimation() {
   notifAnimationInterval = setInterval(() => {
     logo.src = frames[frame];
     frame = (frame + 1) % frames.length;
-  }, 300); // change de frame toutes les 300ms
+  }, 300); // Update frame every 300ms
   logo.classList.add("animate-pulse");
 }
 

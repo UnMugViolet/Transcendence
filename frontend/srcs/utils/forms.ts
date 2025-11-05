@@ -1,9 +1,9 @@
 import { BACKEND_URL } from "./config.js";
-import { AuthManager } from "./auth.js";
-import { UserManager } from "./user.js";
+import { AuthManager } from "../user/auth.js";
+import { UserManager } from "../user/user.js";
 import { ModalManager } from "./modal.js";
-import { initChatSocket } from "./chat.js";
-import { AuthResponse } from "./types.js";
+import { initChatSocket } from "../user/chat.js";
+import { AuthResponse } from "../types/types.js";
 import { i18n } from "./i18n.js";
 
 /**

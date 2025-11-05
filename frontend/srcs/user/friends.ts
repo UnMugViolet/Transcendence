@@ -1,7 +1,7 @@
-import { BACKEND_URL } from "./config.js";
+import { BACKEND_URL } from "../utils/config.js";
 import { openChatWindow } from "./chat.js";
-import { loadNotifications } from "./notif.js";
-import { i18n } from "./i18n.js";
+import { loadNotifications } from "../user/notif.js";
+import { i18n } from "../utils/i18n.js";
 // 🔹 Sidebar amis
 const sidebarHandle = document.getElementById("sidebarHandle");
 const sidebar = document.getElementById("sidebar");

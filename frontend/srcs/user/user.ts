@@ -1,19 +1,71 @@
-import { BACKEND_URL } from "./config.js";
+import { BACKEND_URL } from "../utils/config.js";
 import { AuthManager } from "./auth.js";
-import { ApiClient } from "./api.js";
-import { User } from "./types.js";
+import { ApiClient } from "../utils/api.js";
+import { User } from "../types/types.js";
 import { setSidebarEnabled } from "./friends.js";
 import { closeChatSocket, initChatSocket } from "./chat.js";
-import { initPongBtns, navigateTo } from "./game.js";
+import { initPongBtns, navigateTo } from "../game/game.js";
 import { initNotifications } from "./notif.js";
-import { handleRoute } from "./router.js";
+import { handleRoute } from "../route/router.js";
 
 import { loadFriends } from "./friends.js";
 
 /**
  * User management and authentication state
  */
-export class UserManager {
+export class UserManager implements User {
+  id: number;
+  name: string;
+  profile_picture?: string | undefined;
+
+  constructor(id: number, name: string, profile_picture?: string) {
+    this.id = id;
+    this.name = name;
+    this.profile_picture = profile_picture;
+  }
+
+  /**
+   * Gets the current user instance
+   */
+  static currentUser: UserManager | null = null;
+
+  /**
+   * Creates a new user instance and sets it as current
+   */
+  static createUser(id: number, name: string, profile_picture?: string): UserManager {
+    this.currentUser = new UserManager(id, name, profile_picture);
+    return this.currentUser;
+  }
+
+  /**
+   * Gets the current user or null if not logged in
+   */
+  static getCurrentUser(): UserManager | null {
+    return this.currentUser;
+  }
+
+  /**
+   * Clears the current user instance
+   */
+  static clearCurrentUser(): void {
+    this.currentUser = null;
+  }
+
+  /**
+   * Updates the current user's profile information
+   */
+  updateProfile(name?: string, profile_picture?: string): void {
+    if (name !== undefined) this.name = name;
+    if (profile_picture !== undefined) this.profile_picture = profile_picture;
+  }
+
+  /**
+   * Gets the user's profile picture URL
+   */
+  getProfilePictureUrl(): string | null {
+    return this.profile_picture ? `${BACKEND_URL}/img/${this.profile_picture}` : null;
+  }
+
   /**
    * Sets the UI state for a logged-in user
    */

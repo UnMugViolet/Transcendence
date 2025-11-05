@@ -1,7 +1,7 @@
- import { BACKEND_URL } from "./config.js";
- import { handleGameRemote } from "./game.js";
- import { openFriendProfile } from "./profile.js";
- import { i18n } from "./i18n.js";
+ import { BACKEND_URL } from "../utils/config.js";
+ import { handleGameRemote } from "../game/game.js";
+ import { openFriendProfile } from "../user/profile.js";
+ import { i18n } from "../utils/i18n.js";
 
  export let ws: WebSocket | null = null;
 

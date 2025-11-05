@@ -1,12 +1,12 @@
-import { AuthManager } from "./auth.js";
-import { ModalManager } from "./modal.js";
-import { FormManager } from "./forms.js";
-import { UserManager } from "./user.js";
-import { Router } from "./router.js";
-import { populateLanguageDropdown, initLanguageButton } from "./langs.js";
-import { initChatSocket } from "./chat.js";
-import { setSidebarEnabled } from "./friends.js";
-import { i18n } from "./i18n.js";
+import { AuthManager } from "./user/auth.js";
+import { ModalManager } from "./utils/modal.js";
+import { FormManager } from "./utils/forms.js";
+import { UserManager } from "./user/user.js";
+import { Router } from "./route/router.js";
+import { populateLanguageDropdown, initLanguageButton } from "./utils/langs.js";
+import { initChatSocket } from "./user/chat.js";
+import { setSidebarEnabled } from "./user/friends.js";
+import { i18n } from "./utils/i18n.js";
 
 /**
  * Language dropdown setup
@@ -128,10 +128,10 @@ class Application {
 Application.init();
 
 // Export for backward compatibility
-export { AuthManager } from "./auth.js";
-export { ModalManager } from "./modal.js";
-export { UserManager } from "./user.js";
-export { Router } from "./router.js";
+export { AuthManager } from "./user/auth.js";
+export { ModalManager } from "./utils/modal.js";
+export { UserManager } from "./user/user.js";
+export { Router } from "./route/router.js";
 
 // Legacy exports
 export const getToken = AuthManager.getToken.bind(AuthManager);

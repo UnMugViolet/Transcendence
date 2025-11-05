@@ -1,4 +1,4 @@
-import { ModalId } from "./types.js";
+import { ModalId } from "../types/types.js";
 
 /**
  * Modal management utilities

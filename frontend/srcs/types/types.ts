@@ -29,6 +29,12 @@ export interface LanguageConfig {
   flag: string;
 }
 
+export interface User {
+  id: number;
+  name: string;
+  profile_picture?: string;
+}
+
 export type ViewId = "viewGame" | "pongMenu" | "lobby";
 
 export type ModalId = "modalSignUp" | "modalSignIn" | "modalProfile" | "modalFriendProfile" | "modalGamePause" | "modalReconnect";

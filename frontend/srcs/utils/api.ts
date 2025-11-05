@@ -1,5 +1,5 @@
 import { BACKEND_URL } from "./config.js";
-import { AuthManager } from "./auth.js";
+import { AuthManager } from "../user/auth.js";
 import { i18n } from "./i18n.js";
 
 /**

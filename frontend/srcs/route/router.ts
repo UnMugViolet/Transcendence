@@ -1,5 +1,5 @@
-import { ViewId } from "./types.js";
-import { AuthManager } from "./auth.js";
+import { ViewId } from "../types/types.js";
+import { AuthManager } from "../user/auth.js";
 
 /**
  * Application routing and view management

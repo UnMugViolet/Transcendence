@@ -1,4 +1,4 @@
-import { AuthTokens, StorageType } from "./types.js";
+import { AuthTokens, StorageType } from "../types/types.js";
 
 /**
  * Authentication utilities and token management
