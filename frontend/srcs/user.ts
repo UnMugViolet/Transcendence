@@ -65,7 +65,10 @@ export class UserManager {
       userAvatar.src = `${BACKEND_URL}/img/${profilePicture}`;
       userAvatar.addEventListener("click", () => {
         const profileModal = document.getElementById("modalProfile");
-        if (profileModal) profileModal.classList.remove("hidden");
+        if (profileModal) {
+			profileModal.classList.remove("hidden");
+			profileModal.classList.add("flex");
+		}
       });
     }
   }
