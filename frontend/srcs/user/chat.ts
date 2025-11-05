@@ -37,7 +37,7 @@
  });
 
  export function initChatSocket(token: string, onReady?: () => void) {
-	// Si le WS existe et est déjà ouvert, on ne fait rien
+	// If the WS exists and is already opened, do nothing
     if (ws && ws.readyState === WebSocket.OPEN) {
         if (onReady) onReady();
         return;

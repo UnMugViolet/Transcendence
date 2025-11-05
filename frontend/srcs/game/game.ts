@@ -4,17 +4,17 @@ import { handleRoute, getToken } from "../index.js";
 import { initChatSocket } from "../user/chat.js";
 import { i18n } from "../utils/i18n.js";
 
-const pong = document.getElementById('pongCanvas') as HTMLCanvasElement;
-const pongMenu = document.getElementById('pongMenu') as HTMLDivElement;
-const backToMenu = document.getElementById('backToMenu') as HTMLButtonElement;
+const pong = document.getElementById('pongCanvas') as HTMLCanvasElement | null;
+const pongMenu = document.getElementById('pongMenu') as HTMLDivElement | null;
+const backToMenu = document.getElementById('backToMenu') as HTMLButtonElement | null;
 
-let mode = '';
+let mode: string = '';
 
 export function initPongBtns() {
-	const btnOffline = document.getElementById('btnOffline') as HTMLButtonElement;
-	const btnOnline = document.getElementById('btnOnline') as HTMLButtonElement;
-	const btnTournament = document.getElementById('btnTournament') as HTMLButtonElement;
-	const btnIA = document.getElementById('btnIA') as HTMLButtonElement;
+	const btnOffline = document.getElementById('btnOffline') as HTMLButtonElement | null;
+	const btnOnline = document.getElementById('btnOnline') as HTMLButtonElement | null;
+	const btnTournament = document.getElementById('btnTournament') as HTMLButtonElement | null;
+	const btnIA = document.getElementById('btnIA') as HTMLButtonElement | null;
 
 	if (btnOffline) {
 		btnOffline.onclick = () => {
@@ -82,6 +82,11 @@ export async function leaveGame(options: { navigate?: boolean; closeSocket?: boo
 		navigateTo('pongMenu', true);
 		handleRoute();
 	}
+}
+
+if (!pong) {
+	console.error("Pong canvas not found!");
+	throw new Error("Pong canvas not found");
 }
 
 pong.width = pong.clientWidth;
@@ -417,9 +422,12 @@ export async function handleGameRemote(data: any) {
 };
 
 async function joinGame(mode: string) {
-	let token = sessionStorage.getItem("token");
-	if (!token) token = localStorage.getItem("token") || token;
-	if (!token) return;
+	let token = sessionStorage.getItem("token") as string | null;
+
+	if (!token) {
+		console.warn("No token found, cannot join game.");
+		return;
+	}
 
 	// Clear any previous start error message when attempting to join
 	const startMessage = document.getElementById('startMessage') as HTMLElement | null;

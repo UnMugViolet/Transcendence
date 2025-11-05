@@ -13,7 +13,7 @@ export async function populateLanguageDropdown(availableLangs: string[]) {
 		availableLangs.forEach((langCode: string) => {
 			const btn: HTMLButtonElement = document.createElement('button');
 			btn.setAttribute('id', `btn-${langCode}`);
-			btn.className = 'flex items-center gap-2 px-3 py-2 hover:bg-rose-800 w-full text-left';
+			btn.className = 'flex items-center gap-2 px-3 py-2 hover:bg-rose-800 w-full text-left px-2';
 			btn.innerHTML = `<img src="img/flags/${langCode}.png" alt="${langCode.toUpperCase()}" class="w-5 h-5 rounded-full border border-amber-100" /> ${langCode.toUpperCase()}`;
 			langDropdown.appendChild(btn);
 		});

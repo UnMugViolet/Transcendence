@@ -42,6 +42,7 @@ export class AuthManager {
   static clearAuth(): void {
     sessionStorage.clear();
     localStorage.clear();
+    console.log("Cleared authentication data");
   }
 
   /**

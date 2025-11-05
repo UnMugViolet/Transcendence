@@ -152,6 +152,7 @@ export class UserManager implements User {
     const userInfo = document.getElementById("userInfo");
     const btnLogout = document.getElementById("btnLogout");
 
+    console.log("Logging out user");
     // Clear authentication data
     AuthManager.clearAuth();
 
