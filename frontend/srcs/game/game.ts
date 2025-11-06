@@ -109,9 +109,9 @@ const paddleHeight = 0.16 * height;
 const ballRadius = 0.01 * width;
 
 let posXPlayer1 = 0.05 * width;
-let posYPlayer1 = 0;
+let posYPlayer1 = height / 2;
 let posXPlayer2 = width - 0.05 * width;
-let posYPlayer2 = 0;
+let posYPlayer2 = height / 2;
 
 let player1Score = 0;
 let player2Score = 0;
@@ -176,11 +176,11 @@ window.addEventListener("popstate", async (event) => {
 		return;
 	}
 
-	if (started && mode === '1v1Offline') {
+	if (started && (mode === '1v1Offline' || mode === 'IA')) {
 		const leave = confirm(i18n.t("confirm"));
 		if (leave) {
 			await leaveGame({ navigate: false, resetState: false });
-			await endingGame({ winner: 0, mode: '1v1Offline' });
+			await endingGame({ winner: 0, mode: mode });
 			console.log("Leaving game...");
 			isInternalNavigation = true;
 			history.replaceState(null, "", "pongMenu");
@@ -193,7 +193,7 @@ window.addEventListener("popstate", async (event) => {
 			started = true;
 			setTimeout(() => (isInternalNavigation = false), 100);
 		}
-	} else if (started && (mode === '1v1Online' || mode === 'Tournament' || mode === 'IA')) {
+	} else if (started && (mode === '1v1Online' || mode === 'Tournament')) {
 		event.preventDefault();
 		started = false;
 		modalReconnect?.classList.remove("hidden");
@@ -249,6 +249,10 @@ start?.addEventListener("click", async () => {
 	if (!token) return;
 
 	try {
+		// Ensure WebSocket is connected before starting so we can receive the 'start' event
+		await new Promise<void>((resolve) => {
+			initChatSocket(token!, resolve);
+		});
 		console.log("Starting game...");
 		const res = await fetch(`${BACKEND_URL}/start`, {
 			method: "POST",
@@ -277,9 +281,16 @@ start?.addEventListener("click", async () => {
 			const lobbyInput = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
 			if (lobbyInput && lobbyInput.value && lobbyInput.value.trim()) {
 				sessionStorage.setItem('player2Name', lobbyInput.value.trim());
+			} else {
+				sessionStorage.setItem('player2Name', i18n.t("playerTwo") || "Player 2");
 			}
 			const username = sessionStorage.getItem('username') || sessionStorage.getItem('player1Name') || i18n.t("player1");
 			sessionStorage.setItem('player1Name', username);
+		} else if (mode === 'IA') {
+			// Set up AI opponent name
+			const username = sessionStorage.getItem('username') || sessionStorage.getItem('player1Name') || i18n.t("player1");
+			sessionStorage.setItem('player1Name', username);
+			sessionStorage.setItem('player2Name', i18n.t("ai") || "AI");
 		}
 
 		// hide local lobby options when the game actually starts
@@ -290,6 +301,30 @@ start?.addEventListener("click", async () => {
 		}
 
 		navigateTo('viewGame');
+
+		// Fallback for single-player modes: if 'start' WS message doesn't arrive shortly, start locally
+		if ((mode === '1v1Offline' || mode === 'IA')) {
+			const partyId = Number((data && data.partyId) || sessionStorage.getItem('partyId'));
+			if (!gameId && partyId) gameId = partyId;
+			if (!team) team = 1;
+			console.log("Setting fallback timeout for mode:", mode, "gameId:", gameId, "team:", team); // DEBUG
+			setTimeout(async () => {
+				if (!started) {
+					console.log("No WS 'start' received yet; triggering local start fallback."); // DEBUG
+					started = true;
+					// Initialize positions for the fallback case
+					console.log("Before fallback init - positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
+					posYPlayer1 = height / 2;
+					posYPlayer2 = height / 2;
+					ballX = width / 2;
+					ballY = height / 2;
+					console.log("After fallback init - positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
+					await startingGame(false, true);
+				} else {
+					console.log("WS 'start' already received, skipping fallback."); // DEBUG
+				}
+			}, 300);
+		}
 	} catch (err) {
 		console.error("Error Start Game:", err);
 		const startMessage = document.getElementById('startMessage') as HTMLElement | null;
@@ -308,6 +343,7 @@ function sleep(ms: number): Promise<void> {
 
 //demarrer la partie pour tous les joueurs 
 async function startingGame(resume = false, timer = true) {
+	console.log("startingGame called, resume:", resume, "timer:", timer); // DEBUG
 	console.log("Game is starting!");
 	navigateTo('viewGame');
 	ctx.clearRect(0, 0, width, height);
@@ -318,19 +354,23 @@ async function startingGame(resume = false, timer = true) {
 		if (resume) ctx.fillText(i18n.t("gameResumes"), width / 2, height / 2 - 40);
 		else ctx.fillText(i18n.t("gameStarts"), width / 2, height / 2 - 40);
 		let countdown = 5;
+		console.log("Starting countdown from 5"); // DEBUG
 		const countdownInterval = setInterval(() => {
 			ctx.clearRect(0, height / 2 - 20, width, 100);
 			ctx.fillStyle = "rgb(239, 68, 68)";
 			ctx.fillText(countdown.toString(), width / 2, height / 2 + 40);
+			console.log("Countdown:", countdown); // DEBUG
 			countdown--;
 			if (countdown < 0) {
 				clearInterval(countdownInterval);
 				ctx.clearRect(0, height / 2 - 20, width, 100);
+				console.log("Countdown finished"); // DEBUG
 			}
 		}, 1000);
 		await sleep(6000);
 	}
 	
+	console.log("About to start remoteGameLoop"); // DEBUG
 	remoteGameLoop();
 }
 
@@ -385,13 +425,18 @@ function startTimer(sec: number) {
 }
 
 export async function handleGameRemote(data: any) {
+	console.log("handleGameRemote called with:", data); // DEBUG
+	
 	if (data.type === "start" && !started) {
+		console.log("Processing start message"); // DEBUG
 		modalGamePause?.classList.add("hidden");
 		if (pauseInterval) clearInterval(pauseInterval);
 		const resume = data.resume || false;
 		const timer = data.timer || true;
 		gameId = data.game;
 		team = data.team;
+
+		console.log("Game ID set to:", gameId, "Team set to:", team); // DEBUG
 
 		if (data.players && Array.isArray(data.players)) {
 			const p1 = (data.players as Array<any>).find(p => p.team === 1);
@@ -401,6 +446,7 @@ export async function handleGameRemote(data: any) {
 		}
 
 		started = true;
+		console.log("About to call startingGame"); // DEBUG
 		await startingGame(resume, timer);
 		return true;
 	}
@@ -423,14 +469,23 @@ export async function handleGameRemote(data: any) {
 	}
 	if (data.type === "game" && started) {
 		const value = data.data;
+		console.log("Received game data from server:", value); // DEBUG
+		console.log("Canvas dimensions:", {width, height}); // DEBUG
+		
+		// Store old positions for comparison
+		const oldPositions = {ballX, ballY, posYPlayer1, posYPlayer2};
+		
 		posYPlayer1 = value.paddle1Y * height;
 		posYPlayer2 = value.paddle2Y * height;
 		ballX = value.ballX * width;
 		ballY = value.ballY * height;
 		player1Score = value.score1;
 		player2Score = value.score2;
+		
+		console.log("Position update - old:", oldPositions, "new:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
 		return true;
 	}
+	console.log("Message not handled, returning false"); // DEBUG
 	return false;
 };
 
@@ -461,7 +516,7 @@ async function joinGame(mode: string) {
 		console.log("Joining game...");
 		console.log("Trying to join mode:", mode);
 
-		const res = await fetch(`${BACKEND_URL}/join`, {
+		let res = await fetch(`${BACKEND_URL}/join`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -470,11 +525,28 @@ async function joinGame(mode: string) {
 			body: JSON.stringify({ mode })
 		});
 
-		const data = await res.json();
+		let data = await res.json();
 		console.log("Join Game Response:", data); // DEBUG
 
 		if (!res.ok) {
-			throw new Error(data.error || i18n.t("failedJoin"));
+			// If already in a game, attempt a quick leave and retry once
+			if (data && typeof data.error === 'string' && data.error.includes('already in a game')) {
+				console.warn('Already in a game, attempting to leave and retry join...');
+				try {
+					await fetch(`${BACKEND_URL}/leave`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+				} catch (_) {}
+				// retry join once
+				res = await fetch(`${BACKEND_URL}/join`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+					body: JSON.stringify({ mode })
+				});
+				data = await res.json();
+				console.log('Join Retry Response:', data);
+				if (!res.ok) throw new Error(data.error || i18n.t('failedJoin'));
+			} else {
+				throw new Error(data.error || i18n.t('failedJoin'));
+			}
 		}
 
 		if (data.partyId) {
@@ -493,6 +565,8 @@ async function joinGame(mode: string) {
 		// Different messages for different modes
 		if (mode === '1v1Offline') {
 			ctx.fillText(i18n.t("offlineGameReady") || "Offline Game Ready - Click Start to Play!", width / 2, height / 2);
+		} else if (mode === 'IA') {
+			ctx.fillText(i18n.t("aiGameReady") || "AI Game Ready - Click Start to Play!", width / 2, height / 2);
 		} else {
 			ctx.fillText(i18n.t("waitingOpponent"), width / 2, height / 2);
 		}
@@ -506,9 +580,17 @@ async function joinGame(mode: string) {
 		// Show/hide local lobby options depending on mode
 		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
 
-		if (mode === '1v1Offline' && lobbyLocalOptions) {
+		if ((mode === '1v1Offline' || mode === 'IA') && lobbyLocalOptions) {
 			lobbyLocalOptions.classList.remove('hidden');
 			lobbyLocalOptions.classList.add('flex');
+			
+			// For IA mode, hide the player 2 name input since it's always "AI"
+			const player2Input = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
+			if (mode === 'IA' && player2Input) {
+				player2Input.style.display = 'none';
+			} else if (mode === '1v1Offline' && player2Input) {
+				player2Input.style.display = 'block';
+			}
 		}
 		else if (lobbyLocalOptions) {
 			lobbyLocalOptions.classList.add('hidden');
@@ -536,29 +618,54 @@ async function joinGame(mode: string) {
 window.addEventListener("keydown", (event) => {
 	// ignore movement keys when typing in an input/textarea or contenteditable
 	if (isTyping()) return;
-	if (event.key === "ArrowUp")
-		upPlayer2 = true;
-	if (event.key === "ArrowDown")
-		downPlayer2 = true;
-	if (event.key === "w")
+	
+	// Player 1 controls (WASD) - always available in offline mode, or when user is team 1
+	if (event.key === "w" || event.key === "W") {
 		upPlayer1 = true;
-	if (event.key === "s")
+	}
+	if (event.key === "s" || event.key === "S") {
 		downPlayer1 = true;
+	}
+	
+	// Player 2 controls (Arrow keys) - only in offline mode, or when user is team 2
+	if (event.key === "ArrowUp") {
+		if (mode === '1v1Offline') {
+			upPlayer2 = true;
+		} else if (team === 2) {
+			upPlayer2 = true;
+		}
+	}
+	if (event.key === "ArrowDown") {
+		if (mode === '1v1Offline') {
+			downPlayer2 = true;
+		} else if (team === 2) {
+			downPlayer2 = true;
+		}
+	}
 });
 
 window.addEventListener("keyup", (event) => {
 	if (isTyping()) return;
-	if (event.key === "ArrowUp")
-		upPlayer2 = false;
-	if (event.key === "ArrowDown")
-		downPlayer2 = false;
-	if (event.key === "w")
+	
+	// Player 1 controls (WASD)
+	if (event.key === "w" || event.key === "W") {
 		upPlayer1 = false;
-	if (event.key === "s")
+	}
+	if (event.key === "s" || event.key === "S") {
 		downPlayer1 = false;
+	}
+	
+	// Player 2 controls (Arrow keys)
+	if (event.key === "ArrowUp") {
+		upPlayer2 = false;
+	}
+	if (event.key === "ArrowDown") {
+		downPlayer2 = false;
+	}
 });
 
 function draw() {
+	console.log("draw() called - Ball position:", ballX, ballY, "Paddle positions:", posYPlayer1, posYPlayer2); // DEBUG
 	ctx.clearRect(0, 0, width, height);
 	ctx.fillStyle = "rgb(254, 243, 199)";
 
@@ -587,32 +694,48 @@ function draw() {
 	ctx.fillText(player1Score.toString(), width * 0.25, 50);
 	ctx.fillText(player2Score.toString(), width * 0.75, 50);
 
-
 }
 
 function sendInput() {
-	socket?.send(JSON.stringify({
-		type: "input",
-		game: gameId,
-		team: team,
-		up: upPlayer1,
-		down: downPlayer1
-	}));
+	if (!socket || !started) return;
 
-	if (mode === '1v1Offline' && started) {
-		socket?.send(JSON.stringify({
+	// For 1v1Offline mode, send input for both players
+	if (mode === '1v1Offline') {
+		// Send player 1 input (WASD keys)
+		socket.send(JSON.stringify({
+			type: "input",
+			game: gameId,
+			team: 1,
+			up: upPlayer1,
+			down: downPlayer1
+		}));
+		
+		// Send player 2 input (Arrow keys)
+		socket.send(JSON.stringify({
 			type: "input",
 			game: gameId,
 			team: 2,
 			up: upPlayer2,
 			down: downPlayer2
 		}));
+	} else {
+		// For online modes, send input for the current player's team only
+		socket.send(JSON.stringify({
+			type: "input",
+			game: gameId,
+			team: team || 1,
+			up: (team === 1 ? upPlayer1 : upPlayer2),
+			down: (team === 1 ? downPlayer1 : downPlayer2)
+		}));
 	}
 }
 
 function remoteGameLoop() {
+	console.log("remoteGameLoop called, started:", started, "gameId:", gameId, "positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
 	draw();
 	sendInput();
 	if (started)
 		requestAnimationFrame(remoteGameLoop);
+	else
+		console.log("Game loop stopped, started is false"); // DEBUG
 }

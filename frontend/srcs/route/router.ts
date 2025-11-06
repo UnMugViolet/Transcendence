@@ -23,7 +23,10 @@ export class Router {
     views.forEach((view) => (view as HTMLDivElement).classList.add("hidden"));
 
     const targetView = document.getElementById(viewId);
-    if (targetView) targetView.classList.remove("hidden");
+    if (targetView) {
+      targetView.classList.remove("hidden");
+      targetView.classList.add("flex");
+    }
   }
 
   /**

@@ -59,6 +59,7 @@
   "failedJoin": "加入游戏失败",
   "waitingOpponent": "等待对手中...",
   "offlineGameReady": "离线游戏准备就绪 - 点击开始游戏!",
+  "aiGameReady": "AI游戏准备就绪 - 点击开始游戏!",
   "player1": "玩家1",
   "playerTwo": "玩家 2",
 

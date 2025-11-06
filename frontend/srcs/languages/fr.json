@@ -59,6 +59,7 @@
   "failedJoin": "Échec pour rejoindre la partie",
   "waitingOpponent": "En attente d'un adversaire...",
   "offlineGameReady": "Jeu Hors Ligne Prêt - Cliquez sur Démarrer pour Jouer!",
+  "aiGameReady": "Jeu IA Prêt - Cliquez sur Démarrer pour Jouer!",
   "player1": "Joueur 1",
   "playerTwo": "Joueur 2",
 

@@ -230,8 +230,11 @@ function setupNextMatch(partyId) {
 
 export async function sendStartMessage(partyId, resume = false) {
 	const game = games.get(partyId);
-	if (pauses.has(partyId)) return;
-	const partyPlayers = db.prepare('SELECT * FROM party_players WHERE party_id = ? AND status != ? AND status != ?').all(partyId, 'disconnected', 'left');
+	// If a lingering pause exists, clear it so the game can start
+	if (pauses.has(partyId)) {
+		pauses.delete(partyId);
+	}
+	const partyPlayers = db.prepare('SELECT * FROM party_players WHERE party_id = ? AND status = ?').all(partyId, 'active');
 	// Build players array with name and team so clients can display names
 	const playersList = partyPlayers.map(p => {
 		const nameRow = db.prepare('SELECT name FROM users WHERE id = ?').get(p.user_id);
@@ -243,8 +246,8 @@ export async function sendStartMessage(partyId, resume = false) {
 		if (playerSocket)
 		{
 			console.log(`Notifying user ${player.user_id} to start the game`); // DEBUG
-			const row = db.prepare('SELECT team FROM party_players WHERE party_id = ? AND user_id = ? AND status = ?').get(partyId, player.user_id, 'active');
-			const playerTeam = row ? row.team : 0;
+			// Use the team from the player record directly since we have it
+			const playerTeam = player.team;
 			const playerName = db.prepare('SELECT name FROM users WHERE id = ?').get(player.user_id).name; // DEBUG
 			console.log(`User ${playerName} is on team ${playerTeam} in game for party ${partyId}`); // DEBUG
 			playerSocket.send(JSON.stringify({ type: 'start', game: partyId, team: playerTeam, resume: resume, players: playersList }));
@@ -288,10 +291,10 @@ export function movePlayer(data) {
 
 function createGame() {
 	return {
-		paddle1Y: 0,
-		paddle2Y: 0,
-		ballX: 0,
-		ballY: 0,
+		paddle1Y: 0.5,
+		paddle2Y: 0.5,
+		ballX: 0.5,
+		ballY: 0.5,
 		angle: 0,
 		ballSpeed: 0,
 		score1: 0,
@@ -433,6 +436,26 @@ export const gameLoop = setInterval(() => {
 			resetRound(game);
 		}
 
+		// AI logic for IA mode
+		if (party.type === 'IA' && game.started) {
+			// Simple AI: move paddle towards ball
+			const aiSpeed = 0.006; // Slightly slower than player for fairness
+			const ballYTarget = game.ballY;
+			const paddle2Center = game.paddle2Y;
+			
+			if (ballYTarget < paddle2Center - 0.02) {
+				// Move paddle up
+				game.paddle2Y -= aiSpeed;
+				if (game.paddle2Y - paddleHeight / 2 < 0)
+					game.paddle2Y = paddleHeight / 2;
+			} else if (ballYTarget > paddle2Center + 0.02) {
+				// Move paddle down
+				game.paddle2Y += aiSpeed;
+				if (game.paddle2Y + paddleHeight / 2 > 1)
+					game.paddle2Y = 1 - paddleHeight / 2;
+			}
+		}
+
 		if (game.started) updateBall(game);
 
 		// console.log(`Ball speed: ${game.ballSpeed}`); // DEBUG
@@ -495,11 +518,34 @@ async function gameRoutes(fastify) {
 		// TODO : Check if user is an host
 
 		// count only players still present (not left/disconnected)
-		const playersCount = db.prepare('SELECT COUNT(*) as count FROM party_players WHERE party_id = ? AND status != ? AND status != ?').get(party.id, 'left', 'disconnected').count;
-		if (playersCount < minPlayers[mode]) return reply.status(400).send({ error: fastify.i18n.t('notEnough', lang) });
+		let playersCount = db.prepare('SELECT COUNT(*) as count FROM party_players WHERE party_id = ? AND status != ? AND status != ?').get(party.id, 'left', 'disconnected').count;
+		
+		// For 1v1Offline and IA modes, allow starting with just 1 player
+		const requiredPlayers = (mode === '1v1Offline' || mode === 'IA') ? 1 : minPlayers[mode];
+		// If the user previously left but is attempting to start a single-player game, reactivate them
+		if ((mode === '1v1Offline' || mode === 'IA') && playersCount < 1) {
+			const userRow = db.prepare('SELECT * FROM party_players WHERE party_id = ? AND user_id = ?').get(party.id, userId);
+			if (userRow) {
+				// Put requester on team 1 and active
+				db.prepare('UPDATE party_players SET team = ?, status = ? WHERE party_id = ? AND user_id = ?').run(1, 'active', party.id, userId);
+				playersCount = 1;
+			}
+		}
+		if (playersCount < requiredPlayers) return reply.status(400).send({ error: fastify.i18n.t('notEnough', lang) });
 
 		let info;
-		if (mode !== 'Tournament') db.prepare('UPDATE party_players SET status = ? WHERE party_id = ?').run('active', party.id);
+		if (mode !== 'Tournament') {
+			// For single player modes, ensure we have the right team setup
+			if (mode === '1v1Offline' || mode === 'IA') {
+				// Make sure the user is on team 1
+				db.prepare('UPDATE party_players SET team = ? WHERE party_id = ? AND user_id = ?').run(1, party.id, userId);
+				
+				// For offline mode, we might need to create a second "player" or handle it differently
+				// For IA mode, the AI will be controlled by the backend
+			}
+			// Set players to active status for the game
+			db.prepare('UPDATE party_players SET status = ? WHERE party_id = ? AND (status = ? OR status = ?)').run('active', party.id, 'lobby', 'waiting');
+		}
 		else
 		{
 			tournament[party.id] = createTournament();
@@ -520,8 +566,9 @@ async function gameRoutes(fastify) {
 			if (info.afk !== -1) handlePause(party.id, info.afk);
 			setTeam(party.id, info.p1, info.p2);
 		}
+		// Ensure any lingering pause state is cleared before starting
+		if (pauses.has(party.id)) pauses.delete(party.id);
 		db.prepare('UPDATE parties SET status = ? WHERE id = ?').run('active', party.id);
-		db.prepare('UPDATE party_players SET status = ? WHERE party_id = ? AND status = ?').run('waiting', party.id, 'lobby');
 		if (!info) setTeam(party.id);
 		sendStartMessage(party.id);
 		parties = db.prepare('SELECT * FROM parties WHERE status = ?').all('active');
@@ -533,7 +580,7 @@ async function gameRoutes(fastify) {
 			WHERE pp.party_id = ?
     	`).all(party.id);
 
-		return { message: 'Game started', partyId: party.id, players: players };
+		return { message: 'Game started', partyId: party.id, players: players, mode: mode };
 	});
 
 	fastify.post('/join', { preHandler: fastify.authenticate }, async (request, reply) => {
@@ -543,8 +590,23 @@ async function gameRoutes(fastify) {
 		const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
 		if (!user) return reply.status(404).send({ error: 'User not found' });
 
+		// Cleanup stale active games if the user has no active websocket connection
+		const activeRow = db.prepare('SELECT * FROM party_players WHERE user_id = ? AND status = ?').get(userId, 'active');
+		if (activeRow && !clients.get(userId)) {
+			console.log(`Cleaning stale active game for user ${user.name} in party ${activeRow.party_id}`);
+			db.prepare('UPDATE party_players SET status = ? WHERE user_id = ? AND party_id = ?').run('left', userId, activeRow.party_id);
+		}
+
+		// Check if user is already in an active game (with a live socket)
 		const isInGame = db.prepare('SELECT * FROM party_players WHERE user_id = ? AND status = ?').get(userId, 'active');
-		if (isInGame) return reply.status(400).send({ error: 'User is already in a game' });
+		if (isInGame && clients.get(userId)) return reply.status(400).send({ error: 'User is already in a game' });
+
+		// Disconnect user from any other waiting/lobby/disconnected games before joining new one
+		const existingParties = db.prepare('SELECT * FROM party_players WHERE user_id = ? AND (status = ? OR status = ? OR status = ?)').all(userId, 'lobby', 'waiting', 'disconnected');
+		existingParties.forEach(partyPlayer => {
+			db.prepare('UPDATE party_players SET status = ? WHERE user_id = ? AND party_id = ?').run('left', userId, partyPlayer.party_id);
+			console.log(`User ${user.name} left previous party ${partyPlayer.party_id} to join new game`);
+		});
 
 		const parties = db.prepare('SELECT * FROM parties WHERE type = ? AND status = ? ORDER BY created_at ASC').all(mode, 'waiting');
 

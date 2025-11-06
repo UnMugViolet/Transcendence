@@ -97,14 +97,16 @@ export class UserManager implements User {
 
     // Show notifications
     const notifEl = document.getElementById("notifications");
-    if (notifEl) notifEl.classList.remove("hidden");
+    if (notifEl) {
+       notifEl.classList.remove("hidden");
+    }
 
     // Initialize user-specific features
     initPongBtns();
     setSidebarEnabled(true);
     initNotifications();
     loadFriends();
-    navigateTo("pongMenu", true);
+    navigateTo("#pongMenu", true);
     handleRoute();
   }
 

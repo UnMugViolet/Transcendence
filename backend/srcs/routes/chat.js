@@ -255,7 +255,8 @@ async function chat(fastify) {
 				}
 			});
 
-			connection.socket.on('close', () => {
+			connection.socket.on('close', (code, reason) => {
+				console.log(`WS close for ${payload.name} (id=${payload.id}) code=${code} reason=${reason}`);
 				const party = db.prepare('SELECT * FROM party_players WHERE user_id = ? AND (status = ? OR status = ?)').get(payload.id, 'active', 'waiting');
 				if (party) {
 					db.prepare('UPDATE party_players SET status = ? WHERE user_id = ?').run('disconnected', payload.id);
@@ -269,7 +270,8 @@ async function chat(fastify) {
 
 		} catch (err) {
 			console.log('❌ WebSocket rejected:', err.message);
-			connection.socket.close();
+			// Close with a policy violation code to provide a clearer signal to the client
+			try { connection.socket.close(1008, 'Unauthorized or invalid token'); } catch (_) {}
 		}
 	});
 }

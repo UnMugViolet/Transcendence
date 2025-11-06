@@ -39,19 +39,34 @@
  export function initChatSocket(token: string, onReady?: () => void) {
 	// If the WS exists and is already opened, do nothing
     if (ws && ws.readyState === WebSocket.OPEN) {
+        console.log("WebSocket already connected");
         if (onReady) onReady();
         return;
     }
+    
+    // Close existing connection if it's in a bad state
+    if (ws && ws.readyState !== WebSocket.CLOSED) {
+        console.log("Closing existing WebSocket connection");
+        ws.close();
+    }
+    
 	// Clear global chat messages
 	if (globalChatMessages) globalChatMessages.innerHTML = "";
 
-	ws = new WebSocket(`${BACKEND_URL.replace("http", "ws")}/ws?token=${token}`);
+	console.log("Creating new WebSocket connection...");
+	// Encode the token to avoid '+' and other special characters breaking the query string
+	const encodedToken = encodeURIComponent(token);
+	ws = new WebSocket(`${BACKEND_URL.replace("http", "ws")}/ws?token=${encodedToken}`);
+	
 	ws.onopen = () => {
 		console.log("WebSocket connected");
 		if (onReady) onReady();
 	};
+	
 	ws.onmessage = async (event) => {
 		const msg = JSON.parse(event.data);
+		console.log("WebSocket message received:", msg); // DEBUG
+		
 		if (msg.type === 'party') {
 			const msgDiv = document.createElement("div");
 			msgDiv.className = "text-left my-1 text-sm text-yellow-300";
@@ -60,7 +75,9 @@
 			globalChatMessages.scrollTop = globalChatMessages.scrollHeight;
 		} else {
 			try {
+				console.log("Trying to handle game message:", msg); // DEBUG
 				const handled = await handleGameRemote(msg);
+				console.log("Game message handled:", handled); // DEBUG
 				if (!handled) 
 					receiveMessage(msg);
 			} catch (err) {
@@ -68,10 +85,12 @@
 			}	
 		}
 	};
-	ws.onclose = () => {
-		console.log("WebSocket disconnected");
+	
+	ws.onclose = (event) => {
+		console.log("WebSocket disconnected", event.code, event.reason);
 		ws = null;
 	};
+	
 	ws.onerror = (err) => {
 		console.error("WebSocket error:", err);
 	};
@@ -83,6 +102,11 @@ export function closeChatSocket() {
     ws = null;
   }
 }
+
+// Ensure the socket is properly closed on page unload to trigger server-side cleanup
+window.addEventListener("beforeunload", () => {
+	try { ws?.close(); } catch (_) {}
+});
 	
 async function loadHistory(friendId: number, messageEl: HTMLElement) {
 	const token = sessionStorage.getItem("token");
