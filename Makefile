@@ -1,6 +1,7 @@
 APP_NAME 	= Transcendance
 IP 			= localhost
-PORT 		= 8080
+PORT_DEV 	= 8080
+PORT_PROD 	= 8443
 BACK_PORT 	= 3000
 
 DOCKER_COMPOSE = docker compose
@@ -22,7 +23,7 @@ help: ## Outputs this help screen
 up: ## Launch the docker services
 	@echo "$(YELLOW) $(BOLD) Starting up containers...$(RESET)"
 	$(DOCKER_COMPOSE) up -d 
-	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) https://$(IP):$(PORT) $(RESET)"
+	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) dev: http://$(IP):$(PORT_DEV) prod: https://$(IP):$(PORT_PROD) $(RESET)"
 	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) https://$(IP):$(BACK_PORT) $(RESET)"
 
 down: ## Stop the docker services

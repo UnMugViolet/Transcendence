@@ -58,6 +58,7 @@
   "wonGame": "won the game!",
   "failedJoin": "Failed to join the game",
   "waitingOpponent": "Waiting for opponent...",
+  "offlineGameReady": "Offline Game Ready - Click Start to Play!",
   "player1": "Player 1",
   "playerTwo": "Player 2",
 

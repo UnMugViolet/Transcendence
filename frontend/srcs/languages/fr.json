@@ -57,7 +57,8 @@
   "wonTournament": "a gagné le tournoi !",
   "wonGame": "a gagné la partie !",
   "failedJoin": "Échec pour rejoindre la partie",
-  "waitingOpponent": "En attente de l'adversaire...",
+  "waitingOpponent": "En attente d'un adversaire...",
+  "offlineGameReady": "Jeu Hors Ligne Prêt - Cliquez sur Démarrer pour Jouer!",
   "player1": "Joueur 1",
   "playerTwo": "Joueur 2",
 

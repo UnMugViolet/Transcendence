@@ -90,6 +90,12 @@ class Application {
         // Initialize UI components
         ModalManager.initializeModals();
         ModalManager.setupModalEventListeners();
+        
+        // Set up logout callback to avoid circular dependency
+        ModalManager.setLogoutCallback(() => {
+          UserManager.logout();
+        });
+        
         FormManager.setupFormListeners();
         LanguageManager.init();
         Router.init();

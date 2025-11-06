@@ -1,8 +1,9 @@
 import { BACKEND_URL } from "../utils/config.js";
 import { ws as socket } from "../user/chat.js";
-import { handleRoute, getToken } from "../index.js";
+import { handleRoute, getToken, ModalManager } from "../index.js";
 import { initChatSocket } from "../user/chat.js";
 import { i18n } from "../utils/i18n.js";
+import { AuthManager } from "../user/auth.js";
 
 const pong = document.getElementById('pongCanvas') as HTMLCanvasElement | null;
 const pongMenu = document.getElementById('pongMenu') as HTMLDivElement | null;
@@ -19,24 +20,28 @@ export function initPongBtns() {
 	if (btnOffline) {
 		btnOffline.onclick = () => {
 			mode = '1v1Offline';
+			console.log("mod selected from init: ", mode);
 			joinGame(mode);
 		};
 	}
 	if (btnOnline) {
 		btnOnline.onclick = () => {
 			mode = '1v1Online';
+			console.log("mod selected from init: ", mode);
 			joinGame(mode);
 		};
 	}
 	if (btnTournament) {
 		btnTournament.onclick = () => {
 			mode = 'Tournament';
+			console.log("mod selected from init: ", mode);
 			joinGame(mode);
 		};
 	}
 	if (btnIA) {
 		btnIA.onclick = () => {
 			mode = 'IA';
+			console.log("mod selected from init: ", mode);
 			joinGame(mode);
 		};
 	}
@@ -45,9 +50,11 @@ export function initPongBtns() {
 // Fonction pour arrêter d'appeler 1000 fois /leave
 export async function leaveGame(options: { navigate?: boolean; closeSocket?: boolean; resetState?: boolean } = {}) {
 	const opts = { navigate: true, closeSocket: true, resetState: true, ...options };
-	let token = sessionStorage.getItem("token");
-	if (!token) token = localStorage.getItem("token") || token;
-	if (!token) return;
+	let token = AuthManager.getToken();
+	if (!token) {
+		console.warn("No token found, cannot leave game.");
+		return;
+	} 
 
 	try {
 		await fetch(`${BACKEND_URL}/leave`, {
@@ -67,15 +74,16 @@ export async function leaveGame(options: { navigate?: boolean; closeSocket?: boo
 		// hide local lobby options when leaving
 		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
 		const lobby = document.getElementById('lobby');
+		const startBtn = document.getElementById('btnStart');
+		const backBtn = document.getElementById('backToMenu');
 
-		if (lobbyLocalOptions) {
+		if (lobbyLocalOptions && lobby && startBtn && backBtn) {
 			lobbyLocalOptions.classList.add('hidden');
-		}
-		if (lobby) {
 			lobby.classList.add('hidden');
-		} 
-		const startBtn = document.getElementById('btnStart'); if (startBtn) startBtn.classList.add('hidden');
-		const backBtn = document.getElementById('backToMenu'); if (backBtn) backBtn.classList.add('hidden');
+			startBtn.classList.add('hidden');
+			backBtn.classList.add('hidden');
+		}
+
 	}
 
 	if (opts.navigate) {
@@ -134,33 +142,39 @@ const goodBye = document.getElementById("goodBye");
 export let isInternalNavigation = false;
 
 export function navigateTo(viewId: string, replace = false) {
-  isInternalNavigation = true;
-  if (replace) {
-    history.replaceState({ page: viewId }, "", '#' + viewId);
-  } else {
-    window.location.hash ='#' + viewId;
-  }
-  setTimeout(() => (isInternalNavigation = false), 100);
+	isInternalNavigation = true;
+	if (replace) {
+		history.replaceState({ page: viewId }, "", '#' + viewId);
+	} else {
+		window.location.hash = '#' + viewId;
+	}
+	setTimeout(() => (isInternalNavigation = false), 100);
 }
 
 // Ensure lobby UI is hidden when we navigate away from the lobby
 export function hideLobbyUI() {
-  const lobby = document.getElementById('lobby');
-  if (lobby) lobby.classList.add('hidden');
-  const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
-  if (lobbyLocalOptions) lobbyLocalOptions.classList.add('hidden');
-  const startBtn = document.getElementById('btnStart'); if (startBtn) startBtn.classList.add('hidden');
-  const backBtn = document.getElementById('backToMenu'); if (backBtn) backBtn.classList.add('hidden');
-  const startMessage = document.getElementById('startMessage'); if (startMessage) { startMessage.textContent = ''; startMessage.classList.add('hidden'); }
+	const lobby: HTMLElement | null = document.getElementById('lobby');
+	if (lobby) {
+		lobby.classList.add('hidden');
+	}
+	const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
+	if (lobbyLocalOptions) {
+		lobbyLocalOptions.classList.add('hidden');
+	}
+	const startBtn = document.getElementById('btnStart'); if (startBtn) startBtn.classList.add('hidden');
+	const backBtn = document.getElementById('backToMenu'); if (backBtn) backBtn.classList.add('hidden');
+	const startMessage = document.getElementById('startMessage'); if (startMessage) { startMessage.textContent = ''; startMessage.classList.add('hidden'); }
 }
 
 window.addEventListener('hashchange', () => {
-  if (location.hash !== '#lobby') hideLobbyUI();
+	if (location.hash !== '#lobby') hideLobbyUI();
 });
 
 // A revoir ?
 window.addEventListener("popstate", async (event) => {
-	if (isInternalNavigation) return;
+	if (isInternalNavigation) {
+		return;
+	}
 
 	if (started && mode === '1v1Offline') {
 		const leave = confirm(i18n.t("confirm"));
@@ -169,7 +183,7 @@ window.addEventListener("popstate", async (event) => {
 			await endingGame({ winner: 0, mode: '1v1Offline' });
 			console.log("Leaving game...");
 			isInternalNavigation = true;
-			history.replaceState(null, "", "#pongMenu");
+			history.replaceState(null, "", "pongMenu");
 			handleRoute();
 			setTimeout(() => (isInternalNavigation = false), 100);
 		} else {
@@ -208,9 +222,10 @@ no?.addEventListener("click", async () => {
 });
 
 yes?.addEventListener("click", async () => {
-	let token = sessionStorage.getItem("token");
-	if (!token) token = localStorage.getItem("token") || token;
-	if (!token) return;
+	let token = AuthManager.getToken();
+	if (!token) {
+		return;
+	}
 
 	console.log("Resuming game...");
 	try {
@@ -230,8 +245,7 @@ yes?.addEventListener("click", async () => {
 });
 
 start?.addEventListener("click", async () => {
-	let token = sessionStorage.getItem("token");
-	if (!token) token = localStorage.getItem("token") || token;
+	let token = AuthManager.getToken();
 	if (!token) return;
 
 	try {
@@ -289,7 +303,7 @@ start?.addEventListener("click", async () => {
 });
 
 function sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 //demarrer la partie pour tous les joueurs 
@@ -300,8 +314,7 @@ async function startingGame(resume = false, timer = true) {
 	ctx.font = "50px Arial";
 	ctx.fillStyle = "rgb(254, 243, 199)";
 	ctx.textAlign = "center";
-	if (timer)
-	{
+	if (timer) {
 		if (resume) ctx.fillText(i18n.t("gameResumes"), width / 2, height / 2 - 40);
 		else ctx.fillText(i18n.t("gameStarts"), width / 2, height / 2 - 40);
 		let countdown = 5;
@@ -317,6 +330,7 @@ async function startingGame(resume = false, timer = true) {
 		}, 1000);
 		await sleep(6000);
 	}
+	
 	remoteGameLoop();
 }
 
@@ -337,7 +351,6 @@ async function endingGame(data: any) {
 		ctx.fillText(`${data.winner} ${i18n.t("wonGame")}`, width / 2, height / 2);
 	goodBye?.classList.remove("hidden");
 	await sleep(3000);
-	// if (!data.round) navigateTo('pongMenu', true);
 	navigateTo('pongMenu', true);
 	handleRoute();
 }
@@ -351,24 +364,24 @@ function formatTime(sec: number) {
 }
 
 function startTimer(sec: number) {
-    let pauseSeconds = sec;
+	let pauseSeconds = sec;
 
-    const timerElem = document.getElementById('pauseTimer');
-    if (timerElem) {
-        timerElem.textContent = formatTime(pauseSeconds);
-        timerElem.style.color = "";
-    }
+	const timerElem = document.getElementById('pauseTimer');
+	if (timerElem) {
+		timerElem.textContent = formatTime(pauseSeconds);
+		timerElem.style.color = "";
+	}
 
-    clearInterval(pauseInterval);
-    pauseInterval = setInterval(() => {
-        pauseSeconds--;
-        if (timerElem) {
-            timerElem.textContent = formatTime(pauseSeconds);
-            if (pauseSeconds <= 10) timerElem.style.color = "red";
+	clearInterval(pauseInterval);
+	pauseInterval = setInterval(() => {
+		pauseSeconds--;
+		if (timerElem) {
+			timerElem.textContent = formatTime(pauseSeconds);
+			if (pauseSeconds <= 10) timerElem.style.color = "red";
 			else timerElem.style.color = "";
-        }
-        if (pauseSeconds <= 0) clearInterval(pauseInterval);
-    }, 1000);
+		}
+		if (pauseSeconds <= 0) clearInterval(pauseInterval);
+	}, 1000);
 }
 
 export async function handleGameRemote(data: any) {
@@ -378,7 +391,7 @@ export async function handleGameRemote(data: any) {
 		const resume = data.resume || false;
 		const timer = data.timer || true;
 		gameId = data.game;
-        team = data.team;
+		team = data.team;
 
 		if (data.players && Array.isArray(data.players)) {
 			const p1 = (data.players as Array<any>).find(p => p.team === 1);
@@ -409,20 +422,20 @@ export async function handleGameRemote(data: any) {
 		return true;
 	}
 	if (data.type === "game" && started) {
-        const value = data.data;
+		const value = data.data;
 		posYPlayer1 = value.paddle1Y * height;
 		posYPlayer2 = value.paddle2Y * height;
 		ballX = value.ballX * width;
 		ballY = value.ballY * height;
 		player1Score = value.score1;
 		player2Score = value.score2;
-        return true;
+		return true;
 	}
-    return false;
+	return false;
 };
 
 async function joinGame(mode: string) {
-	let token = sessionStorage.getItem("token") as string | null;
+	let token = AuthManager.getToken();
 
 	if (!token) {
 		console.warn("No token found, cannot join game.");
@@ -440,9 +453,14 @@ async function joinGame(mode: string) {
 		await new Promise<void>((resolve) => {
 			initChatSocket(token, resolve);
 		});
-		const globalChatMessages = document.getElementById("globalChatMessages");
-		if (globalChatMessages) globalChatMessages.innerHTML = "";
+		const globalChatMessages: HTMLElement | null = document.getElementById("globalChatMessages");
+
+		if (globalChatMessages) {
+			globalChatMessages.innerHTML = "";
+		}
 		console.log("Joining game...");
+		console.log("Trying to join mode:", mode);
+
 		const res = await fetch(`${BACKEND_URL}/join`, {
 			method: "POST",
 			headers: {
@@ -451,10 +469,13 @@ async function joinGame(mode: string) {
 			},
 			body: JSON.stringify({ mode })
 		});
+
 		const data = await res.json();
 		console.log("Join Game Response:", data); // DEBUG
 
-		if (!res.ok) throw new Error(data.error || i18n.t("failedJoin"));
+		if (!res.ok) {
+			throw new Error(data.error || i18n.t("failedJoin"));
+		}
 
 		if (data.partyId) {
 			sessionStorage.setItem("partyId", data.partyId.toString());
@@ -468,10 +489,18 @@ async function joinGame(mode: string) {
 		ctx.font = "40px Arial";
 		ctx.fillStyle = "rgb(254, 243, 199)";
 		ctx.textAlign = "center";
-		ctx.fillText(i18n.t("waitingOpponent"), width / 2, height / 2);
+		
+		// Different messages for different modes
+		if (mode === '1v1Offline') {
+			ctx.fillText(i18n.t("offlineGameReady") || "Offline Game Ready - Click Start to Play!", width / 2, height / 2);
+		} else {
+			ctx.fillText(i18n.t("waitingOpponent"), width / 2, height / 2);
+		}
 
         const lobby = document.getElementById("lobby");
-        if (lobby) lobby.classList.remove("hidden");
+        if (lobby) {
+ 			lobby.classList.remove("hidden");
+		}
         navigateTo('lobby');
 
 		// Show/hide local lobby options depending on mode
@@ -491,21 +520,23 @@ async function joinGame(mode: string) {
 	} catch (err) {
 		console.error("Error Join Game:", err);
 	}
-}
-
-function isTyping() {
-  const el = document.activeElement as HTMLElement | null;
-  if (!el) return false;
-  const tag = el.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
-  if ((el as HTMLElement).isContentEditable) return true;
-  return false;
+}function isTyping() {
+	const el = document.activeElement as HTMLElement | null;
+	if (!el) return false;
+	const tag = el.tagName;
+	if (tag === 'INPUT' || tag === 'TEXTAREA') {
+		return true;
+	}
+	if ((el as HTMLElement).isContentEditable) {
+		return true;
+	}
+	return false;
 }
 
 window.addEventListener("keydown", (event) => {
 	// ignore movement keys when typing in an input/textarea or contenteditable
 	if (isTyping()) return;
-	if (event.key === "ArrowUp") 
+	if (event.key === "ArrowUp")
 		upPlayer2 = true;
 	if (event.key === "ArrowDown")
 		downPlayer2 = true;
@@ -517,7 +548,7 @@ window.addEventListener("keydown", (event) => {
 
 window.addEventListener("keyup", (event) => {
 	if (isTyping()) return;
-	if (event.key === "ArrowUp") 
+	if (event.key === "ArrowUp")
 		upPlayer2 = false;
 	if (event.key === "ArrowDown")
 		downPlayer2 = false;
@@ -548,7 +579,7 @@ function draw() {
 
 	ctx.fillText(player1Name, width * 0.25, 80);
 	ctx.fillText(player2Name, width * 0.75, 80);
-	
+
 	ctx.font = "40px Arial";
 	ctx.fillStyle = "rgb(254, 243, 199)";
 	ctx.textAlign = "center";

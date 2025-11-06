@@ -662,8 +662,7 @@ async function gameRoutes(fastify) {
 		if (pauses.has(party.id)) db.prepare('UPDATE party_players SET status = ? WHERE user_id = ? AND party_id = ?').run('active', userId, party.id);
 		else db.prepare('UPDATE party_players SET status = ? WHERE user_id = ? AND party_id = ?').run('waiting', userId, party.id);
 
-		// if (partyPlayer.length > 1) return { message: 'Waiting for other player to resume', partyId: party.id }; // TODO : Plus tard frr
-		sendSysMessage(party.id, `${user.name} s’est reconnecté !`);
+		sendSysMessage(party.id, `${user.name} reconnected !`);
 
 		if (pauses.has(party.id)) {
 			db.prepare('UPDATE parties SET status = ? WHERE id = ?').run('active', party.id);

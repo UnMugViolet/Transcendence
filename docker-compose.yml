@@ -1,5 +1,5 @@
 services:
-  backend:
+  transcendence_backend:
     build:
       context: ./backend
     container_name: backend
@@ -13,7 +13,7 @@ services:
       - ./backend/img:/app/img
       - ./backend/srcs:/app/srcs
 
-  frontend:
+  transcendence_frontend:
     build:
       context: ./frontend
     container_name: frontend
@@ -22,6 +22,6 @@ services:
       - "8080:80"
       - "8443:443"
     depends_on:
-      - backend
+      - transcendence_backend
     volumes:
       - ./frontend/srcs:/usr/share/nginx/html/srcs/languages

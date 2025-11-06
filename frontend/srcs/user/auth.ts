@@ -5,7 +5,7 @@ import { AuthTokens, StorageType } from "../types/types.js";
  */
 export class AuthManager {
   /**
-   * Gets the current authentication token
+   * Gets the current authentication token try to fetch on sessionStorage or localStorage
    */
   static getToken(): string | null {
     return sessionStorage.getItem("token") || localStorage.getItem("token");

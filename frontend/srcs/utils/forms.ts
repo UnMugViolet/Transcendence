@@ -60,10 +60,12 @@ export class FormManager {
           refreshToken: data.refreshToken
         }, stayConnected);
         
+        // Store username, userId will be updated after profile fetch
         AuthManager.storeUserInfo(username, "", stayConnected);
 
         ModalManager.closeModal("modalSignUp");
         
+        // Fetch user profile to get complete user data and update userId
         await UserManager.fetchUserProfile();
         initChatSocket(data.accessToken, () => {
           console.log("Chat WebSocket ready after signup");
@@ -112,10 +114,12 @@ export class FormManager {
           refreshToken: data.refreshToken
         }, stayConnected);
         
+        // Store username, userId will be updated after profile fetch
         AuthManager.storeUserInfo(username, "", stayConnected);
 
         ModalManager.closeModal("modalSignIn");
         
+        // Fetch user profile to get complete user data and update userId
         await UserManager.fetchUserProfile();
         initChatSocket(data.accessToken, () => {
           console.log("Chat WebSocket ready after login");
