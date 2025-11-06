@@ -5,7 +5,7 @@
     "css": "postcss srcs/css/*.css --dir dist/css/",
     "tailwind": "tailwindcss -i srcs/css/index.css -o dist/css/index.css --watch",
     "build-ts": "tsc --outDir dist",
-    "build-css": "concurrently  \"npm run css\" \"npm run tailwind\"",
+    "build-css": " npm run css && npm run tailwind",
     "dev": "npm run build-ts && npm run build-css",
     "build-tailwind": "tailwindcss -i srcs/style.css -o dist/style.css"
   },
