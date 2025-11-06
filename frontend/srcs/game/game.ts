@@ -100,13 +100,13 @@ if (!pong) {
 pong.width = pong.clientWidth;
 pong.height = pong.clientHeight;
 
-const width = pong.width;
-const height = pong.height;
+let width = pong.width;
+let height = pong.height;
 const ctx = pong.getContext('2d') as CanvasRenderingContext2D;
 
-const paddleWidth = 0.01 * width;
-const paddleHeight = 0.16 * height;
-const ballRadius = 0.01 * width;
+let paddleWidth = 0.01 * width;
+let paddleHeight = 0.16 * height;
+let ballRadius = 0.01 * width;
 
 let posXPlayer1 = 0.05 * width;
 let posYPlayer1 = height / 2;
@@ -121,6 +121,15 @@ let downPlayer1 = false;
 let upPlayer2 = false;
 let downPlayer2 = false;
 
+// Local simulation state (used for 1v1Offline and IA modes)
+let simulateLocal = false;
+let ballVX = 0; // pixels per second
+let ballVY = 0; // pixels per second
+let paddleSpeed = 0; // pixels per second
+let ballSpeed = 0; // pixels per second
+let lastFrameTs = 0;
+const MAX_SCORE_LOCAL = 11; // win condition
+
 let ballX = width / 2;
 let ballY = height / 2;
 
@@ -129,6 +138,8 @@ export let gameId = 0;
 let team = 0;
 
 let pauseInterval: any;
+let lastServerUpdateTs = 0;
+let warnedNoServerUpdates = false;
 
 const modalGamePause = document.getElementById("modalGamePause");
 const modalReconnect = document.getElementById("modalReconnect");
@@ -137,6 +148,58 @@ const yes = document.getElementById("btnReconnectYes");
 const no = document.getElementById("btnReconnectNo");
 const start = document.getElementById("btnStart");
 const goodBye = document.getElementById("goodBye");
+
+// Ensure canvas matches its visible size and recompute layout-dependent values
+function resizeCanvas(recenter: boolean = false) {
+	if (!pong) return;
+
+	const prevWidth = width;
+	const prevHeight = height;
+
+	// Update canvas pixel size to match CSS size (when visible)
+	const newClientWidth = pong.clientWidth || prevWidth || 800;
+	const newClientHeight = pong.clientHeight || prevHeight || 600;
+	pong.width = newClientWidth;
+	pong.height = newClientHeight;
+
+	width = pong.width;
+	height = pong.height;
+
+	// Recompute sizes based on new dimensions
+	paddleWidth = 0.01 * width;
+	paddleHeight = 0.16 * height;
+	ballRadius = Math.max(1, 0.01 * width); // ensure visible even on tiny widths
+
+	// Keep paddles at 5% from edges
+	posXPlayer1 = 0.05 * width;
+	posXPlayer2 = width - 0.05 * width;
+
+	if (recenter || !prevWidth || !prevHeight) {
+		// Center everything if requested or if we didn't have previous dimensions
+		posYPlayer1 = height / 2;
+		posYPlayer2 = height / 2;
+		ballX = width / 2;
+		ballY = height / 2;
+	} else {
+		// Preserve relative Y positions across resizes
+		const y1Ratio = posYPlayer1 / prevHeight;
+		const y2Ratio = posYPlayer2 / prevHeight;
+		posYPlayer1 = y1Ratio * height;
+		posYPlayer2 = y2Ratio * height;
+
+		// Keep ball position proportional as well
+		const bxRatio = ballX / prevWidth;
+		const byRatio = ballY / prevHeight;
+		ballX = bxRatio * width;
+		ballY = byRatio * height;
+	}
+}
+
+// Initialize once (may be refined again when the view becomes visible)
+resizeCanvas(true);
+
+// Keep canvas in sync on window resize
+window.addEventListener('resize', () => resizeCanvas(false));
 
 // Pour que le popstate soit trigger seulement quand l'utilisateur clique sur le bouton retour du navigateur
 export let isInternalNavigation = false;
@@ -183,7 +246,7 @@ window.addEventListener("popstate", async (event) => {
 			await endingGame({ winner: 0, mode: mode });
 			console.log("Leaving game...");
 			isInternalNavigation = true;
-			history.replaceState(null, "", "pongMenu");
+			history.replaceState(null, "", "#pongMenu");
 			handleRoute();
 			setTimeout(() => (isInternalNavigation = false), 100);
 		} else {
@@ -314,10 +377,18 @@ start?.addEventListener("click", async () => {
 					started = true;
 					// Initialize positions for the fallback case
 					console.log("Before fallback init - positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
+					console.log("Canvas dimensions for fallback:", {width, height}); // DEBUG
+					
+					// Explicitly set and verify each variable
 					posYPlayer1 = height / 2;
+					console.log("Set posYPlayer1 to:", posYPlayer1, "current value:", posYPlayer1); // DEBUG
 					posYPlayer2 = height / 2;
+					console.log("Set posYPlayer2 to:", posYPlayer2, "current value:", posYPlayer2); // DEBUG
 					ballX = width / 2;
+					console.log("Set ballX to:", ballX, "current value:", ballX); // DEBUG
 					ballY = height / 2;
+					console.log("Set ballY to:", ballY, "current value:", ballY); // DEBUG
+					
 					console.log("After fallback init - positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
 					await startingGame(false, true);
 				} else {
@@ -346,18 +417,32 @@ async function startingGame(resume = false, timer = true) {
 	console.log("startingGame called, resume:", resume, "timer:", timer); // DEBUG
 	console.log("Game is starting!");
 	navigateTo('viewGame');
+	// Ensure canvas has non-zero size now that the view should be visible
+	resizeCanvas(true);
+	// One more pass on next frame to catch freshly-laid-out size
+	setTimeout(() => resizeCanvas(false), 0);
 	ctx.clearRect(0, 0, width, height);
-	ctx.font = "50px Arial";
+	// Dynamic font sizes based on canvas height
+	const messageFont = Math.max(28, Math.floor(height * 0.08)); // ~8% of height
+	const countdownFont = Math.max(48, Math.floor(height * 0.20)); // ~20% of height
+	ctx.font = `${messageFont}px Arial`;
 	ctx.fillStyle = "rgb(254, 243, 199)";
 	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
 	if (timer) {
-		if (resume) ctx.fillText(i18n.t("gameResumes"), width / 2, height / 2 - 40);
-		else ctx.fillText(i18n.t("gameStarts"), width / 2, height / 2 - 40);
+		if (resume) {
+			ctx.fillText(i18n.t("gameResumes"), width / 2, height / 2 - 40);
+		}
+		else {
+			ctx.fillText(i18n.t("gameStarts"), width / 2, height / 2 - 40);
+		}
+		ctx.textBaseline = "middle";
 		let countdown = 5;
 		console.log("Starting countdown from 5"); // DEBUG
 		const countdownInterval = setInterval(() => {
 			ctx.clearRect(0, height / 2 - 20, width, 100);
 			ctx.fillStyle = "rgb(239, 68, 68)";
+			ctx.font = `${countdownFont}px Arial`;
 			ctx.fillText(countdown.toString(), width / 2, height / 2 + 40);
 			console.log("Countdown:", countdown); // DEBUG
 			countdown--;
@@ -371,6 +456,26 @@ async function startingGame(resume = false, timer = true) {
 	}
 	
 	console.log("About to start remoteGameLoop"); // DEBUG
+
+	// Decide if we simulate locally
+	simulateLocal = (mode === '1v1Offline' || mode === 'IA');
+
+	// Initialize local simulation parameters when needed
+	if (simulateLocal) {
+		// Speeds proportional to canvas size for consistent feel
+		paddleSpeed = Math.max(200, height * 0.6); // px/s
+		ballSpeed = Math.max(250, Math.min(width, height) * 0.6); // px/s
+		// Center ball and set initial random direction
+		ballX = width / 2;
+		ballY = height / 2;
+		const angle = (Math.random() * 0.6 - 0.3) + (Math.random() < 0.5 ? 0 : Math.PI); // ~[-0.3..0.3] or opposite
+		ballVX = Math.cos(angle) * ballSpeed;
+		ballVY = Math.sin(angle) * ballSpeed;
+		// Center paddles
+		posYPlayer1 = height / 2;
+		posYPlayer2 = height / 2;
+		lastFrameTs = performance.now();
+	}
 	remoteGameLoop();
 }
 
@@ -471,6 +576,8 @@ export async function handleGameRemote(data: any) {
 		const value = data.data;
 		console.log("Received game data from server:", value); // DEBUG
 		console.log("Canvas dimensions:", {width, height}); // DEBUG
+		lastServerUpdateTs = performance.now();
+		warnedNoServerUpdates = false;
 		
 		// Store old positions for comparison
 		const oldPositions = {ballX, ballY, posYPlayer1, posYPlayer2};
@@ -699,6 +806,9 @@ function draw() {
 function sendInput() {
 	if (!socket || !started) return;
 
+	// Don't send inputs during pure local simulation
+	if (simulateLocal) return;
+
 	// For 1v1Offline mode, send input for both players
 	if (mode === '1v1Offline') {
 		// Send player 1 input (WASD keys)
@@ -732,8 +842,117 @@ function sendInput() {
 
 function remoteGameLoop() {
 	console.log("remoteGameLoop called, started:", started, "gameId:", gameId, "positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
+
+	// Advance local simulation if enabled
+	if (simulateLocal) {
+		const now = performance.now();
+		const dt = Math.min(32, now - lastFrameTs) / 1000; // cap dt to avoid jumps
+		lastFrameTs = now;
+
+		// Update paddles from input
+		if (upPlayer1) posYPlayer1 -= paddleSpeed * dt;
+		if (downPlayer1) posYPlayer1 += paddleSpeed * dt;
+		if (mode === '1v1Offline') {
+			if (upPlayer2) posYPlayer2 -= paddleSpeed * dt;
+			if (downPlayer2) posYPlayer2 += paddleSpeed * dt;
+		} else if (mode === 'IA') {
+			// Simple AI: follow the ball with imperfections
+			const dy = ballY - posYPlayer2;
+			const difficultyFactor = 0.8; // 0.5 = easy, 1.0 = hard
+			const jitter = (Math.random() - 0.5) * 20; // ±10px jitter
+			let desired = dy * difficultyFactor + jitter;
+			// Occasional larger error (distraction)
+			if (Math.random() < 0.03) desired += (Math.random() - 0.5) * 80;
+			// Speed varies slightly (simulates inconsistency)
+			const speedVariation = 0.85 + Math.random() * 0.3; // 85-115%
+			const aiSpeed = paddleSpeed * 0.9 * speedVariation;
+			// Clamp movement per frame
+			const maxStep = aiSpeed * dt;
+			const step = Math.max(-maxStep, Math.min(maxStep, desired));
+			posYPlayer2 += step;
+		}
+
+		// Clamp paddles within bounds
+		const halfPH = paddleHeight / 2;
+		posYPlayer1 = Math.max(halfPH, Math.min(height - halfPH, posYPlayer1));
+		posYPlayer2 = Math.max(halfPH, Math.min(height - halfPH, posYPlayer2));
+
+		// Move ball
+		ballX += ballVX * dt;
+		ballY += ballVY * dt;
+
+		// Top/bottom collision
+		if (ballY - ballRadius <= 0 && ballVY < 0) { ballY = ballRadius; ballVY *= -1; }
+		if (ballY + ballRadius >= height && ballVY > 0) { ballY = height - ballRadius; ballVY *= -1; }
+
+		// Paddle collisions
+		const p1Left = posXPlayer1 - paddleWidth / 2;
+		const p1Right = posXPlayer1 + paddleWidth / 2;
+		const p1Top = posYPlayer1 - paddleHeight / 2;
+		const p1Bottom = posYPlayer1 + paddleHeight / 2;
+
+		const p2Left = posXPlayer2 - paddleWidth / 2;
+		const p2Right = posXPlayer2 + paddleWidth / 2;
+		const p2Top = posYPlayer2 - paddleHeight / 2;
+		const p2Bottom = posYPlayer2 + paddleHeight / 2;
+
+		// Left paddle
+		if (ballX - ballRadius <= p1Right && ballX - ballRadius >= p1Left && ballY >= p1Top && ballY <= p1Bottom && ballVX < 0) {
+			ballX = p1Right + ballRadius;
+			// Reflect with angle based on hit position
+			const rel = (ballY - posYPlayer1) / (paddleHeight / 2);
+			const angle = rel * (Math.PI / 4);
+			ballVX = Math.abs(Math.cos(angle) * ballSpeed);
+			ballVY = Math.sin(angle) * ballSpeed;
+		}
+
+		// Right paddle
+		if (ballX + ballRadius >= p2Left && ballX + ballRadius <= p2Right && ballY >= p2Top && ballY <= p2Bottom && ballVX > 0) {
+			ballX = p2Left - ballRadius;
+			const rel = (ballY - posYPlayer2) / (paddleHeight / 2);
+			const angle = rel * (Math.PI / 4);
+			ballVX = -Math.abs(Math.cos(angle) * ballSpeed);
+			ballVY = Math.sin(angle) * ballSpeed;
+		}
+
+		// Scoring
+		if (ballX < 0) {
+			player2Score += 1;
+			// reset ball towards player 1
+			ballX = width / 2; ballY = height / 2; ballVX = Math.abs(ballSpeed) * (Math.random() > 0.5 ? 1 : 1); ballVY = (Math.random() * 2 - 1) * (ballSpeed * 0.5);
+			if (simulateLocal && player2Score >= MAX_SCORE_LOCAL) {
+				started = false;
+				simulateLocal = false;
+				const winner = sessionStorage.getItem('player2Name') || i18n.t('playerTwo') || 'Player 2';
+				// Schedule end outside of sync loop without await to satisfy TS
+				setTimeout(() => { endingGame({ winner, mode }); }, 0);
+				return; // stop loop
+			}
+		}
+		if (ballX > width) {
+			player1Score += 1;
+			// reset ball towards player 2
+			ballX = width / 2; ballY = height / 2; ballVX = -Math.abs(ballSpeed) * (Math.random() > 0.5 ? 1 : 1); ballVY = (Math.random() * 2 - 1) * (ballSpeed * 0.5);
+			if (simulateLocal && player1Score >= MAX_SCORE_LOCAL) {
+				started = false;
+				simulateLocal = false;
+				const winner = sessionStorage.getItem('player1Name') || i18n.t('player1') || 'Player 1';
+				setTimeout(() => { endingGame({ winner, mode }); }, 0);
+				return; // stop loop
+			}
+		}
+	}
 	draw();
 	sendInput();
+
+	// Warn if online but no server updates arriving
+	if (!simulateLocal && started && lastServerUpdateTs > 0) {
+		const since = performance.now() - lastServerUpdateTs;
+		if (since > 1500 && !warnedNoServerUpdates) {
+			console.warn("No server game updates for", Math.round(since), "ms. Check backend streaming.");
+			warnedNoServerUpdates = true;
+		}
+	}
 	if (started)
 		requestAnimationFrame(remoteGameLoop);
 	else
