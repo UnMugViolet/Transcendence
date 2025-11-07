@@ -1,21 +1,34 @@
 import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
+import { USER_CREATION_CONSTANTS } from './utils.js';
 
 // Ensure the database directory exists
-const dbPath = process.env.DB_PATH || '../data/database.db';
-const dbDir = path.dirname(dbPath);
+const dbFile = process.env.DB_FILE || 'default_name.sqlite';
+const dbDir = '../data/';
 
-if (!fs.existsSync(dbDir)) {
+// Create data directory if it doesn't exist
+try {
+	fs.accessSync(dbDir, fs.constants.F_OK);
+} catch {
 	fs.mkdirSync(dbDir, { recursive: true });
 }
+
+// Create the database file if it doesn't exist
+try {
+	fs.accessSync(path.join(dbDir, dbFile), fs.constants.F_OK);
+} catch {
+	fs.writeFileSync(path.join(dbDir, dbFile), '');
+}
+
+const dbPath = path.join(dbDir, dbFile);
 
 const db = new Database(dbPath);
 
 db.prepare(`CREATE TABLE IF NOT EXISTS users (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL UNIQUE COLLATE NOCASE,
-	pass TEXT NOT NULL,
+	name VARCHAR(${USER_CREATION_CONSTANTS.MAX_NAME_LENGTH}) NOT NULL UNIQUE COLLATE NOCASE,
+	password VARCHAR(255) NOT NULL,
 	profile_picture TEXT NOT NULL DEFAULT 'default.jpg',
 	last_seen INTEGER NOT NULL,
 	created_at INTEGER NOT NULL

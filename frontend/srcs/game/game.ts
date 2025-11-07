@@ -122,13 +122,7 @@ let upPlayer2 = false;
 let downPlayer2 = false;
 
 // Local simulation state (used for 1v1Offline and IA modes)
-let simulateLocal = false;
-let ballVX = 0; // pixels per second
-let ballVY = 0; // pixels per second
-let paddleSpeed = 0; // pixels per second
-let ballSpeed = 0; // pixels per second
-let lastFrameTs = 0;
-const MAX_SCORE_LOCAL = 11; // win condition
+// Local simulation variables removed; backend is authoritative for all modes
 
 let ballX = width / 2;
 let ballY = height / 2;
@@ -195,7 +189,6 @@ function resizeCanvas(recenter: boolean = false) {
 	}
 }
 
-// Initialize once (may be refined again when the view becomes visible)
 resizeCanvas(true);
 
 // Keep canvas in sync on window resize
@@ -376,20 +369,20 @@ start?.addEventListener("click", async () => {
 					console.log("No WS 'start' received yet; triggering local start fallback."); // DEBUG
 					started = true;
 					// Initialize positions for the fallback case
-					console.log("Before fallback init - positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
-					console.log("Canvas dimensions for fallback:", {width, height}); // DEBUG
+					// console.log("Before fallback init - positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
+					// console.log("Canvas dimensions for fallback:", {width, height}); // DEBUG
 					
 					// Explicitly set and verify each variable
 					posYPlayer1 = height / 2;
-					console.log("Set posYPlayer1 to:", posYPlayer1, "current value:", posYPlayer1); // DEBUG
+					// console.log("Set posYPlayer1 to:", posYPlayer1, "current value:", posYPlayer1); // DEBUG
 					posYPlayer2 = height / 2;
-					console.log("Set posYPlayer2 to:", posYPlayer2, "current value:", posYPlayer2); // DEBUG
+					// console.log("Set posYPlayer2 to:", posYPlayer2, "current value:", posYPlayer2); // DEBUG
 					ballX = width / 2;
-					console.log("Set ballX to:", ballX, "current value:", ballX); // DEBUG
+					// console.log("Set ballX to:", ballX, "current value:", ballX); // DEBUG
 					ballY = height / 2;
-					console.log("Set ballY to:", ballY, "current value:", ballY); // DEBUG
+					// console.log("Set ballY to:", ballY, "current value:", ballY); // DEBUG
 					
-					console.log("After fallback init - positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
+					// console.log("After fallback init - positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
 					await startingGame(false, true);
 				} else {
 					console.log("WS 'start' already received, skipping fallback."); // DEBUG
@@ -412,6 +405,8 @@ function sleep(ms: number): Promise<void> {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Local round reset logic removed. Backend handles all physics, scoring and round resets.
+
 //demarrer la partie pour tous les joueurs 
 async function startingGame(resume = false, timer = true) {
 	console.log("startingGame called, resume:", resume, "timer:", timer); // DEBUG
@@ -430,52 +425,45 @@ async function startingGame(resume = false, timer = true) {
 	ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
 	if (timer) {
-		if (resume) {
-			ctx.fillText(i18n.t("gameResumes"), width / 2, height / 2 - 40);
-		}
-		else {
-			ctx.fillText(i18n.t("gameStarts"), width / 2, height / 2 - 40);
-		}
-		ctx.textBaseline = "middle";
+		// Display the starting message
+		const startMessage = resume ? i18n.t("gameResumes") : i18n.t("gameStarts");
+		ctx.fillText(startMessage, width / 2, height / 2 - 40);
+		
 		let countdown = 5;
 		console.log("Starting countdown from 5"); // DEBUG
 		const countdownInterval = setInterval(() => {
-			ctx.clearRect(0, height / 2 - 20, width, 100);
+			// Clear the entire canvas and redraw everything for clean display
+			ctx.clearRect(0, 0, width, height);
+			
+			// Redraw the starting message
+			ctx.fillStyle = "rgb(254, 243, 199)";
+			ctx.font = `${messageFont}px Arial`;
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(startMessage, width / 2, height / 2 - 40);
+			
+			// Draw the countdown number
 			ctx.fillStyle = "rgb(239, 68, 68)";
 			ctx.font = `${countdownFont}px Arial`;
 			ctx.fillText(countdown.toString(), width / 2, height / 2 + 40);
+			
 			console.log("Countdown:", countdown); // DEBUG
 			countdown--;
 			if (countdown < 0) {
 				clearInterval(countdownInterval);
-				ctx.clearRect(0, height / 2 - 20, width, 100);
+				ctx.clearRect(0, 0, width, height);
 				console.log("Countdown finished"); // DEBUG
 			}
 		}, 1000);
-		await sleep(6000);
 	}
+	// Wait for countdown to finish before starting the game loop
+	await sleep(6000);
 	
 	console.log("About to start remoteGameLoop"); // DEBUG
 
-	// Decide if we simulate locally
-	simulateLocal = (mode === '1v1Offline' || mode === 'IA');
+	// Backend is authoritative; no local simulation
 
-	// Initialize local simulation parameters when needed
-	if (simulateLocal) {
-		// Speeds proportional to canvas size for consistent feel
-		paddleSpeed = Math.max(200, height * 0.6); // px/s
-		ballSpeed = Math.max(250, Math.min(width, height) * 0.6); // px/s
-		// Center ball and set initial random direction
-		ballX = width / 2;
-		ballY = height / 2;
-		const angle = (Math.random() * 0.6 - 0.3) + (Math.random() < 0.5 ? 0 : Math.PI); // ~[-0.3..0.3] or opposite
-		ballVX = Math.cos(angle) * ballSpeed;
-		ballVY = Math.sin(angle) * ballSpeed;
-		// Center paddles
-		posYPlayer1 = height / 2;
-		posYPlayer2 = height / 2;
-		lastFrameTs = performance.now();
-	}
+	// No local physics initialization; relying on backend updates
 	remoteGameLoop();
 }
 
@@ -589,7 +577,7 @@ export async function handleGameRemote(data: any) {
 		player1Score = value.score1;
 		player2Score = value.score2;
 		
-		console.log("Position update - old:", oldPositions, "new:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
+		// console.log("Position update - old:", oldPositions, "new:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
 		return true;
 	}
 	console.log("Message not handled, returning false"); // DEBUG
@@ -772,7 +760,7 @@ window.addEventListener("keyup", (event) => {
 });
 
 function draw() {
-	console.log("draw() called - Ball position:", ballX, ballY, "Paddle positions:", posYPlayer1, posYPlayer2); // DEBUG
+	// console.log("draw() called - Ball position:", ballX, ballY, "Paddle positions:", posYPlayer1, posYPlayer2); // DEBUG
 	ctx.clearRect(0, 0, width, height);
 	ctx.fillStyle = "rgb(254, 243, 199)";
 
@@ -806,30 +794,12 @@ function draw() {
 function sendInput() {
 	if (!socket || !started) return;
 
-	// Don't send inputs during pure local simulation
-	if (simulateLocal) return;
-
-	// For 1v1Offline mode, send input for both players
 	if (mode === '1v1Offline') {
-		// Send player 1 input (WASD keys)
-		socket.send(JSON.stringify({
-			type: "input",
-			game: gameId,
-			team: 1,
-			up: upPlayer1,
-			down: downPlayer1
-		}));
-		
-		// Send player 2 input (Arrow keys)
-		socket.send(JSON.stringify({
-			type: "input",
-			game: gameId,
-			team: 2,
-			up: upPlayer2,
-			down: downPlayer2
-		}));
+		// Send inputs for both paddles from one client (shared keyboard)
+		socket.send(JSON.stringify({ type: "input", game: gameId, team: 1, up: upPlayer1, down: downPlayer1 }));
+		socket.send(JSON.stringify({ type: "input", game: gameId, team: 2, up: upPlayer2, down: downPlayer2 }));
 	} else {
-		// For online modes, send input for the current player's team only
+		// Online and IA: send only assigned team input; backend moves AI when needed
 		socket.send(JSON.stringify({
 			type: "input",
 			game: gameId,
@@ -841,120 +811,9 @@ function sendInput() {
 }
 
 function remoteGameLoop() {
-	console.log("remoteGameLoop called, started:", started, "gameId:", gameId, "positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
-
-	// Advance local simulation if enabled
-	if (simulateLocal) {
-		const now = performance.now();
-		const dt = Math.min(32, now - lastFrameTs) / 1000; // cap dt to avoid jumps
-		lastFrameTs = now;
-
-		// Update paddles from input
-		if (upPlayer1) posYPlayer1 -= paddleSpeed * dt;
-		if (downPlayer1) posYPlayer1 += paddleSpeed * dt;
-		if (mode === '1v1Offline') {
-			if (upPlayer2) posYPlayer2 -= paddleSpeed * dt;
-			if (downPlayer2) posYPlayer2 += paddleSpeed * dt;
-		} else if (mode === 'IA') {
-			// Simple AI: follow the ball with imperfections
-			const dy = ballY - posYPlayer2;
-			const difficultyFactor = 0.8; // 0.5 = easy, 1.0 = hard
-			const jitter = (Math.random() - 0.5) * 20; // ±10px jitter
-			let desired = dy * difficultyFactor + jitter;
-			// Occasional larger error (distraction)
-			if (Math.random() < 0.03) desired += (Math.random() - 0.5) * 80;
-			// Speed varies slightly (simulates inconsistency)
-			const speedVariation = 0.85 + Math.random() * 0.3; // 85-115%
-			const aiSpeed = paddleSpeed * 0.9 * speedVariation;
-			// Clamp movement per frame
-			const maxStep = aiSpeed * dt;
-			const step = Math.max(-maxStep, Math.min(maxStep, desired));
-			posYPlayer2 += step;
-		}
-
-		// Clamp paddles within bounds
-		const halfPH = paddleHeight / 2;
-		posYPlayer1 = Math.max(halfPH, Math.min(height - halfPH, posYPlayer1));
-		posYPlayer2 = Math.max(halfPH, Math.min(height - halfPH, posYPlayer2));
-
-		// Move ball
-		ballX += ballVX * dt;
-		ballY += ballVY * dt;
-
-		// Top/bottom collision
-		if (ballY - ballRadius <= 0 && ballVY < 0) { ballY = ballRadius; ballVY *= -1; }
-		if (ballY + ballRadius >= height && ballVY > 0) { ballY = height - ballRadius; ballVY *= -1; }
-
-		// Paddle collisions
-		const p1Left = posXPlayer1 - paddleWidth / 2;
-		const p1Right = posXPlayer1 + paddleWidth / 2;
-		const p1Top = posYPlayer1 - paddleHeight / 2;
-		const p1Bottom = posYPlayer1 + paddleHeight / 2;
-
-		const p2Left = posXPlayer2 - paddleWidth / 2;
-		const p2Right = posXPlayer2 + paddleWidth / 2;
-		const p2Top = posYPlayer2 - paddleHeight / 2;
-		const p2Bottom = posYPlayer2 + paddleHeight / 2;
-
-		// Left paddle
-		if (ballX - ballRadius <= p1Right && ballX - ballRadius >= p1Left && ballY >= p1Top && ballY <= p1Bottom && ballVX < 0) {
-			ballX = p1Right + ballRadius;
-			// Reflect with angle based on hit position
-			const rel = (ballY - posYPlayer1) / (paddleHeight / 2);
-			const angle = rel * (Math.PI / 4);
-			ballVX = Math.abs(Math.cos(angle) * ballSpeed);
-			ballVY = Math.sin(angle) * ballSpeed;
-		}
-
-		// Right paddle
-		if (ballX + ballRadius >= p2Left && ballX + ballRadius <= p2Right && ballY >= p2Top && ballY <= p2Bottom && ballVX > 0) {
-			ballX = p2Left - ballRadius;
-			const rel = (ballY - posYPlayer2) / (paddleHeight / 2);
-			const angle = rel * (Math.PI / 4);
-			ballVX = -Math.abs(Math.cos(angle) * ballSpeed);
-			ballVY = Math.sin(angle) * ballSpeed;
-		}
-
-		// Scoring
-		if (ballX < 0) {
-			player2Score += 1;
-			// reset ball towards player 1
-			ballX = width / 2; ballY = height / 2; ballVX = Math.abs(ballSpeed) * (Math.random() > 0.5 ? 1 : 1); ballVY = (Math.random() * 2 - 1) * (ballSpeed * 0.5);
-			if (simulateLocal && player2Score >= MAX_SCORE_LOCAL) {
-				started = false;
-				simulateLocal = false;
-				const winner = sessionStorage.getItem('player2Name') || i18n.t('playerTwo') || 'Player 2';
-				// Schedule end outside of sync loop without await to satisfy TS
-				setTimeout(() => { endingGame({ winner, mode }); }, 0);
-				return; // stop loop
-			}
-		}
-		if (ballX > width) {
-			player1Score += 1;
-			// reset ball towards player 2
-			ballX = width / 2; ballY = height / 2; ballVX = -Math.abs(ballSpeed) * (Math.random() > 0.5 ? 1 : 1); ballVY = (Math.random() * 2 - 1) * (ballSpeed * 0.5);
-			if (simulateLocal && player1Score >= MAX_SCORE_LOCAL) {
-				started = false;
-				simulateLocal = false;
-				const winner = sessionStorage.getItem('player1Name') || i18n.t('player1') || 'Player 1';
-				setTimeout(() => { endingGame({ winner, mode }); }, 0);
-				return; // stop loop
-			}
-		}
-	}
+	// When not simulating locally, only draw current server-fed positions and send input periodically.
 	draw();
 	sendInput();
 
-	// Warn if online but no server updates arriving
-	if (!simulateLocal && started && lastServerUpdateTs > 0) {
-		const since = performance.now() - lastServerUpdateTs;
-		if (since > 1500 && !warnedNoServerUpdates) {
-			console.warn("No server game updates for", Math.round(since), "ms. Check backend streaming.");
-			warnedNoServerUpdates = true;
-		}
-	}
-	if (started)
-		requestAnimationFrame(remoteGameLoop);
-	else
-		console.log("Game loop stopped, started is false"); // DEBUG
+	if (started) requestAnimationFrame(remoteGameLoop);
 }

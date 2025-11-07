@@ -103,7 +103,7 @@ formProfile?.addEventListener("submit", async (e) => {
 					"Content-Type": "application/json",
 					"Authorization": `Bearer ${token}`,
 				},
-				body: JSON.stringify({ pass: password }),
+				body: JSON.stringify({ password: password }),
 			});
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error || i18n.t("errorPassword"));

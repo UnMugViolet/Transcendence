@@ -44,7 +44,7 @@ export class FormManager {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: username,
-            pass: password,
+            password: password,
             stayConnect: stayConnected,
           }),
         });
@@ -98,7 +98,7 @@ export class FormManager {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: username,
-            pass: password,
+            password: password,
             stayConnect: stayConnected,
           }),
         });

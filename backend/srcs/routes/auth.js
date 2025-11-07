@@ -14,7 +14,9 @@ async function authRoutes(fastify) {
 		const refreshToken = fastify.jwt.sign({ id: id, name : name, type : 'refresh' });
 
 		let expiresAt;
-		if (stayConnect) expiresAt = 9999999999999;
+		if (stayConnect) {
+			expiresAt =  7 * 24 * 60 * 60 * 1000; // 7 days
+		}
 		else expiresAt = 60 * 60 * 1000; // 1 hour
 
 		db.prepare('INSERT INTO refresh_tokens (user_id, token, user_agent, timeout, last_used_at) VALUES (?, ?, ?, ?, ?)').run(id, refreshToken, userAgent, expiresAt, Date.now());
@@ -24,24 +26,32 @@ async function authRoutes(fastify) {
 
 	fastify.post('/register', async (request, reply) => {
 		const name = request.body.name?.trim();
-		const pass = request.body.pass;
+		const password = request.body.password;
 		const stayConnect = request.body.stayConnect;
 
 		console.log('Received request to add user:', name);
 
-		if (!name) return reply.status(400).send({ error: 'Name is required' });
-		if (!pass) return reply.status(400).send({ error: 'Password is required' });
+		if (!name) {
+			return reply.status(400).send({ error: 'Name is required' });
+		}
+		if (!password) {
+			return reply.status(400).send({ error: 'Password is required' });
+		}
 
 		let check = checkName(name);
-		if (!check.valid) return reply.status(400).send({ error: check.error });
+		if (!check.valid) {
+			return reply.status(400).send({ error: check.error });
+		}
 
-		check = checkPassword(pass);
-		if (!check.valid) return reply.status(400).send({ error: check.error });
+		check = checkPassword(password);
+		if (!check.valid) {
+			return reply.status(400).send({ error: check.error });
+		}
 
-		const hashedPass = bcrypt.hashSync(pass, 10);
+		const hashedPass = bcrypt.hashSync(password, 10);
 
 		try {
-			const info = db.prepare('INSERT INTO users (name, pass, last_seen, created_at) VALUES (?, ?, ?, ?)').run(name, hashedPass, Date.now(), Date.now());
+			const info = db.prepare('INSERT INTO users (name, password, last_seen, created_at) VALUES (?, ?, ?, ?)').run(name, hashedPass, Date.now(), Date.now());
 
 			console.log("User ", name, " added with ID:", info.lastInsertRowid);
 			return genKey(info.lastInsertRowid, name, stayConnect, request.headers['user-agent']);
@@ -56,19 +66,27 @@ async function authRoutes(fastify) {
 
 	fastify.post('/login', async (request, reply) => {
 		const name = request.body.name?.trim();
-		const pass = request.body.pass;
+		const password = request.body.password;
 		const stayConnect = request.body.stayConnect;
 
 		console.log('Received request to login user:', name);
 
-		if (!name) return reply.status(400).send({ error: 'Name is required' });
-		if (!pass) return reply.status(400).send({ error: 'Password is required' });
+		if (!name) {
+			return reply.status(400).send({ error: 'Name is required' });
+		}
+		if (!password) {
+			return reply.status(400).send({ error: 'Password is required' });
+		}
 
 		const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name);
-		if (!user) return reply.status(404).send({ error: 'User not found' });
+		if (!user) {
+			return reply.status(404).send({ error: 'User not found' });
+		}
 
-		const isValidPass = bcrypt.compareSync(pass, user.pass);
-		if (!isValidPass) return reply.status(401).send({ error: 'Invalid password' });
+		const isValidPass = bcrypt.compareSync(password, user.password);
+		if (!isValidPass) {
+			return reply.status(401).send({ error: 'Invalid password' });
+		}
 
 		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), user.id);
 
@@ -87,7 +105,9 @@ async function authRoutes(fastify) {
 
 		try {
 			const payload = fastify.jwt.verify(token);
-			if (payload.type !== 'refresh') return reply.status(401).send({ error: 'Unauthorized' });
+			if (payload.type !== 'refresh') {
+				return reply.status(401).send({ error: 'Unauthorized' });
+			}
 		} catch (err) {
 			return reply.status(401).send({ error: 'Invalid token' });
 		}

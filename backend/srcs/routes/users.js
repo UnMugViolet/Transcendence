@@ -77,14 +77,14 @@ async function usersRoutes(fastify) {
 
 	fastify.post('/update/password', { preHandler: fastify.authenticate }, async (request, reply) => {
 		const userId = request.user.id;
-		const { pass } = request.body;
+		const { password } = request.body;
 
-		const check = checkPassword(pass);
+		const check = checkPassword(password);
 		if (!check.valid) return reply.status(400).send({ error: check.error });
 
-		const hashedPass = bcrypt.hashSync(pass, 10);
+		const hashedPass = bcrypt.hashSync(password, 10);
 		try {
-			db.prepare('UPDATE users SET pass = ? WHERE id = ?').run(hashedPass, userId);
+			db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hashedPass, userId);
 			return { success: true };
 		} catch (err) {
 			return reply.status(500).send({ error: 'Failed to update password' });

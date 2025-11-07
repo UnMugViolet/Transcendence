@@ -15,7 +15,6 @@ import authRoutes from './routes/auth.js';
 import friendsRoutes from './routes/friends.js';
 import usersRoutes from './routes/users.js';
 import gameRoutes from './routes/game.js';
-import { i18n } from './i18n.js';
 import { clients } from './routes/chat.js';
 import { gameLoop, pauseLoop } from './routes/game.js';
 
@@ -39,8 +38,6 @@ fastify.register(fastifyStatic, {
 });
 
 fastify.decorate('db', db);
-
-fastify.decorate('i18n', i18n);
 
 
 fastify.decorate("authenticate", async function (request, reply) {
@@ -129,69 +126,3 @@ cron.schedule('0 * * * *', () => {
 	console.log('Refresh tokens cleaned at', new Date().toLocaleString());
 });
 
-// -------------------------------------------- //
-
-
-
-// Simule 10 matchs toutes les 5 minutes
-
-// cron.schedule("*/5 * * * *", () => {
-// 	const usersCount = db.prepare("SELECT COUNT(*) AS count FROM users").get().count;
-
-// 	if (usersCount < 2) {
-// 		console.log("Pas assez d'utilisateurs pour simuler des matchs.");
-// 		return;
-// 	}
-
-// 	const getRandomUser = db.prepare("SELECT id FROM users ORDER BY RANDOM() LIMIT 1");
-// 	const insertMatch = db.prepare(`
-// 		INSERT INTO match_history (p1_id, p2_id, p1_score, p2_score, winner_id, created_at)
-// 		VALUES (?, ?, ?, ?, ?, ?)
-// 	`);
-
-// 	console.log("Ajout de matchs simulés...");
-
-// 	for (let i = 0; i < 10; i++) {
-// 		let p1_id = getRandomUser.get().id;
-// 		let p2_id = getRandomUser.get().id;
-
-// 		while (p1_id === p2_id)
-// 			p2_id = getRandomUser.get().id;
-
-// 		let p1_score = Math.floor(Math.random() * 11);
-// 		let p2_score = Math.floor(Math.random() * 11);
-
-// 		let winner_id = p1_score >= p2_score ? p1_id : p2_id;
-
-// 		let created_at = Date.now();
-
-// 		insertMatch.run(p1_id, p2_id, p1_score, p2_score, winner_id, created_at);
-// 	}
-
-// 	console.log("10 matchs ajoutés !");
-// });
-
-
-// Generate 10 users every 5 minutes
-
-// cron.schedule("*/5 * * * *", () => {
-// 	let count = 0;
-// 	for (let i = 0; i < 10; i++) {
-// 		const name = Math.random().toString(36).substring(2, 10);
-// 		const pass = Math.random().toString(36).substring(2, 10) + 'A1!';
-
-// 		const hashedPass = bcrypt.hashSync(pass, 10);
-// 		try {
-// 			const info = db.prepare('INSERT INTO users (name, pass) VALUES (?, ?)').run(name, hashedPass);
-// 			console.log(`Utilisateur généré: ${name} avec le mot de passe: ${pass}`);
-// 			count++;
-// 		} catch (err) {
-// 			if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-// 				console.log(`Le nom ${name} existe déjà. Ignorer...`);
-// 			} else {
-// 				console.error('Erreur lors de la génération de l\'utilisateur:', err);
-// 			}
-// 		}
-// 	}
-// 	console.log(`${count} utilisateurs générés !`);
-// });

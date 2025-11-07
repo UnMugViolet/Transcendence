@@ -65,7 +65,7 @@
 	
 	ws.onmessage = async (event) => {
 		const msg = JSON.parse(event.data);
-		console.log("WebSocket message received:", msg); // DEBUG
+		// console.log("WebSocket message received:", msg); // DEBUG
 		
 		if (msg.type === 'party') {
 			const msgDiv = document.createElement("div");
@@ -75,9 +75,9 @@
 			globalChatMessages.scrollTop = globalChatMessages.scrollHeight;
 		} else {
 			try {
-				console.log("Trying to handle game message:", msg); // DEBUG
+				// console.log("Trying to handle game message:", msg); // DEBUG
 				const handled = await handleGameRemote(msg);
-				console.log("Game message handled:", handled); // DEBUG
+				// console.log("Game message handled:", handled); // DEBUG
 				if (!handled) 
 					receiveMessage(msg);
 			} catch (err) {
