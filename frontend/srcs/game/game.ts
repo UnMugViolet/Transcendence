@@ -669,8 +669,12 @@ async function joinGame(mode: string) {
         const lobby = document.getElementById("lobby");
         if (lobby) {
  			lobby.classList.remove("hidden");
+			console.log("DEBUG: Lobby element found and hidden class removed");
+		} else {
+			console.log("DEBUG: Lobby element not found!");
 		}
         navigateTo('lobby');
+		console.log("DEBUG: navigateTo('lobby') called");
 
 		// Show/hide local lobby options depending on mode
 		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
@@ -678,6 +682,7 @@ async function joinGame(mode: string) {
 		if ((mode === '1v1Offline' || mode === 'IA') && lobbyLocalOptions) {
 			lobbyLocalOptions.classList.remove('hidden');
 			lobbyLocalOptions.classList.add('flex');
+			console.log("DEBUG: lobbyLocalOptions shown for mode:", mode);
 			
 			// For IA mode, hide the player 2 name input since it's always "AI"
 			const player2Input = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
@@ -691,8 +696,18 @@ async function joinGame(mode: string) {
 			lobbyLocalOptions.classList.add('hidden');
 		}
 
-		start?.classList.remove("hidden");
-		backToMenu?.classList.remove("hidden");
+		if (start) {
+			start.classList.remove("hidden");
+			console.log("DEBUG: Start button shown");
+		} else {
+			console.log("DEBUG: Start button element not found!");
+		}
+		if (backToMenu) {
+			backToMenu.classList.remove("hidden");
+			console.log("DEBUG: Back to menu button shown");
+		} else {
+			console.log("DEBUG: Back to menu button element not found!");
+		}
 		goodBye?.classList.add("hidden");
 	} catch (err) {
 		console.error("Error Join Game:", err);

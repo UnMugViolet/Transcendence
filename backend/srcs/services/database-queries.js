@@ -70,7 +70,8 @@ export const partyPlayerQueries = {
 			db.prepare('INSERT INTO party_players (party_id, user_id, team, status) VALUES (?, ?, ?, ?)').run(partyId, userId, team, status);
 		}
 	},
-	delete: (partyId) => db.prepare('DELETE FROM party_players WHERE party_id = ?').run(partyId)
+	delete: (partyId) => db.prepare('DELETE FROM party_players WHERE party_id = ?').run(partyId),
+	deleteUser: (partyId, userId) => db.prepare('DELETE FROM party_players WHERE party_id = ? AND user_id = ?').run(partyId, userId)
 };
 
 // Invite queries

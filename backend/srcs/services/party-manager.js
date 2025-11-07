@@ -201,6 +201,14 @@ export function cleanupUserGames(userId) {
 		partyPlayerQueries.updateStatus('left', activeRow.party_id, userId);
 	}
 	
+	// Always clean up 'left' status records - they should be completely removed
+	const leftParties = partyPlayerQueries.findByUserIdAndStatus(userId, 'left');
+	if (leftParties) {
+		const userName = userQueries.getNameById(userId);
+		console.log(`Removing 'left' status for user ${userName} in party ${leftParties.party_id}`);
+		partyPlayerQueries.deleteUser(leftParties.party_id, userId);
+	}
+	
 	// Disconnect from other waiting/lobby/disconnected games
 	const existingParties = partyPlayerQueries.findByUserIdMultipleStatuses(userId, ['lobby', 'waiting', 'disconnected']);
 	existingParties.forEach(partyPlayer => {
