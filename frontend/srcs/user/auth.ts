@@ -12,6 +12,13 @@ export class AuthManager {
   }
 
   /**
+   * Checks if the provided token is a temporary offline token
+   */
+  static isTemporaryToken(token: string): boolean {
+    return token.startsWith('temp-offline-token-');
+  }
+
+  /**
    * Gets the current refresh token
    */
   static getRefreshToken(): string | null {
@@ -50,6 +57,16 @@ export class AuthManager {
    */
   static isAuthenticated(): boolean {
     return !!(this.getToken() && this.getRefreshToken());
+  }
+
+  static createTemporaryToken(): string {
+
+    if (this.getToken()) {
+      return this.getToken() as string;
+    }
+    const tempToken = 'temp-offline-token-' + Math.random().toString(36).substring(2);
+    sessionStorage.setItem("token", tempToken);
+    return tempToken;
   }
 
   /**
