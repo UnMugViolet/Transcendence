@@ -26,6 +26,11 @@ export function initPongBtns() {
 		btnOnline?.classList.remove('hidden');
 		btnTournament?.classList.add('flex');
 		btnTournament?.classList.remove('hidden');
+	} else {
+		btnOnline?.classList.add('hidden');
+		btnOnline?.classList.remove('flex');
+		btnTournament?.classList.add('hidden');
+		btnTournament?.classList.remove('flex');
 	}
 
 	if (btnOffline) {

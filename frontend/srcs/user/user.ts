@@ -184,6 +184,7 @@ export class UserManager implements User {
     // Disable user features
     setSidebarEnabled(false);
     closeChatSocket();
+    console.log("Clear all buttons");
     
     // Reset browser history
     history.replaceState(null, "", "/");
@@ -192,6 +193,7 @@ export class UserManager implements User {
     };
     
     handleRoute();
+    initPongBtns();
   }
 
   /**
