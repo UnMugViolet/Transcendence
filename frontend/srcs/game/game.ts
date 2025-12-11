@@ -606,7 +606,6 @@ async function joinGame(mode: string) {
 	// If no token and game mode offline or IA, create a temporary token
 	if (!token && (mode === '1v1Offline' || mode === 'IA')) {
 		token = AuthManager.createTemporaryToken();
-		return;
 	} else if (!token) {
 		console.warn("No token found, cannot join game.");
 		return;
