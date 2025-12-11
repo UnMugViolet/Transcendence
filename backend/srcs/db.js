@@ -5,7 +5,8 @@ import { USER_CREATION_CONSTANTS } from './utils.js';
 
 // Ensure the database directory exists
 const dbFile = process.env.DB_FILE || 'default_name.sqlite';
-const dbDir = '../data/';
+const dbDir = process.env.DB_PATH || '/app/data/';
+let   db;
 
 // Create data directory if it doesn't exist
 try {
@@ -23,7 +24,13 @@ try {
 
 const dbPath = path.join(dbDir, dbFile);
 
-const db = new Database(dbPath);
+try {
+	db = new Database(dbPath);
+	console.log('Connected to database at:', dbPath);
+} catch (err) {
+	console.error('Could not connect to database', err);
+	process.exit(1);
+}
 
 db.prepare(`CREATE TABLE IF NOT EXISTS users (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,

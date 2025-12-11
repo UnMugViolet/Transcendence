@@ -6,8 +6,7 @@
     "tailwind": "tailwindcss -i srcs/css/index.css -o dist/css/index.css --watch",
     "build-ts": "tsc --outDir dist",
     "build-css": " npm run css && npm run tailwind",
-    "dev": "npm run build-ts && npm run build-css",
-    "build-tailwind": "tailwindcss -i srcs/style.css -o dist/style.css"
+    "build-tailwind": "tailwindcss -i srcs/css/index.css -o dist/css/index.css --minify"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.13",

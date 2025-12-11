@@ -16,6 +16,17 @@ export function initPongBtns() {
 	const btnOnline = document.getElementById('btnOnline') as HTMLButtonElement | null;
 	const btnTournament = document.getElementById('btnTournament') as HTMLButtonElement | null;
 	const btnIA = document.getElementById('btnIA') as HTMLButtonElement | null;
+	const userLoggedIn = getToken() !== null;
+
+	console.log("User logged in status:", userLoggedIn);
+
+	// Disable online and tournament buttons if not logged in
+	if (userLoggedIn) {
+		btnOnline?.classList.add('flex');
+		btnOnline?.classList.remove('hidden');
+		btnTournament?.classList.add('flex');
+		btnTournament?.classList.remove('hidden');
+	}
 
 	if (btnOffline) {
 		btnOffline.onclick = () => {
@@ -24,14 +35,14 @@ export function initPongBtns() {
 			joinGame(mode);
 		};
 	}
-	if (btnOnline) {
+	if (btnOnline && userLoggedIn) {
 		btnOnline.onclick = () => {
 			mode = '1v1Online';
 			console.log("mod selected from init: ", mode);
 			joinGame(mode);
 		};
 	}
-	if (btnTournament) {
+	if (btnTournament && userLoggedIn) {
 		btnTournament.onclick = () => {
 			mode = 'Tournament';
 			console.log("mod selected from init: ", mode);
@@ -586,8 +597,17 @@ export async function handleGameRemote(data: any) {
 
 async function joinGame(mode: string) {
 	let token = AuthManager.getToken();
+	const pongMenu = document.getElementById('pongMenu') as HTMLDivElement | null;
 
-	if (!token) {
+	if (pongMenu) {
+		pongMenu.classList.add('hidden');
+	}
+
+	// If no token and game mode offline or IA, create a temporary token
+	if (!token && (mode === '1v1Offline' || mode === 'IA')) {
+		token = AuthManager.createTemporaryToken();
+		return;
+	} else if (!token) {
 		console.warn("No token found, cannot join game.");
 		return;
 	}

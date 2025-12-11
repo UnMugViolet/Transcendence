@@ -23,12 +23,10 @@ export class ModalManager {
    * Closes a modal by adding 'hidden' class and removing 'flex' class
    */
   static closeModal(id: ModalId): void {
-    console.log("Closing modal:", id);
     const modal = document.getElementById(id);
     if (modal) {
       modal.classList.add("hidden");
       modal.classList.remove("flex");
-      console.log(`Modal ${id} closed successfully`);
     } else {
       console.error(`Modal ${id} not found`);
     }
