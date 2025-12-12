@@ -2,6 +2,7 @@ services:
   transcendence_backend:
     build:
       context: ./backend
+    image: "transcendence_backend_dev:latest"
     container_name: backend_dev
     restart: unless-stopped
     ports:
@@ -19,6 +20,7 @@ services:
     build:
       context: ./frontend
       target: development
+    image: "transcendence_frontend_dev:latest"
     container_name: frontend_dev
     restart: unless-stopped
     ports:

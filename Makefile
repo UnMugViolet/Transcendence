@@ -34,9 +34,7 @@ build-dev: ## Build development docker images
 	@echo "$(YELLOW) $(BOLD)  Building development images...$(RESET)"
 	$(DOCKER_COMPOSE) -f docker-compose.dev.yml build --no-cache
 
-re-dev: fclean build-dev dev ## Rebuild the development environment
-
-## —— Prod App handling ——————————————————————————————————————————————————————————————
+## —— Prod app handling ——————————————————————————————————————————————————————————————
 
 prod: ## Launch the docker services (production)
 	@echo "$(YELLOW) $(BOLD) Starting up production containers...$(RESET)"
@@ -57,7 +55,7 @@ push: ## Push all docker images to the registry
 	$(DOCKER_COMPOSE) push
 
 
-## —— Dev utils ——————————————————————————————————————————————————————————————
+## —— Utils ——————————————————————————————————————————————————————————————
 
 prod-logs: ## Show the logs of all containers
 	@$(DOCKER_COMPOSE) logs 
@@ -84,6 +82,7 @@ fclean: clean ## Remove all containers, images and volumes
 
 ## —— Rebuild ————————————————————————————————————————————————————————————————
 
-re: fclean build all ## Rebuild the whole project
+re: fclean build all ## Rebuild the whole production environment
+re-dev: fclean build-dev dev ## Rebuild the whole development environment
 
 .PHONY: all help up down dev dev-down dev-logs build push clean fclean re install logs 
