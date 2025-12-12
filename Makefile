@@ -13,17 +13,35 @@ GREEN = \033[0;92m
 YELLOW = \033[0;93m
 CYAN = \033[0;96m
 
-all: up
+all: prod
 
 help: ## Outputs this help screen
 	@grep -E '(^[a-zA-Z0-9_-]+:.*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}{printf "\033[32m%-30s$(CLR_RESET) %s\n", $$1, $$2}' | sed -e 's/\[32m##/[33m/'
 
-## —— App handling ——————————————————————————————————————————————————————————————
+## —— Dev app handling ——————————————————————————————————————————————————————————————
 
-up: ## Launch the docker services
-	@echo "$(YELLOW) $(BOLD) Starting up containers...$(RESET)"
+dev: ## Launch development environment with live reload
+	@echo "$(YELLOW) $(BOLD) Starting development environment...$(RESET)"
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d
+	@echo "$(GREEN)Development server available at $(RESET) $(WHITE) http://$(IP):$(PORT_DEV) $(RESET)"
+	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) http://$(IP):$(BACK_PORT) $(RESET)"
+
+dev-down: ## Stop development environment
+	@echo "$(CYAN) $(BOLD) Stopping development containers...$(RESET)"
+	$(DOCKER_COMPOSE) -f docker-compose.dev.yml down
+
+build-dev: ## Build development docker images 
+	@echo "$(YELLOW) $(BOLD)  Building development images...$(RESET)"
+	$(DOCKER_COMPOSE) -f docker-compose.dev.yml build --no-cache
+
+re-dev: fclean build-dev dev ## Rebuild the development environment
+
+## —— Prod App handling ——————————————————————————————————————————————————————————————
+
+prod: ## Launch the docker services (production)
+	@echo "$(YELLOW) $(BOLD) Starting up production containers...$(RESET)"
 	$(DOCKER_COMPOSE) up -d 
-	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) dev: http://$(IP):$(PORT_DEV) prod: https://$(IP):$(PORT_PROD) $(RESET)"
+	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) https://$(IP):$(PORT_PROD) $(RESET)"
 	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) https://$(IP):$(BACK_PORT) $(RESET)"
 
 down: ## Stop the docker services
@@ -41,8 +59,11 @@ push: ## Push all docker images to the registry
 
 ## —— Dev utils ——————————————————————————————————————————————————————————————
 
-logs: ## Show the logs of all containers
-	@$(DOCKER_COMPOSE) logs -f
+prod-logs: ## Show the logs of all containers
+	@$(DOCKER_COMPOSE) logs 
+
+dev-logs: ## Show development logs
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml logs -f
 
 install: ## Install project dependencies
 	@echo "$(GREEN) Installing backend dependencies...$(RESET)"
@@ -65,4 +86,4 @@ fclean: clean ## Remove all containers, images and volumes
 
 re: fclean build all ## Rebuild the whole project
 
-.PHONY: all help up down build push clean fclean re 
+.PHONY: all help up down dev dev-down dev-logs build push clean fclean re install logs 

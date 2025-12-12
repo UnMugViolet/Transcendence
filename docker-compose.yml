@@ -7,15 +7,16 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - .env
+      - backend/.env
     volumes:
-      - ./backend/data:/app/data
-      - ./backend/img:/app/img
-      - ./backend/srcs:/app/srcs
+      - backend_data:/app/data
+      - backend_img:/app/img
+      - backend_srcs:/app/srcs
 
   transcendence_frontend:
     build:
       context: ./frontend
+      target: production
     container_name: frontend
     restart: unless-stopped
     ports:
@@ -23,5 +24,11 @@ services:
       - "8443:443"
     depends_on:
       - transcendence_backend
-    volumes:
-      - ./frontend/srcs:/usr/share/nginx/html/srcs/languages
+  
+volumes:
+  backend_data:
+    driver: local
+  backend_srcs:
+    driver: local
+  backend_img:
+    driver: local
