@@ -1,0 +1,35 @@
+services:
+  transcendence_backend:
+    build:
+      context: ./backend
+    image: "transcendence_backend_dev:latest"
+    container_name: backend_dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/img:/app/img
+      - ./backend/srcs:/app/srcs
+      - ./backend/package.json:/app/package.json
+      - ./backend/languages:/app/languages
+
+  transcendence_frontend:
+    build:
+      context: ./frontend
+      target: development
+    image: "transcendence_frontend_dev:latest"
+    container_name: frontend_dev
+    restart: unless-stopped
+    ports:
+      - "8080:3001"  # Development server port
+    depends_on:
+      - transcendence_backend
+    volumes:
+      - ./frontend:/app
+      - ./frontend/srcs/languages:/app/languages
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
