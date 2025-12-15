@@ -101,6 +101,7 @@ class Application {
         LanguageManager.init();
         Router.init();
         initPongBtns();
+        console.log("Init pond buttons");
 
         // Handle authentication state
         await this.handleAuthenticationState();

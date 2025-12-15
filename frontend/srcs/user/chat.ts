@@ -37,7 +37,7 @@
  });
 
  export function initChatSocket(token: string, onReady?: () => void) {
-	// If the WS exists and is already opened, do nothing
+	// If the WS exists and is already opened with the same token context, do nothing
     if (ws && ws.readyState === WebSocket.OPEN) {
         console.log("WebSocket already connected");
         if (onReady) onReady();
@@ -48,6 +48,7 @@
     if (ws && ws.readyState !== WebSocket.CLOSED) {
         console.log("Closing existing WebSocket connection");
         ws.close();
+        ws = null; // Set to null immediately to allow new connection
     }
     
 	// Clear global chat messages

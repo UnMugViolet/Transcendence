@@ -89,7 +89,9 @@ formProfile?.addEventListener("submit", async (e) => {
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error || i18n.t("errorName"));
 			const welcomeMessage: HTMLElement | null = document.getElementById("welcomeMessage");
-			if (welcomeMessage) welcomeMessage.textContent = name;
+			if (welcomeMessage) {
+				welcomeMessage.textContent = name;
+			}
 			sessionStorage.setItem("username", name);
 		}
 

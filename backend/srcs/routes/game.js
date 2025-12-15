@@ -91,9 +91,15 @@ export const pauseLoop = setInterval(() => {
 
 		if (Date.now() - pause >= 90000) {
 			partyQueries.updateStatus(party.id, 'active');
-			const player = partyPlayerQueries.findByPartyIdAndStatus(party.id, 'disconnected')[0];
-			console.log(`\x1b[33mResuming game for party ${party.id} after timeout, player ${player.user_id} eliminated\x1b[0m`);
-			partyPlayerQueries.updateStatus('left', party.id, player.user_id);
+			const player = partyPlayerQueries.findByPartyIdAndStatus(party.id, 'disconnected')?.[0];
+			
+			if (player) {
+				console.log(`\x1b[33mResuming game for party ${party.id} after timeout, player ${player.user_id} eliminated\x1b[0m`);
+				partyPlayerQueries.updateStatus('left', party.id, player.user_id);
+			} else {
+				console.log(`\x1b[33mResuming game for party ${party.id} after timeout (no disconnected players found)\x1b[0m`);
+			}
+			
 			partiesPaused = partyQueries.findByStatus('paused');
 			parties = partyQueries.findByStatus('active');
 			pauses.delete(party.id);

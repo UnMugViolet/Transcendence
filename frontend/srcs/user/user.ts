@@ -17,11 +17,13 @@ export class UserManager implements User {
   id: number;
   name: string;
   profile_picture?: string | undefined;
+  role: string;
 
-  constructor(id: number, name: string, profile_picture?: string) {
+  constructor(id: number, name: string, role: string, profile_picture?: string) {
     this.id = id;
     this.name = name;
     this.profile_picture = profile_picture;
+    this.role = role;
   }
 
   /**
@@ -32,8 +34,8 @@ export class UserManager implements User {
   /**
    * Creates a new user instance and sets it as current
    */
-  static createUser(id: number, name: string, profile_picture?: string): UserManager {
-    this.currentUser = new UserManager(id, name, profile_picture);
+  static createUser(id: number, name: string, role: string, profile_picture?: string): UserManager {
+    this.currentUser = new UserManager(id, name, role,  profile_picture);
     return this.currentUser;
   }
 
@@ -42,6 +44,13 @@ export class UserManager implements User {
    */
   static getCurrentUser(): UserManager | null {
     return this.currentUser;
+  }
+
+  /**
+   * Gets the current user role
+   */
+  static getCurrentUserRole(): string | null {
+    return this.currentUser ? this.currentUser.role : null;
   }
 
   /**
@@ -54,11 +63,31 @@ export class UserManager implements User {
   /**
    * Updates the current user's profile information
    */
-  updateProfile(name?: string, profile_picture?: string): void {
-    if (name !== undefined) this.name = name;
-    if (profile_picture !== undefined) this.profile_picture = profile_picture;
+  updateProfile(name?: string,profile_picture?: string): void {
+    if (name !== undefined) {
+      this.name = name;
+    }
+    if (profile_picture !== undefined) {
+      this.profile_picture = profile_picture;
+    }
   }
 
+  /**
+   * Checks if the user has a 'demo' role
+   * @return boolean - true if the user is a demo user
+   */
+  static isUserDemo(): boolean {
+    return UserManager.getCurrentUserRole() === 'demo';
+  }
+
+  /** 
+   * Checks if the user is logged in by checking if the role is not null
+   * @return boolean - true if the user is logged in
+  */
+  static isUserLoggedIn(): boolean {
+    return UserManager.getCurrentUserRole() !== null;
+  }
+  
   /**
    * Gets the user's profile picture URL
    */
@@ -87,7 +116,9 @@ export class UserManager implements User {
       userInfo.classList.add("flex");
       
       const welcomeMessage = document.getElementById("welcomeMessage");
-      if (welcomeMessage) welcomeMessage.textContent = username;
+      if (welcomeMessage) {
+        welcomeMessage.textContent = username;
+      }
 
       // Set user avatar
       if (profilePicture) {
@@ -113,9 +144,11 @@ export class UserManager implements User {
   /**
    * Sets the user avatar and click handler
    */
-  private static setUserAvatar(profilePicture: string): void {
+  private static setUserAvatar(profilePicture?: string): void {
     const userAvatar = document.getElementById("userAvatar") as HTMLImageElement | null;
     if (userAvatar) {
+      if (!profilePicture) 
+        profilePicture = "default_avatar.png";
       userAvatar.src = `${BACKEND_URL}/img/${profilePicture}`;
       userAvatar.addEventListener("click", () => {
         const profileModal = document.getElementById("modalProfile");

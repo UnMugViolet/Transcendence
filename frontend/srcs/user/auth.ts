@@ -89,7 +89,9 @@ export class AuthManager {
       return this.getToken() as string;
     }
     const tempToken = 'temp-offline-token-' + Math.random().toString(36).substring(2);
+    // Store in both sessionStorage and localStorage so it persists across refreshes
     sessionStorage.setItem("token", tempToken);
+    localStorage.setItem("token", tempToken);
     return tempToken;
   }
 
@@ -150,8 +152,8 @@ export class AuthManager {
    * @returns Promise<boolean> - true if demo user was created successfully
    */
   static async createDemoUser(): Promise<boolean> {
-    const token = this.getToken();
-    if (token && this.isTemporaryToken(token)) {
+    const userInfo = document.getElementById("userInfo") as HTMLElement | null;
+
       // Call backend API to create demo user
       try {
         const DemoUserDataJson = await this.getDemoUserData();
@@ -178,42 +180,47 @@ export class AuthManager {
           throw new Error(data.error || "Failed to create demo user");
         }
 
+        // Store new tokens in both sessionStorage and localStorage so they persist across refreshes
         AuthManager.storeTokens({
           accessToken: data.accessToken,
           refreshToken: data.refreshToken
-        }, false);
+        }, true); // Store in localStorage
 
-        await UserManager.fetchUserProfile();
-        initChatSocket(data.accessToken, () => {
-          console.log("Chat WebSocket ready after demo user creation");
-        });
 
         console.log("Demo user created successfully:", demoUsername);
+
+        UserManager.setLoggedInState(demoUsername, undefined);
+        
         return true;
       }
       catch (error) {
         console.error("Error creating demo user:", error);
         return false;
       }
-    }
-    return false;
   }
 
   /**
    * Ensures user is ready for online play by creating demo user if needed
+   * this done by checking if the user has a role
    * @returns Promise<boolean> - true if user is ready for online play
    */
   static async ensureUserReady(): Promise<boolean> {
+    const role = UserManager.getCurrentUserRole() as string | null;
     const token = this.getToken();
-    if (!token) {
-      this.createTemporaryToken();
+
+    // If user already has a token (demo or authenticated), they're ready
+    if (token) {
+      console.log("User has existing token, they're ready for online play");
       return true;
     }
 
-    if (this.isTemporaryToken(token)) {
+    // Only create demo user if there's no token at all
+    if (!role) {
+      console.log("No role found, cannot ensure user is ready");
       return await this.createDemoUser();
     }
 
-    return true; // User already has real tokens
+
+    return true; // User already has a role, no need to create demo user
   }
 }

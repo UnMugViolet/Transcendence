@@ -1,6 +1,6 @@
 import { BACKEND_URL } from "../utils/config.js";
 import { ws as socket } from "../user/chat.js";
-import { handleRoute, getToken, ModalManager } from "../index.js";
+import { handleRoute, getToken, ModalManager, UserManager } from "../index.js";
 import { initChatSocket } from "../user/chat.js";
 import { i18n } from "../utils/i18n.js";
 import { AuthManager } from "../user/auth.js";
@@ -16,13 +16,16 @@ export function initPongBtns() {
 	const btnOnline = document.getElementById('btnOnline') as HTMLButtonElement | null;
 	const btnTournament = document.getElementById('btnTournament') as HTMLButtonElement | null;
 	const btnIA = document.getElementById('btnIA') as HTMLButtonElement | null;
-	const userLoggedIn = getToken() !== null;
-	let isTemporaryToken = AuthManager.isTemporaryToken(getToken() || '') as boolean;
 
-	console.log("User logged in status:", userLoggedIn, "Token temp ? ", isTemporaryToken);
+	let userLoggedIn = UserManager.isUserLoggedIn() as boolean;
+	let isDemoUser = UserManager.isUserDemo() as boolean;
+	let currentUserRole = UserManager.getCurrentUserRole() as string;
+	let userName = UserManager.getCurrentUser()?.name as string | null;
+
+	console.log("User logged in status:", userLoggedIn, "Demo user ? ", isDemoUser, "User name:", userName);
 
 	// Disable online and tournament buttons if not logged in
-	if (userLoggedIn && !isTemporaryToken) {
+	if (currentUserRole == 'admin' || currentUserRole == 'user') {
 		btnOnline?.classList.add('flex');
 		btnOnline?.classList.remove('hidden');
 		btnTournament?.classList.add('flex');
@@ -34,39 +37,50 @@ export function initPongBtns() {
 		btnTournament?.classList.remove('flex');
 	}
 
+
 	if (btnOffline) {
 		btnOffline.onclick = async () => {
 			mode = '1v1Offline';
-			console.log("mod selected from init: ", mode);
 			
 			// Ensure user is ready for online play (create demo user if needed)
 			const userReady = await AuthManager.ensureUserReady();
 			if (userReady) {
+				// Close old socket if it exists, to force reconnection with new token
+				if (socket && socket.readyState === WebSocket.OPEN) {
+					socket.close();
+				}
 				joinGame(mode);
 			} else {
 				console.error("Failed to prepare user for online play");
 			}
 		};
 	}
-	if (btnOnline && userLoggedIn && !isTemporaryToken) {
+	if (btnOnline && userLoggedIn && !isDemoUser) {
 		btnOnline.onclick = () => {
 			mode = '1v1Online';
-			console.log("mod selected from init: ", mode);
 			joinGame(mode);
 		};
 	}
-	if (btnTournament && userLoggedIn && !isTemporaryToken) {
+	if (btnTournament && userLoggedIn && !isDemoUser) {
 		btnTournament.onclick = () => {
 			mode = 'Tournament';
-			console.log("mod selected from init: ", mode);
 			joinGame(mode);
 		};
 	}
 	if (btnIA) {
-		btnIA.onclick = () => {
+		btnIA.onclick = async () => {
 			mode = 'IA';
-			console.log("mod selected from init: ", mode);
-			joinGame(mode);
+
+			const userReady = await AuthManager.ensureUserReady();
+			if (userReady) {
+				// Close old socket if it exists, to force reconnection with new token
+				if (socket && socket.readyState === WebSocket.OPEN) {
+					socket.close();
+				}
+				joinGame(mode);
+			} else {
+				console.error("Failed to prepare user for online play");
+			}
 		};
 	}
 }
@@ -542,10 +556,10 @@ function startTimer(sec: number) {
 }
 
 export async function handleGameRemote(data: any) {
-	console.log("handleGameRemote called with:", data); // DEBUG
+	// console.log("handleGameRemote called with:", data); // DEBUG
 	
 	if (data.type === "start" && !started) {
-		console.log("Processing start message"); // DEBUG
+		// console.log("Processing start message"); // DEBUG
 		modalGamePause?.classList.add("hidden");
 		if (pauseInterval) clearInterval(pauseInterval);
 		const resume = data.resume || false;
@@ -586,8 +600,8 @@ export async function handleGameRemote(data: any) {
 	}
 	if (data.type === "game" && started) {
 		const value = data.data;
-		console.log("Received game data from server:", value); // DEBUG
-		console.log("Canvas dimensions:", {width, height}); // DEBUG
+		// console.log("Received game data from server:", value); // DEBUG
+		// console.log("Canvas dimensions:", {width, height}); // DEBUG
 		lastServerUpdateTs = performance.now();
 		warnedNoServerUpdates = false;
 		
@@ -684,6 +698,15 @@ async function joinGame(mode: string) {
 			sessionStorage.setItem("team", data.team);
 		}
 
+		// Check if this is a rejoin of an active party
+		const isRejoin = data.message && data.message.includes('Rejoined');
+		if (isRejoin) {
+			console.log("Rejoined active party, waiting for game state...");
+			// Wait a bit for the server to send game state and resume message
+			await new Promise(resolve => setTimeout(resolve, 500));
+			return;
+		}
+
 		ctx.clearRect(0, 0, width, height);
 		ctx.font = "40px Arial";
 		ctx.fillStyle = "rgb(254, 243, 199)";
@@ -691,7 +714,7 @@ async function joinGame(mode: string) {
 		
 		// Different messages for different modes
 		if (mode === '1v1Offline') {
-			ctx.fillText(i18n.t("offlineGameReady") || "Offline Game Ready - Click Start to Play!", width / 2, height / 2);
+			ctx.fillText(i18n.t("offlineGameReady") || "", width / 2, height / 2);
 		} else if (mode === 'IA') {
 			ctx.fillText(i18n.t("aiGameReady") || "AI Game Ready - Click Start to Play!", width / 2, height / 2);
 		} else {
