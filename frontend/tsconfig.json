@@ -4,6 +4,7 @@
     "module": "ES6",
     "moduleResolution": "Node",
     "strict": true,
+    "resolveJsonModule": true,
     "esModuleInterop": true,
     "outDir": "dist",
     "rootDir": "srcs",

@@ -17,11 +17,12 @@ export function initPongBtns() {
 	const btnTournament = document.getElementById('btnTournament') as HTMLButtonElement | null;
 	const btnIA = document.getElementById('btnIA') as HTMLButtonElement | null;
 	const userLoggedIn = getToken() !== null;
+	let isTemporaryToken = AuthManager.isTemporaryToken(getToken() || '') as boolean;
 
-	console.log("User logged in status:", userLoggedIn);
+	console.log("User logged in status:", userLoggedIn, "Token temp ? ", isTemporaryToken);
 
 	// Disable online and tournament buttons if not logged in
-	if (userLoggedIn) {
+	if (userLoggedIn && !isTemporaryToken) {
 		btnOnline?.classList.add('flex');
 		btnOnline?.classList.remove('hidden');
 		btnTournament?.classList.add('flex');
@@ -34,20 +35,27 @@ export function initPongBtns() {
 	}
 
 	if (btnOffline) {
-		btnOffline.onclick = () => {
+		btnOffline.onclick = async () => {
 			mode = '1v1Offline';
 			console.log("mod selected from init: ", mode);
-			joinGame(mode);
+			
+			// Ensure user is ready for online play (create demo user if needed)
+			const userReady = await AuthManager.ensureUserReady();
+			if (userReady) {
+				joinGame(mode);
+			} else {
+				console.error("Failed to prepare user for online play");
+			}
 		};
 	}
-	if (btnOnline && userLoggedIn) {
+	if (btnOnline && userLoggedIn && !isTemporaryToken) {
 		btnOnline.onclick = () => {
 			mode = '1v1Online';
 			console.log("mod selected from init: ", mode);
 			joinGame(mode);
 		};
 	}
-	if (btnTournament && userLoggedIn) {
+	if (btnTournament && userLoggedIn && !isTemporaryToken) {
 		btnTournament.onclick = () => {
 			mode = 'Tournament';
 			console.log("mod selected from init: ", mode);
@@ -736,7 +744,9 @@ async function joinGame(mode: string) {
 	} catch (err) {
 		console.error("Error Join Game:", err);
 	}
-}function isTyping() {
+}
+
+function isTyping() {
 	const el = document.activeElement as HTMLElement | null;
 	if (!el) return false;
 	const tag = el.tagName;
@@ -751,7 +761,9 @@ async function joinGame(mode: string) {
 
 window.addEventListener("keydown", (event) => {
 	// ignore movement keys when typing in an input/textarea or contenteditable
-	if (isTyping()) return;
+	if (isTyping()) {
+		return ;
+	}
 	
 	// Player 1 controls (WASD) - always available in offline mode, or when user is team 1
 	if (event.key === "w" || event.key === "W") {

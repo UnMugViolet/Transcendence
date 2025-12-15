@@ -51,7 +51,7 @@ async function authRoutes(fastify) {
 		const hashedPass = bcrypt.hashSync(password, 10);
 
 		try {
-			const info = db.prepare('INSERT INTO users (name, password, last_seen, created_at) VALUES (?, ?, ?, ?)').run(name, hashedPass, Date.now(), Date.now());
+			const info = db.prepare('INSERT INTO users (name, pass, last_seen, created_at) VALUES (?, ?, ?, ?)').run(name, hashedPass, Date.now(), Date.now());
 
 			console.log("User ", name, " added with ID:", info.lastInsertRowid);
 			return genKey(info.lastInsertRowid, name, stayConnect, request.headers['user-agent']);
@@ -83,7 +83,7 @@ async function authRoutes(fastify) {
 			return reply.status(404).send({ error: 'User not found' });
 		}
 
-		const isValidPass = bcrypt.compareSync(password, user.password);
+		const isValidPass = bcrypt.compareSync(password, user.pass);
 		if (!isValidPass) {
 			return reply.status(401).send({ error: 'Invalid password' });
 		}

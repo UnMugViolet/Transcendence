@@ -11,7 +11,7 @@ import { i18n } from "./i18n.js";
  */
 export class FormManager {
   /**
-   * Sets up all form event listeners
+   * Sets up all form event listenersF
    */
   static setupFormListeners(): void {
     this.setupSignUpForm();
@@ -46,6 +46,7 @@ export class FormManager {
             name: username,
             password: password,
             stayConnect: stayConnected,
+            role : "user"
           }),
         });
 
