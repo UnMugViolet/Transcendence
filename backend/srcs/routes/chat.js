@@ -26,6 +26,7 @@ import {
 	addSenderName
 } from '../services/chat-service.js';
 import { movePlayer, pauseGameFromWS, sendSysMessage } from './game.js';
+import metrics from '../metrics.js';
 
 const clients = new Map();
 
@@ -160,6 +161,7 @@ async function chat(fastify) {
 			if (payload.type !== 'access') throw new Error('Unauthorized');
 
 			clients.set(payload.id, connection.socket || connection);
+			metrics.recordWebSocketConnection();
 			console.log(`🔌 Client connecté : ${payload.name} (ID: ${payload.id})`);
 			console.log(`DEBUG: Total clients connected: ${clients.size}`);
 			console.log(`DEBUG: Client IDs: [${Array.from(clients.keys()).join(', ')}]`);
@@ -240,6 +242,7 @@ async function chat(fastify) {
 				
 				console.log(`❌ Client ${payload.name} déconnecté (ID: ${payload.id})`);
 				clients.delete(payload.id);
+				metrics.recordWebSocketDisconnection();
 				console.log(`DEBUG: Clients after disconnect: ${clients.size} remaining`);
 			});
 

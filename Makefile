@@ -1,6 +1,7 @@
 APP_NAME 	= Transcendance
 IP 			= localhost
 PORT_DEV 	= 8080
+PORT_GF 	= 10100
 PORT_PROD 	= 8443
 BACK_PORT 	= 3000
 
@@ -25,6 +26,7 @@ dev: ## Launch development environment with live reload
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d
 	@echo "$(GREEN)Development server available at $(RESET) $(WHITE) http://$(IP):$(PORT_DEV) $(RESET)"
 	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) http://$(IP):$(BACK_PORT) $(RESET)"
+	@echo "$(GREEN)Grafana server available at $(RESET) $(WHITE) http://$(IP):$(PORT_GF) $(RESET)"
 
 dev-down: ## Stop development environment
 	@echo "$(CYAN) $(BOLD) Stopping development containers...$(RESET)"

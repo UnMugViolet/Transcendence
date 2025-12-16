@@ -5,6 +5,7 @@ import { initializeTournament, setupNextMatch, sendNextGameMessage } from '../se
 import { sendSysMessage, sendGameStateToPlayers } from '../services/message-service.js';
 import { GAME_CONSTANTS } from '../services/game-logic.js';
 import { clients } from './chat.js';
+import metrics from '../metrics.js';
 
 // Game state
 const games = new Map();
@@ -25,10 +26,15 @@ export function pauseGameFromWS(partyId, userId) {
 
 // Game loop for updating ball physics and sending state to clients
 export const gameLoop = setInterval(() => {
+	metrics.recordGameLoopIteration();
+	
 	if (!parties || parties.length === 0) {
 		// Refresh parties list if empty
 		parties = partyQueries.findByStatus('active');
 	}
+	
+	// Update active games metric
+	metrics.setActiveGames(parties?.length || 0);
 	
 	parties?.forEach(party => {
 		const players = partyPlayerQueries.findByPartyId(party.id);

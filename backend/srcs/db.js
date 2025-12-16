@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { USER_CREATION_CONSTANTS } from './utils.js';
+import metrics from './metrics.js';
 
 // Ensure the database directory exists
 const dbFile = process.env.DB_FILE || 'default_name.sqlite';
@@ -37,6 +38,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS users (
 	name VARCHAR(${USER_CREATION_CONSTANTS.MAX_NAME_LENGTH}) NOT NULL UNIQUE COLLATE NOCASE,
 	password VARCHAR(255) NOT NULL,
 	profile_picture TEXT NOT NULL DEFAULT 'default.jpg',
+	role TEXT NOT NULL DEFAULT 'user',
 	last_seen INTEGER NOT NULL,
 	created_at INTEGER NOT NULL
 )`).run();
@@ -126,4 +128,59 @@ db.prepare(`CREATE TABLE IF NOT EXISTS messages (
 	FOREIGN KEY (receiver_id) REFERENCES users(id)
 )`).run();
 
+// Wrap db methods to track query metrics
+const originalPrepare = db.prepare.bind(db);
+db.prepare = function(sql) {
+	const stmt = originalPrepare(sql);
+	const originalRun = stmt.run.bind(stmt);
+	const originalGet = stmt.get.bind(stmt);
+	const originalAll = stmt.all.bind(stmt);
+	
+	stmt.run = function(...args) {
+		const start = Date.now();
+		try {
+			const result = originalRun(...args);
+			const duration = (Date.now() - start) / 1000;
+			metrics.recordQueryDuration('write', duration);
+			return result;
+		} catch (err) {
+			const duration = (Date.now() - start) / 1000;
+			metrics.recordQueryDuration('write_error', duration);
+			throw err;
+		}
+	};
+	
+	stmt.get = function(...args) {
+		const start = Date.now();
+		try {
+			const result = originalGet(...args);
+			const duration = (Date.now() - start) / 1000;
+			metrics.recordQueryDuration('read', duration);
+			return result;
+		} catch (err) {
+			const duration = (Date.now() - start) / 1000;
+			metrics.recordQueryDuration('read_error', duration);
+			throw err;
+		}
+	};
+	
+	stmt.all = function(...args) {
+		const start = Date.now();
+		try {
+			const result = originalAll(...args);
+			const duration = (Date.now() - start) / 1000;
+			metrics.recordQueryDuration('read', duration);
+			return result;
+		} catch (err) {
+			const duration = (Date.now() - start) / 1000;
+			metrics.recordQueryDuration('read_error', duration);
+			throw err;
+		}
+	};
+	
+	
+	return stmt;
+};
+
+export { dbPath };
 export default db;
