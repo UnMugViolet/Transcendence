@@ -1,7 +1,6 @@
-import { BACKEND_URL } from "../utils/config.js";
 import { AuthTokens, StorageType, AuthResponse } from "../types/types.js";
 import { UserManager } from "../user/user.js";
-import { initChatSocket } from "../user/chat.js";
+import { FormManager } from "../utils/forms.js";
 
  /**
   * Authentication utilities and token management for frontend.
@@ -42,6 +41,13 @@ export class AuthManager {
    */
   static storeTokens(tokens: AuthTokens, persistent: boolean = false): void {
     const storage: StorageType = persistent ? localStorage : sessionStorage;
+    const otherStorage: StorageType = persistent ? sessionStorage : localStorage;
+    
+    // Clear the other storage to avoid conflicts
+    otherStorage.removeItem("token");
+    otherStorage.removeItem("refreshToken");
+    
+    // Store in the desired storage
     storage.setItem("token", tokens.accessToken);
     storage.setItem("refreshToken", tokens.refreshToken);
   }
@@ -75,6 +81,15 @@ export class AuthManager {
    */
   static isAuthenticated(): boolean {
     return !!(this.getToken() && this.getRefreshToken());
+  }
+
+  /**
+   * Checks if user has role demo
+   * @return boolean - true if user role is demo
+   */
+  static isDemoUser(): boolean {
+    const currentUser = UserManager.getCurrentUser();
+    return currentUser ? currentUser.role === 'demo' : false;
   }
 
   /**
@@ -148,58 +163,6 @@ export class AuthManager {
   }
 
   /**
-   * Creates a demo user on the backend for temporary token users
-   * @returns Promise<boolean> - true if demo user was created successfully
-   */
-  static async createDemoUser(): Promise<boolean> {
-    const userInfo = document.getElementById("userInfo") as HTMLElement | null;
-
-      // Call backend API to create demo user
-      try {
-        const DemoUserDataJson = await this.getDemoUserData();
-
-        // Generate random username and password
-        const demoUsername = this.generateRandomUsername(DemoUserDataJson);
-        const password = this.generateRandomPassword();
-
-        console.log("Creating demo user with username:", demoUsername);
-
-        const response = await fetch(`${BACKEND_URL}/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: demoUsername,
-            password: password,
-            role: "demo",
-            stayConnect: false,
-          }),
-        })
-
-        const data: AuthResponse = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to create demo user");
-        }
-
-        // Store new tokens in both sessionStorage and localStorage so they persist across refreshes
-        AuthManager.storeTokens({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken
-        }, true); // Store in localStorage
-
-
-        console.log("Demo user created successfully:", demoUsername);
-
-        UserManager.setLoggedInState(demoUsername, undefined);
-        
-        return true;
-      }
-      catch (error) {
-        console.error("Error creating demo user:", error);
-        return false;
-      }
-  }
-
-  /**
    * Ensures user is ready for online play by creating demo user if needed
    * this done by checking if the user has a role
    * @returns Promise<boolean> - true if user is ready for online play
@@ -208,7 +171,13 @@ export class AuthManager {
     const role = UserManager.getCurrentUserRole() as string | null;
     const token = this.getToken();
 
-    // If user already has a token (demo or authenticated), they're ready
+    // If user has a temporary token, replace it with a real demo account
+    if (token && this.isTemporaryToken(token)) {
+      console.log("User has temporary token, creating demo user...");
+      return await FormManager.createDemoUser();
+    }
+
+    // If user already has a real token (demo or authenticated), they're ready
     if (token) {
       console.log("User has existing token, they're ready for online play");
       return true;
@@ -217,9 +186,8 @@ export class AuthManager {
     // Only create demo user if there's no token at all
     if (!role) {
       console.log("No role found, cannot ensure user is ready");
-      return await this.createDemoUser();
+      return await FormManager.createDemoUser();
     }
-
 
     return true; // User already has a role, no need to create demo user
   }

@@ -123,8 +123,12 @@ formProfile?.addEventListener("submit", async (e) => {
 				body: formData,
 			});
 			const data = await res.json();
-			if (!res.ok) throw new Error(data.error || i18n.t("errorPp"));
-			if (userAvatar) userAvatar.src = `${BACKEND_URL}/img/${data.filename}`;
+			if (!res.ok) {
+				throw new Error(data.error || i18n.t("errorPp"));
+			}
+			if (userAvatar) {
+				userAvatar.src = `${BACKEND_URL}/img/${data.filename}`;
+			}
 			sessionStorage.setItem("profilePicture", data.filename);
 		}
 

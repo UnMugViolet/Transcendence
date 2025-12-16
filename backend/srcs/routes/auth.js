@@ -135,6 +135,39 @@ async function authRoutes(fastify) {
 		const newAccessToken = fastify.jwt.sign({ id: user.id, name: user.name, type: 'access' }, { expiresIn: '20min' });
 		return { newAccessToken };
 	});
+
+
+
+	// TODO : check if the user has the right to delete the account by taking its token and the token in body
+	fastify.delete('/user', async (request, reply) => {
+		const { token } = request.body;
+
+		if (!token) {
+			return reply.status(400).send({ error: 'Token is required' });
+		}
+
+		try {
+			const payload = fastify.jwt.verify(token);
+			if (payload.type !== 'refresh') {
+				return reply.status(401).send({ error: 'Unauthorized' });
+			}
+		} catch (err) {
+			return reply.status(401).send({ error: 'Invalid token' });
+		}
+
+		const tokenInfo = db.prepare('SELECT * FROM refresh_tokens WHERE token = ?').get(token);
+		if (!tokenInfo) {
+			return reply.status(404).send({ error: 'Token not found' });
+		}
+
+		const userId = tokenInfo.user_id;
+
+		db.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').run(userId);
+		db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+
+		console.log("User with ID ", userId, " deleted successfully.");
+		return { message: 'User deleted successfully' };
+	});
 }
 
 export default authRoutes;

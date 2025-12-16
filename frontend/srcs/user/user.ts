@@ -9,6 +9,7 @@ import { initNotifications } from "./notif.js";
 import { handleRoute } from "../route/router.js";
 
 import { loadFriends } from "./friends.js";
+import { FormManager } from "../utils/forms.js";
 
 /**
  * User management and authentication state
@@ -120,10 +121,8 @@ export class UserManager implements User {
         welcomeMessage.textContent = username;
       }
 
-      // Set user avatar
-      if (profilePicture) {
-        this.setUserAvatar(profilePicture);
-      }
+      // Always set user avatar (for both authenticated users and demo users)
+      this.setUserAvatar(profilePicture);
     }
 
     // Show notifications
@@ -142,14 +141,28 @@ export class UserManager implements User {
   }
 
   /**
+   * Restores user avatar display when navigating back to views with user info
+   */
+  static restoreUserAvatar(): void {
+    const currentUser = this.getCurrentUser();
+    if (currentUser) {
+      this.setUserAvatar(currentUser.profile_picture);
+    }
+  }
+
+  /**
    * Sets the user avatar and click handler
    */
   private static setUserAvatar(profilePicture?: string): void {
     const userAvatar = document.getElementById("userAvatar") as HTMLImageElement | null;
     if (userAvatar) {
-      if (!profilePicture) 
-        profilePicture = "default_avatar.png";
-      userAvatar.src = `${BACKEND_URL}/img/${profilePicture}`;
+      // For demo users without a profile picture, use a default avatar or leave empty
+      if (profilePicture) {
+        userAvatar.src = `${BACKEND_URL}/img/${profilePicture}`;
+      } else {
+        // Use a simple default or data URI for demo users
+        userAvatar.src = `${BACKEND_URL}/img/default.jpg`;
+      }
       userAvatar.addEventListener("click", () => {
         const profileModal = document.getElementById("modalProfile");
         if (profileModal) {
@@ -181,11 +194,19 @@ export class UserManager implements User {
 
   /**
    * Logs out the user and resets UI state
+   * In case the user is a demo user, backend is called to delete the demo account
+   * @return void
    */
   static logout(): void {
     const authButtons = document.getElementById("authButtons");
     const userInfo = document.getElementById("userInfo");
     const btnLogout = document.getElementById("btnLogout");
+
+
+    if (AuthManager.isDemoUser()) {
+      console.log("Deleting demo user on logout");
+      FormManager.deleteUser(AuthManager.getToken() as string);
+    }
 
     console.log("Logging out user");
     // Clear authentication data
@@ -236,8 +257,12 @@ export class UserManager implements User {
     const inputName = document.getElementById("usernameSignIn") as HTMLInputElement | null;
     const inputPass = document.getElementById("passwordSignIn") as HTMLInputElement | null;
     
-    if (inputName) inputName.value = "";
-    if (inputPass) inputPass.value = "";
+    if (inputName) {
+      inputName.value = "";
+    }
+    if (inputPass) {
+      inputPass.value = "";
+    }
   }
 }
 
@@ -245,3 +270,4 @@ export class UserManager implements User {
 export const setLoggedInState = UserManager.setLoggedInState.bind(UserManager);
 export const fetchUserProfile = UserManager.fetchUserProfile.bind(UserManager);
 export const logout = UserManager.logout.bind(UserManager);
+export const restoreUserAvatar = UserManager.restoreUserAvatar.bind(UserManager);

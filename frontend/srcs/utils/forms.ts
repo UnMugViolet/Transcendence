@@ -182,4 +182,97 @@ export class FormManager {
       stayConnected: stayConnectedEl.checked,
     };
   }
+
+  /**
+   * Creates a demo user on the backend for temporary token users
+   * @returns Promise<boolean> - true if demo user was created successfully
+   */
+  static async createDemoUser(): Promise<boolean> {
+
+      // Call backend API to create demo user
+      try {
+        const DemoUserDataJson = await AuthManager.getDemoUserData();
+
+        // Generate random username and password
+        const demoUsername = AuthManager.generateRandomUsername(DemoUserDataJson);
+        const password = AuthManager.generateRandomPassword();
+
+        console.log("Creating demo user with username:", demoUsername);
+
+        const response = await fetch(`${BACKEND_URL}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: demoUsername,
+            password: password,
+            role: "demo",
+            stayConnect: false,
+          }),
+        })
+
+        const data: AuthResponse = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to create demo user");
+        }
+
+        // Store new tokens in both sessionStorage and localStorage so they persist across refreshes
+        AuthManager.storeTokens({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken
+        }, true); // Store in localStorage
+
+        // Decode JWT to get user ID
+        const tokenParts = data.accessToken.split('.');
+        if (tokenParts.length === 3) {
+          const decoded = JSON.parse(atob(tokenParts[1]));
+          const userId = decoded.id;
+          // Set the current user in UserManager with demo role
+          UserManager.createUser(userId, demoUsername, 'demo');
+        }
+
+        console.log("Demo user created successfully:", demoUsername);
+
+        UserManager.setLoggedInState(demoUsername, undefined);
+        
+        // Re-initialize pong buttons to reflect demo user status
+        const { initPongBtns } = await import('../game/game.js');
+        initPongBtns();
+        
+        return true;
+      }
+      catch (error) {
+        console.error("Error creating demo user:", error);
+        return false;
+      }
+  }
+
+  /**
+   * Calls the backend to delete a given user base on their token
+   * @param userToken - The token of the user to delete
+   * @returns Promise<boolean> - true if demo user was deleted successfully
+   */
+  static async deleteUser(userToken: string): Promise<boolean> {
+    try {
+
+      const response = await fetch(`${BACKEND_URL}/user`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: userToken
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to delete user");
+      }
+
+      console.log("User deleted successfully");
+      return true;
+    }
+    catch (error) {
+      console.error("Error deleting user:", error);
+      return false;
+    }
+  }
 }

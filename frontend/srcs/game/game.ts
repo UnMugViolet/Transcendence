@@ -556,10 +556,8 @@ function startTimer(sec: number) {
 }
 
 export async function handleGameRemote(data: any) {
-	// console.log("handleGameRemote called with:", data); // DEBUG
 	
 	if (data.type === "start" && !started) {
-		// console.log("Processing start message"); // DEBUG
 		modalGamePause?.classList.add("hidden");
 		if (pauseInterval) clearInterval(pauseInterval);
 		const resume = data.resume || false;
@@ -567,17 +565,19 @@ export async function handleGameRemote(data: any) {
 		gameId = data.game;
 		team = data.team;
 
-		console.log("Game ID set to:", gameId, "Team set to:", team); // DEBUG
 
 		if (data.players && Array.isArray(data.players)) {
 			const p1 = (data.players as Array<any>).find(p => p.team === 1);
 			const p2 = (data.players as Array<any>).find(p => p.team === 2);
-			if (p1 && p1.name) sessionStorage.setItem('player1Name', p1.name);
-			if (p2 && p2.name) sessionStorage.setItem('player2Name', p2.name);
+			if (p1 && p1.name) {
+				sessionStorage.setItem('player1Name', p1.name);
+			}
+			if (p2 && p2.name) {
+				sessionStorage.setItem('player2Name', p2.name);
+			}
 		}
 
 		started = true;
-		console.log("About to call startingGame"); // DEBUG
 		await startingGame(resume, timer);
 		return true;
 	}
@@ -600,8 +600,6 @@ export async function handleGameRemote(data: any) {
 	}
 	if (data.type === "game" && started) {
 		const value = data.data;
-		// console.log("Received game data from server:", value); // DEBUG
-		// console.log("Canvas dimensions:", {width, height}); // DEBUG
 		lastServerUpdateTs = performance.now();
 		warnedNoServerUpdates = false;
 		
@@ -615,10 +613,8 @@ export async function handleGameRemote(data: any) {
 		player1Score = value.score1;
 		player2Score = value.score2;
 		
-		// console.log("Position update - old:", oldPositions, "new:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
 		return true;
 	}
-	console.log("Message not handled, returning false"); // DEBUG
 	return false;
 };
 
@@ -724,12 +720,8 @@ async function joinGame(mode: string) {
         const lobby = document.getElementById("lobby");
         if (lobby) {
  			lobby.classList.remove("hidden");
-			console.log("DEBUG: Lobby element found and hidden class removed");
-		} else {
-			console.log("DEBUG: Lobby element not found!");
 		}
         navigateTo('lobby');
-		console.log("DEBUG: navigateTo('lobby') called");
 
 		// Show/hide local lobby options depending on mode
 		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
@@ -753,15 +745,9 @@ async function joinGame(mode: string) {
 
 		if (start) {
 			start.classList.remove("hidden");
-			console.log("DEBUG: Start button shown");
-		} else {
-			console.log("DEBUG: Start button element not found!");
 		}
 		if (backToMenu) {
 			backToMenu.classList.remove("hidden");
-			console.log("DEBUG: Back to menu button shown");
-		} else {
-			console.log("DEBUG: Back to menu button element not found!");
 		}
 		goodBye?.classList.add("hidden");
 	} catch (err) {
