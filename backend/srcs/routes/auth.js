@@ -162,7 +162,24 @@ async function authRoutes(fastify) {
 
 		const userId = tokenInfo.user_id;
 
+		// Delete in correct order to respect foreign key constraints
+		// Delete messages where user is sender or receiver
+		db.prepare('DELETE FROM messages WHERE sender_id = ? OR receiver_id = ?').run(userId, userId);
+		// Delete invites where user is inviter or invitee
+		db.prepare('DELETE FROM invites WHERE inviter_id = ? OR invitee_id = ?').run(userId, userId);
+		// Delete party_players records
+		db.prepare('DELETE FROM party_players WHERE user_id = ?').run(userId);
+		// Delete parties (if user was the owner, they should be cleaned up)
+		db.prepare('DELETE FROM parties WHERE id IN (SELECT party_id FROM party_players WHERE user_id = ?)').run(userId);
+		// Delete match history where user participated
+		db.prepare('DELETE FROM match_history WHERE p1_id = ? OR p2_id = ? OR winner_id = ?').run(userId, userId, userId);
+		// Delete friends records
+		db.prepare('DELETE FROM friends WHERE id1 = ? OR id2 = ?').run(userId, userId);
+		// Delete blocked records
+		db.prepare('DELETE FROM blocked WHERE blocker_id = ? OR blocked_id = ?').run(userId, userId);
+		// Delete refresh tokens
 		db.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').run(userId);
+		// Finally delete the user
 		db.prepare('DELETE FROM users WHERE id = ?').run(userId);
 
 		console.log("User with ID ", userId, " deleted successfully.");

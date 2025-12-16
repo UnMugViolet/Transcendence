@@ -43,6 +43,8 @@ export class AuthManager {
     const storage: StorageType = persistent ? localStorage : sessionStorage;
     const otherStorage: StorageType = persistent ? sessionStorage : localStorage;
     
+    console.log("DEBUG - Storing tokens, persistent:", persistent);
+    console.log("DEBUG - Clearing other storage...");
     // Clear the other storage to avoid conflicts
     otherStorage.removeItem("token");
     otherStorage.removeItem("refreshToken");
@@ -50,6 +52,7 @@ export class AuthManager {
     // Store in the desired storage
     storage.setItem("token", tokens.accessToken);
     storage.setItem("refreshToken", tokens.refreshToken);
+    console.log("DEBUG - Tokens stored. New token:", tokens.accessToken.substring(0, 20) + "...");
   }
 
   /**

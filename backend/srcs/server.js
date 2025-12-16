@@ -45,16 +45,12 @@ fastify.decorate('db', db);
 
 fastify.decorate("authenticate", async function (request, reply) {
 	try {
-		console.log("DEBUG - Authorization header:", request.headers.authorization);
 		await request.jwtVerify();
-		console.log("DEBUG - JWT verified, request.user:", request.user);
 		if (request.user.type !== 'access') {
-			console.log("DEBUG - Token type is not 'access':", request.user.type);
 			return reply.status(401).send({ error: 'Unauthorized' });
 		}
 		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), request.user.id);
 	} catch (err) {
-		console.log("DEBUG - JWT verification error:", err.message);
 		return reply.status(401).send({ error: 'Unauthorized' });
 	}
 });

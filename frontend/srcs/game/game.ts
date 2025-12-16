@@ -103,6 +103,9 @@ export async function leaveGame(options: { navigate?: boolean; closeSocket?: boo
 		console.error("Error Leave Game:", err);
 	}
 
+	// Clear all active game timers
+	clearGameTimers();
+
 	if (opts.closeSocket) socket?.close();
 
 	if (opts.resetState) {
@@ -170,8 +173,23 @@ export let gameId = 0;
 let team = 0;
 
 let pauseInterval: any;
+let countdownInterval: any;
 let lastServerUpdateTs = 0;
 let warnedNoServerUpdates = false;
+
+/**
+ * Clears all active game intervals and timers
+ */
+function clearGameTimers() {
+	if (pauseInterval) {
+		clearInterval(pauseInterval);
+		pauseInterval = undefined;
+	}
+	if (countdownInterval) {
+		clearInterval(countdownInterval);
+		countdownInterval = undefined;
+	}
+}
 
 const modalGamePause = document.getElementById("modalGamePause");
 const modalReconnect = document.getElementById("modalReconnect");
@@ -412,13 +430,11 @@ start?.addEventListener("click", async () => {
 					
 					// Explicitly set and verify each variable
 					posYPlayer1 = height / 2;
-					// console.log("Set posYPlayer1 to:", posYPlayer1, "current value:", posYPlayer1); // DEBUG
 					posYPlayer2 = height / 2;
-					// console.log("Set posYPlayer2 to:", posYPlayer2, "current value:", posYPlayer2); // DEBUG
 					ballX = width / 2;
-					// console.log("Set ballX to:", ballX, "current value:", ballX); // DEBUG
+					console.log("Set ballX to:", ballX, "current value:", ballX); // DEBUG
 					ballY = height / 2;
-					// console.log("Set ballY to:", ballY, "current value:", ballY); // DEBUG
+					console.log("Set ballY to:", ballY, "current value:", ballY); // DEBUG
 					
 					// console.log("After fallback init - positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
 					await startingGame(false, true);
@@ -469,7 +485,7 @@ async function startingGame(resume = false, timer = true) {
 		
 		let countdown = 5;
 		console.log("Starting countdown from 5"); // DEBUG
-		const countdownInterval = setInterval(() => {
+		countdownInterval = setInterval(() => {
 			// Clear the entire canvas and redraw everything for clean display
 			ctx.clearRect(0, 0, width, height);
 			
@@ -489,6 +505,7 @@ async function startingGame(resume = false, timer = true) {
 			countdown--;
 			if (countdown < 0) {
 				clearInterval(countdownInterval);
+				countdownInterval = undefined;
 				ctx.clearRect(0, 0, width, height);
 				console.log("Countdown finished"); // DEBUG
 			}

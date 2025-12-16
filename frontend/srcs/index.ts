@@ -93,8 +93,8 @@ class Application {
         ModalManager.setupModalEventListeners();
         
         // Set up logout callback to avoid circular dependency
-        ModalManager.setLogoutCallback(() => {
-          UserManager.logout();
+        ModalManager.setLogoutCallback(async () => {
+          await UserManager.logout();
         });
         
         FormManager.setupFormListeners();

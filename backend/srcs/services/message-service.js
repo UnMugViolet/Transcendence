@@ -35,7 +35,6 @@ export function sendGameStateToPlayers(partyId, gameState) {
 				type: 'game',
 				data: gameState
 			}));
-			console.log(`DEBUG: Sent game state to player ${player.user_id}`);
 		} else {
 			// Only mark as disconnected if not already
 			const currentStatus = player.status;

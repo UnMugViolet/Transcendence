@@ -4,7 +4,7 @@ import { ApiClient } from "../utils/api.js";
 import { User } from "../types/types.js";
 import { setSidebarEnabled } from "./friends.js";
 import { closeChatSocket, initChatSocket } from "./chat.js";
-import { initPongBtns, navigateTo } from "../game/game.js";
+import { initPongBtns, navigateTo, leaveGame } from "../game/game.js";
 import { initNotifications } from "./notif.js";
 import { handleRoute } from "../route/router.js";
 
@@ -188,7 +188,7 @@ export class UserManager implements User {
       }
     } catch (error) {
       console.error("Error fetching user profile:", error);
-      this.logout();
+      await this.logout();
     }
   }
 
@@ -197,20 +197,39 @@ export class UserManager implements User {
    * In case the user is a demo user, backend is called to delete the demo account
    * @return void
    */
-  static logout(): void {
+  static async logout(): Promise<void> {
     const authButtons = document.getElementById("authButtons");
     const userInfo = document.getElementById("userInfo");
     const btnLogout = document.getElementById("btnLogout");
 
+    // End any active game before logging out
+    await leaveGame({ navigate: false, closeSocket: false, resetState: true });
 
     if (AuthManager.isDemoUser()) {
       console.log("Deleting demo user on logout");
-      FormManager.deleteUser(AuthManager.getToken() as string);
+      const refreshToken = AuthManager.getRefreshToken();
+      if (refreshToken) {
+        FormManager.deleteUser(refreshToken);
+      }
     }
 
     console.log("Logging out user");
-    // Clear authentication data
+    
+    // Navigate to pong menu BEFORE clearing auth so router can still access token if needed
+    history.replaceState(null, "", "/");
+    window.onpopstate = () => {
+      history.replaceState(null, "", "/");
+    };
+    
+    initPongBtns();
+    navigateTo("pongMenu", true);
+    handleRoute();
+    
+    // Now clear authentication data
     AuthManager.clearAuth();
+    
+    // Clear current user
+    UserManager.clearCurrentUser();
 
     // Show auth buttons
     authButtons?.classList.remove("hidden");
@@ -238,16 +257,7 @@ export class UserManager implements User {
     // Disable user features
     setSidebarEnabled(false);
     closeChatSocket();
-    console.log("Clear all buttons");
-    
-    // Reset browser history
-    history.replaceState(null, "", "/");
-    window.onpopstate = () => {
-      history.replaceState(null, "", "/");
-    };
-    
-    handleRoute();
-    initPongBtns();
+
   }
 
   /**

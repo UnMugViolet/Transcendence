@@ -78,6 +78,8 @@ clean: ## Remove all containers
 
 fclean: clean ## Remove all containers, images and volumes
 	@echo "$(RED) Removing all related images and volumes...$(RESET)"
+	@rm -rf backend/data/* || true
+	@rm -rf backend/database/* || true
 	@$(DOCKER_COMPOSE) down --volumes --rmi all
 
 ## —— Rebuild ————————————————————————————————————————————————————————————————

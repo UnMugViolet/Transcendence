@@ -5,6 +5,7 @@ import { ModalManager } from "./modal.js";
 import { initChatSocket } from "../user/chat.js";
 import { AuthResponse } from "../types/types.js";
 import { i18n } from "./i18n.js";
+import { initPongBtns } from "../game/game.js";
 
 /**
  * Form handling for authentication
@@ -233,9 +234,7 @@ export class FormManager {
         console.log("Demo user created successfully:", demoUsername);
 
         UserManager.setLoggedInState(demoUsername, undefined);
-        
         // Re-initialize pong buttons to reflect demo user status
-        const { initPongBtns } = await import('../game/game.js');
         initPongBtns();
         
         return true;
@@ -247,18 +246,18 @@ export class FormManager {
   }
 
   /**
-   * Calls the backend to delete a given user base on their token
-   * @param userToken - The token of the user to delete
+   * Calls the backend to delete a given user base on their refresh token
+   * @param refreshToken - The refresh token of the user to delete
    * @returns Promise<boolean> - true if demo user was deleted successfully
    */
-  static async deleteUser(userToken: string): Promise<boolean> {
+  static async deleteUser(refreshToken: string): Promise<boolean> {
     try {
 
       const response = await fetch(`${BACKEND_URL}/user`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          token: userToken
+          token: refreshToken
         }),
       });
 
