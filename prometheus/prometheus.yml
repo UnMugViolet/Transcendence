@@ -35,16 +35,17 @@ scrape_configs:
         replacement: 'node_exporter'
 
   # Backend application metrics (Fastify + SQLite)
+  # Works for both dev (backend_dev) and prod (backend) environments
   - job_name: 'backend'
     static_configs:
-      - targets: ['backend_dev:3000']
+      - targets: ['backend_dev:3000', 'backend:3000']
     metrics_path: '/metrics'
     scrape_interval: 10s
     scrape_timeout: 9s
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'backend:3000'
+        replacement: 'backend'
 
   # cAdvisor for Docker container metrics
   - job_name: 'cadvisor'
