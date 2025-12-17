@@ -45,6 +45,9 @@ export class Router {
       case "#lobby":
         Router.showView("lobby");
         break;
+      // case "#userDashboard":
+      //   Router.showView("userDashboard");
+      //   break;
       default:
         Router.showView("pongMenu");
         break;

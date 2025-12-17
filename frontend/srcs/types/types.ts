@@ -35,6 +35,14 @@ export interface User {
   profile_picture?: string;
 }
 
+export interface UserStats {
+  totalGames: number;
+  wins: number;
+  losses: number;
+  avgScore: number;
+  winRate: number; // percentage
+}
+
 export type ViewId = "viewGame" | "pongMenu" | "lobby";
 
 export type ModalId = "modalSignUp" | "modalSignIn" | "modalProfile" | "modalFriendProfile" | "modalGamePause" | "modalReconnect";

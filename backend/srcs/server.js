@@ -15,6 +15,7 @@ import authRoutes from './routes/auth.js';
 import friendsRoutes from './routes/friends.js';
 import usersRoutes from './routes/users.js';
 import gameRoutes from './routes/game.js';
+import statsRoutes from './routes/stats.js';
 import { clients } from './routes/chat.js';
 import { gameLoop, pauseLoop } from './routes/game.js';
 
@@ -36,6 +37,9 @@ fastify.register(fastifyStatic, {
   root: path.join(process.cwd(), 'img'),
   prefix: '/img/',
 });
+
+fastify.register(statsRoutes, { 
+prefix: '/stats' });
 
 fastify.decorate('db', db);
 
