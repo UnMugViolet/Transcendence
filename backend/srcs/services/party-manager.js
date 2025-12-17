@@ -136,7 +136,6 @@ export async function broadcastStartMessage(partyId, resume = false, games, paus
 	}
 	
 	const partyPlayers = partyPlayerQueries.findByPartyIdAndStatus(partyId, 'active');
-	console.log(`DEBUG: broadcastStartMessage for party ${partyId}, found ${partyPlayers.length} active players`);
 	
 	// Build players list with names and teams
 	const playersList = partyPlayers.map(p => {
@@ -149,10 +148,8 @@ export async function broadcastStartMessage(partyId, resume = false, games, paus
 		sendStartMessage(partyId, playersList, player.team, player.user_id, resume);
 	});
 	
-	// await sleep(6000);
 	if (!pauses || !pauses.has(partyId)) {
 		game.started = true;
-		console.log(`DEBUG: Game ${partyId} marked as started`);
 	}
 }
 

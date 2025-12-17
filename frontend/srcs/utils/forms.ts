@@ -47,7 +47,7 @@ export class FormManager {
             name: username,
             password: password,
             stayConnect: stayConnected,
-            role : "user"
+            roleType: "user",
           }),
         });
 
@@ -62,13 +62,19 @@ export class FormManager {
           refreshToken: data.refreshToken
         }, stayConnected);
         
-        // Store username, userId will be updated after profile fetch
-        AuthManager.storeUserInfo(username, "", stayConnected);
+        // Decode JWT to get user ID
+        const tokenParts = data.accessToken.split('.');
+        if (tokenParts.length === 3) {
+          const decoded = JSON.parse(atob(tokenParts[1]));
+          const userId = decoded.id;
+          
+          // Create user with role data from auth response
+          UserManager.createUser(userId, username, data.role);
+        }
 
         ModalManager.closeModal("modalSignUp");
         
-        // Fetch user profile to get complete user data and update userId
-        await UserManager.fetchUserProfile();
+        UserManager.setLoggedInState(username);
         initChatSocket(data.accessToken, () => {
           console.log("Chat WebSocket ready after signup");
         });
@@ -116,13 +122,19 @@ export class FormManager {
           refreshToken: data.refreshToken
         }, stayConnected);
         
-        // Store username, userId will be updated after profile fetch
-        AuthManager.storeUserInfo(username, "", stayConnected);
+        // Decode JWT to get user ID
+        const tokenParts = data.accessToken.split('.');
+        if (tokenParts.length === 3) {
+          const decoded = JSON.parse(atob(tokenParts[1]));
+          const userId = decoded.id;
+          
+          // Create user with role data from auth response
+          UserManager.createUser(userId, username, data.role);
+        }
 
         ModalManager.closeModal("modalSignIn");
         
-        // Fetch user profile to get complete user data and update userId
-        await UserManager.fetchUserProfile();
+        UserManager.setLoggedInState(username);
         initChatSocket(data.accessToken, () => {
           console.log("Chat WebSocket ready after login");
         });
@@ -198,16 +210,14 @@ export class FormManager {
         const demoUsername = AuthManager.generateRandomUsername(DemoUserDataJson);
         const password = AuthManager.generateRandomPassword();
 
-        console.log("Creating demo user with username:", demoUsername);
-
         const response = await fetch(`${BACKEND_URL}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: demoUsername,
             password: password,
-            role: "demo",
             stayConnect: false,
+            roleType: "demo",
           }),
         })
 
@@ -227,13 +237,15 @@ export class FormManager {
         if (tokenParts.length === 3) {
           const decoded = JSON.parse(atob(tokenParts[1]));
           const userId = decoded.id;
-          // Set the current user in UserManager with demo role
-          UserManager.createUser(userId, demoUsername, 'demo');
+          
+          // Create user with role data from auth response
+          UserManager.createUser(userId, demoUsername, data.role);
         }
 
         console.log("Demo user created successfully:", demoUsername);
 
-        UserManager.setLoggedInState(demoUsername, undefined);
+        // Skip navigation here since joinGame will handle navigating to the lobby
+        UserManager.setLoggedInState(demoUsername, undefined, true);
         // Re-initialize pong buttons to reflect demo user status
         initPongBtns();
         

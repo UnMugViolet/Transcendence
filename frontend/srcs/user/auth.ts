@@ -1,4 +1,4 @@
-import { AuthTokens, StorageType, AuthResponse } from "../types/types.js";
+import { AuthTokens, StorageType } from "../types/types.js";
 import { UserManager } from "../user/user.js";
 import { FormManager } from "../utils/forms.js";
 
@@ -43,8 +43,6 @@ export class AuthManager {
     const storage: StorageType = persistent ? localStorage : sessionStorage;
     const otherStorage: StorageType = persistent ? sessionStorage : localStorage;
     
-    console.log("DEBUG - Storing tokens, persistent:", persistent);
-    console.log("DEBUG - Clearing other storage...");
     // Clear the other storage to avoid conflicts
     otherStorage.removeItem("token");
     otherStorage.removeItem("refreshToken");
@@ -52,7 +50,6 @@ export class AuthManager {
     // Store in the desired storage
     storage.setItem("token", tokens.accessToken);
     storage.setItem("refreshToken", tokens.refreshToken);
-    console.log("DEBUG - Tokens stored. New token:", tokens.accessToken.substring(0, 20) + "...");
   }
 
   /**
@@ -75,7 +72,6 @@ export class AuthManager {
   static clearAuth(): void {
     sessionStorage.clear();
     localStorage.clear();
-    console.log("Cleared authentication data");
   }
 
   /**
@@ -91,26 +87,7 @@ export class AuthManager {
    * @return boolean - true if user role is demo
    */
   static isDemoUser(): boolean {
-    const currentUser = UserManager.getCurrentUser();
-    return currentUser ? currentUser.role === 'demo' : false;
-  }
-
-  /**
-   * Generates a temporary offline token and store it in sessionStorage
-   * This is a dummy token that will be deleted as soon as the user clicks on game modes requiring authentication
-   * A Demo accoun will be created on the backend when using this token to play online
-   * @returns string - The temporary token
-   */
-  static createTemporaryToken(): string {
-
-    if (this.getToken()) {
-      return this.getToken() as string;
-    }
-    const tempToken = 'temp-offline-token-' + Math.random().toString(36).substring(2);
-    // Store in both sessionStorage and localStorage so it persists across refreshes
-    sessionStorage.setItem("token", tempToken);
-    localStorage.setItem("token", tempToken);
-    return tempToken;
+    return (UserManager.getCurrentUser()?.role?.name === 'demo') || false;
   }
 
   /**
@@ -167,31 +144,20 @@ export class AuthManager {
 
   /**
    * Ensures user is ready for online play by creating demo user if needed
-   * this done by checking if the user has a role
+   * If user is not authenticated, creates a demo account on the backend
    * @returns Promise<boolean> - true if user is ready for online play
    */
   static async ensureUserReady(): Promise<boolean> {
-    const role = UserManager.getCurrentUserRole() as string | null;
     const token = this.getToken();
-
-    // If user has a temporary token, replace it with a real demo account
-    if (token && this.isTemporaryToken(token)) {
-      console.log("User has temporary token, creating demo user...");
-      return await FormManager.createDemoUser();
-    }
-
-    // If user already has a real token (demo or authenticated), they're ready
+    
+    // If user already has a token (authenticated or demo), they're ready
     if (token) {
-      console.log("User has existing token, they're ready for online play");
+      console.log("User has existing token, ready for online play");
       return true;
     }
 
-    // Only create demo user if there's no token at all
-    if (!role) {
-      console.log("No role found, cannot ensure user is ready");
-      return await FormManager.createDemoUser();
-    }
-
-    return true; // User already has a role, no need to create demo user
+    // No token, create a demo user
+    const result = await FormManager.createDemoUser();
+    return result;
   }
 }

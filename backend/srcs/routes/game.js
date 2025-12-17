@@ -1,10 +1,10 @@
 import { partyQueries, partyPlayerQueries, userQueries } from '../services/database-queries.js';
-import { handlePause, setTeam, handleEndGame,broadcastStartMessage, validateGameStart, cleanupUserGames, findOrCreateParty, assignTeamNumber, sleep } from '../services/party-manager.js';
-import { createGame, resetRound, movePlayer as movePlayerPaddle, updateAI, updateBall, isGameFinished, getGameState } from '../services/game-logic.js';
+import { handlePause, setTeam, handleEndGame,broadcastStartMessage, validateGameStart, cleanupUserGames, findOrCreateParty, assignTeamNumber } from '../services/party-manager.js';
+import { resetRound, movePlayer, updateAI, updateBall, isGameFinished, getGameState, GAME_CONSTANTS } from '../services/game-logic.js';
 import { initializeTournament, setupNextMatch, sendNextGameMessage } from '../services/tournament-manager.js';
 import { sendSysMessage, sendGameStateToPlayers } from '../services/message-service.js';
-import { GAME_CONSTANTS } from '../services/game-logic.js';
 import { clients } from './chat.js';
+import db from '../db.js';
 
 // Game state
 const games = new Map();
@@ -115,7 +115,7 @@ export const pauseLoop = setInterval(() => {
 export function movePlayer(data) {
 	const game = games.get(data.game);
 	if (!game) return;
-	movePlayerPaddle(game, data);
+	movePlayer(game, data);
 }
 
 // Route handlers
@@ -136,7 +136,6 @@ async function gameRoutes(fastify) {
 	fastify.post('/start', { preHandler: fastify.authenticate }, async (request, reply) => {
 		const userId = request.user.id;
 		const mode = request.body.mode;
-		const lang = request.lang || 'fr';
 
 		const validation = validateGameStart(userId, mode, minPlayers);
 		if (validation.error) {
@@ -184,11 +183,18 @@ async function gameRoutes(fastify) {
 		const userId = request.user.id;
 		const mode = request.body.mode;
 
+		console.log(`DEBUG: Join request - userId from JWT: ${userId}, mode: ${mode}`);
+
 		const user = userQueries.findById(userId);
 		if (!user) {
+			console.error(`DEBUG: User not found for userId: ${userId}`);
+			// Log all users for debugging
+			const allUsers = db.prepare('SELECT id, name, role_id FROM users').all();
+			console.error(`DEBUG: All users in database:`, allUsers);
 			return reply.status(404).send({ error: 'User not found' });
 		}
 
+		console.log(`DEBUG: Found user: ${user.name} (ID: ${user.id})`);
 		cleanupUserGames(userId);
 
 		// Check if already in active game

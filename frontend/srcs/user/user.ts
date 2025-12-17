@@ -1,14 +1,12 @@
 import { BACKEND_URL } from "../utils/config.js";
 import { AuthManager } from "./auth.js";
 import { ApiClient } from "../utils/api.js";
-import { User } from "../types/types.js";
-import { setSidebarEnabled } from "./friends.js";
-import { closeChatSocket, initChatSocket } from "./chat.js";
+import { Role, User } from "../types/types.js";
+import { setSidebarEnabled, loadFriends} from "./friends.js";
+import { closeChatSocket } from "./chat.js";
 import { initPongBtns, navigateTo, leaveGame } from "../game/game.js";
 import { initNotifications } from "./notif.js";
 import { handleRoute } from "../route/router.js";
-
-import { loadFriends } from "./friends.js";
 import { FormManager } from "../utils/forms.js";
 
 /**
@@ -17,14 +15,16 @@ import { FormManager } from "../utils/forms.js";
 export class UserManager implements User {
   id: number;
   name: string;
-  profile_picture?: string | undefined;
-  role: string;
+  profile_picture?: string;
+  role: Role;
+  role_id: number;
 
-  constructor(id: number, name: string, role: string, profile_picture?: string) {
+  constructor(id: number, name: string, role: Role, profile_picture?: string) {
     this.id = id;
     this.name = name;
     this.profile_picture = profile_picture;
     this.role = role;
+    this.role_id = role.id;
   }
 
   /**
@@ -35,7 +35,7 @@ export class UserManager implements User {
   /**
    * Creates a new user instance and sets it as current
    */
-  static createUser(id: number, name: string, role: string, profile_picture?: string): UserManager {
+  static createUser(id: number, name: string, role: Role, profile_picture?: string): UserManager {
     this.currentUser = new UserManager(id, name, role,  profile_picture);
     return this.currentUser;
   }
@@ -48,10 +48,10 @@ export class UserManager implements User {
   }
 
   /**
-   * Gets the current user role
+   * Gets the current user role name or null if not logged in
    */
   static getCurrentUserRole(): string | null {
-    return this.currentUser ? this.currentUser.role : null;
+    return this.currentUser ? this.currentUser.role.name : null;
   }
 
   /**
@@ -98,8 +98,11 @@ export class UserManager implements User {
 
   /**
    * Sets the UI state for a logged-in user
+   * @param username - The username to display
+   * @param profilePicture - Optional profile picture URL
+   * @param skipNavigation - If true, skip navigating to pongMenu (useful when called before joinGame)
    */
-  static setLoggedInState(username: string, profilePicture?: string): void {
+  static setLoggedInState(username: string, profilePicture?: string, skipNavigation: boolean = false): void {
     const authButtons = document.getElementById("authButtons");
     const userInfo = document.getElementById("userInfo");
     const btnLogout = document.getElementById("btnLogout");
@@ -136,8 +139,12 @@ export class UserManager implements User {
     setSidebarEnabled(true);
     initNotifications();
     loadFriends();
-    navigateTo("#pongMenu", true);
-    handleRoute();
+    
+    // Only navigate if not skipping (e.g., when called before joinGame, we skip navigation)
+    if (!skipNavigation) {
+      navigateTo("pongMenu", true);
+      handleRoute();
+    }
   }
 
   /**
@@ -182,7 +189,8 @@ export class UserManager implements User {
       const data = await response.json();
       
       if (response.ok && data.user) {
-        this.setLoggedInState(data.user.name, data.user.profile_picture);
+        // Skip navigation on profile fetch since Router.init() already handles initial routing
+        this.setLoggedInState(data.user.name, data.user.profile_picture, true);
         AuthManager.storeUserInfo(data.user.name, data.user.id.toString(), 
           AuthManager.getStorageType() === localStorage);
       }
@@ -209,28 +217,26 @@ export class UserManager implements User {
       console.log("Deleting demo user on logout");
       const refreshToken = AuthManager.getRefreshToken();
       if (refreshToken) {
-        FormManager.deleteUser(refreshToken);
+        // Wait for demo user deletion to complete
+        await FormManager.deleteUser(refreshToken);
       }
     }
 
     console.log("Logging out user");
     
-    // Navigate to pong menu BEFORE clearing auth so router can still access token if needed
-    history.replaceState(null, "", "/");
-    window.onpopstate = () => {
-      history.replaceState(null, "", "/");
-    };
-    
-    initPongBtns();
-    navigateTo("pongMenu", true);
-    handleRoute();
-    
-    // Now clear authentication data
+    // Clear authentication data
     AuthManager.clearAuth();
     
     // Clear current user
     UserManager.clearCurrentUser();
 
+    // Navigate to pongMenu and handle routing
+    navigateTo("pongMenu", true);
+    handleRoute();
+    
+    // Now reinitialize pong buttons AFTER routing
+    initPongBtns();
+    
     // Show auth buttons
     authButtons?.classList.remove("hidden");
     authButtons?.classList.add("flex", "justify-end");

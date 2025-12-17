@@ -39,14 +39,15 @@
  export function initChatSocket(token: string, onReady?: () => void) {
 	// If the WS exists and is already opened with the same token context, do nothing
     if (ws && ws.readyState === WebSocket.OPEN) {
-        console.log("WebSocket already connected");
-        if (onReady) onReady();
+        if (onReady) {
+			onReady();
+		}
         return;
     }
     
     // Close existing connection if it's in a bad state
     if (ws && ws.readyState !== WebSocket.CLOSED) {
-        console.log("Closing existing WebSocket connection");
+        console.log("Closing existing WebSocket connection, readyState:", ws.readyState);
         ws.close();
         ws = null; // Set to null immediately to allow new connection
     }
@@ -54,7 +55,7 @@
 	// Clear global chat messages
 	if (globalChatMessages) globalChatMessages.innerHTML = "";
 
-	console.log("Creating new WebSocket connection...");
+	console.log("Creating new WebSocket connection with token:", token.substring(0, 20) + "...");
 	// Encode the token to avoid '+' and other special characters breaking the query string
 	const encodedToken = encodeURIComponent(token);
 	ws = new WebSocket(`${BACKEND_URL.replace("http", "ws")}/ws?token=${encodedToken}`);
@@ -66,7 +67,6 @@
 	
 	ws.onmessage = async (event) => {
 		const msg = JSON.parse(event.data);
-		// console.log("WebSocket message received:", msg); // DEBUG
 		
 		if (msg.type === 'party') {
 			const msgDiv = document.createElement("div");
@@ -76,9 +76,7 @@
 			globalChatMessages.scrollTop = globalChatMessages.scrollHeight;
 		} else {
 			try {
-				// console.log("Trying to handle game message:", msg); // DEBUG
 				const handled = await handleGameRemote(msg);
-				// console.log("Game message handled:", handled); // DEBUG
 				if (!handled) 
 					receiveMessage(msg);
 			} catch (err) {
@@ -105,7 +103,7 @@ export function closeChatSocket() {
 }
 
 // Ensure the socket is properly closed on page unload to trigger server-side cleanup
-window.addEventListener("beforeunload", () => {
+globalThis.addEventListener("beforeunload", () => {
 	try { ws?.close(); } catch (_) {}
 });
 	
