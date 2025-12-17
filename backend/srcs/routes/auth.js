@@ -74,7 +74,7 @@ async function authRoutes(fastify) {
 
 		try {
 			const info = db.prepare(
-				'INSERT INTO users (name, pass, role_id, last_seen, created_at) VALUES (?, ?, ?, ?, ?)'
+				'INSERT INTO users (name, password, role_id, last_seen, created_at) VALUES (?, ?, ?, ?, ?)'
 			).run(name, hashedPass, roleRecord.id, Date.now(), Date.now());
 
 			const role = db.prepare('SELECT id, name FROM roles WHERE id = ?').get(roleRecord.id);
