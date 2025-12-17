@@ -26,7 +26,10 @@ fastify.register(fastifyCors, {
 });
 
 fastify.register(fastifyjwt, {
-	secret: process.env.JWT_SECRET
+	secret: process.env.JWT_SECRET,
+	sign: {
+		expiresIn: '20min'
+	}
 });
 
 fastify.register(fastifyMultipart, {
@@ -81,17 +84,6 @@ fastify.register(chat);
 
 fastify.get('/', async () => {
 	return { message: 'Hello from Fastify & SQLite 🎉' };
-});
-
-// Prometheus metrics endpoint
-fastify.get('/metrics', async (request, reply) => {
-	reply.header('Content-Type', metrics.getContentType());
-	return metrics.getMetrics();
-});
-
-// DEBUG
-fastify.get('/match', async () => {
-	return db.prepare('SELECT * FROM match_history').all();
 });
 
 fastify.addHook('onClose', async () => {
@@ -154,33 +146,35 @@ cron.schedule('0 * * * *', () => {
 	console.log('Refresh tokens cleaned at', new Date().toLocaleString());
 });
 
-// Update user count metrics every minute
-cron.schedule('* * * * *', () => {
-	const totalUsersCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-	const demoUsersCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE role LIKE ?').get('demo%').count;
-	metrics.setTotalUsers(totalUsersCount);
-	metrics.setDemoUsers(demoUsersCount);
-});
-
-// Update database metrics every 30 seconds
-cron.schedule('*/30 * * * * *', () => {
-	try {
-		const stats = fs.statSync(dbPath);
-		metrics.setDatabaseSize(stats.size);
-	} catch (err) {
-		console.error('Error tracking database size:', err);
-	}
-});
-
-// Remove all role demo account every day at 3am that has been created more than 24 hours ago
-cron.schedule('0 3 * * sun', () => {
+// Remove all role demo account every day at 3am that has been created more than 24 hours ago every day at 3am
+cron.schedule('0 3 * * *', () => {
 	const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
-	const demoUsers = db.prepare('SELECT id FROM users WHERE role LIKE ? AND created_at < ?').all('demo%', twentyFourHoursAgo);
+	
+	// Get the demo role ID
+	const demoRole = db.prepare('SELECT id FROM roles WHERE name = ?').get('demo');
+	if (!demoRole) {
+		console.log('Demo role not found in database');
+		return;
+	}
+	
+	// Find all demo users created more than 24 hours ago
+	const demoUsers = db.prepare('SELECT id, name FROM users WHERE role_id = ? AND created_at < ?').all(demoRole.id, twentyFourHoursAgo);
+	
+	console.log(`Found ${demoUsers.length} demo users to clean up`);
+	
 	demoUsers.forEach(user => {
-		db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
-		db.prepare('DELETE FROM friends WHERE user_id = ? OR friend_id = ?').run(user.id, user.id);
-		db.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').run(user.id);
-		console.log(`Deleted demo user with ID ${user.id}`);
+		try {
+			// Delete user data
+			db.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').run(user.id);
+			db.prepare('DELETE FROM friends WHERE id1 = ? OR id2 = ?').run(user.id, user.id);
+			db.prepare('DELETE FROM blocked WHERE blocker_id = ? OR blocked_id = ?').run(user.id, user.id);
+			db.prepare('DELETE FROM party_players WHERE user_id = ?').run(user.id);
+			db.prepare('DELETE FROM messages WHERE sender_id = ? OR receiver_id = ?').run(user.id, user.id);
+			db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+			
+			console.log(`Deleted demo user: ${user.name} (ID: ${user.id})`);
+		} catch (err) {
+			console.error(`Failed to delete demo user ${user.id}:`, err);
+		}
 	});
 });
-

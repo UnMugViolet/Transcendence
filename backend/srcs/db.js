@@ -7,7 +7,7 @@ import metrics from './metrics.js';
 // Ensure the database directory exists
 const dbFile = process.env.DB_FILE || 'default_name.sqlite';
 const dbDir = process.env.DB_PATH || '/app/data/';
-let   db;
+let db;
 
 // Create data directory if it doesn't exist
 try {
@@ -40,7 +40,14 @@ db.prepare(`CREATE TABLE IF NOT EXISTS users (
 	profile_picture TEXT NOT NULL DEFAULT 'default.jpg',
 	role TEXT NOT NULL DEFAULT 'user',
 	last_seen INTEGER NOT NULL,
-	created_at INTEGER NOT NULL
+	created_at INTEGER NOT NULL,
+    role_id INTEGER NOT NULL DEFAULT 1,
+    FOREIGN KEY (role_id) REFERENCES roles(id)
+)`).run();
+
+db.prepare(`CREATE TABLE IF NOT EXISTS roles (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name TEXT NOT NULL UNIQUE
 )`).run();
 
 db.prepare(`CREATE TABLE IF NOT EXISTS refresh_tokens (
@@ -115,8 +122,6 @@ db.prepare(`CREATE TABLE IF NOT EXISTS invites (
 	FOREIGN KEY (inviter_id) REFERENCES users(id),
 	FOREIGN KEY (invitee_id) REFERENCES users(id)
 )`).run();
-// A implemnter quand la table parties sera creee
-// FOREIGN KEY (party_id) REFERENCES parties(id)
 
 db.prepare(`CREATE TABLE IF NOT EXISTS messages (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -127,6 +132,13 @@ db.prepare(`CREATE TABLE IF NOT EXISTS messages (
 	FOREIGN KEY (sender_id) REFERENCES users(id),
 	FOREIGN KEY (receiver_id) REFERENCES users(id)
 )`).run();
+
+// Seed initial roles (only insert if they don't exist already)
+const insertRole = db.prepare(`INSERT OR IGNORE INTO roles (name) VALUES (?)`);
+insertRole.run('user');
+insertRole.run('admin');
+insertRole.run('demo');
+
 
 // Wrap db methods to track query metrics
 const originalPrepare = db.prepare.bind(db);
@@ -183,4 +195,5 @@ db.prepare = function(sql) {
 };
 
 export { dbPath };
+
 export default db;

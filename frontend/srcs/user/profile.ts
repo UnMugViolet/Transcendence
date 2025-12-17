@@ -69,7 +69,9 @@ closeProfileBtn?.addEventListener("click", () => {
 formProfile?.addEventListener("submit", async (e) => {
 	e.preventDefault();
 	const token = sessionStorage.getItem("token");
-	if (!token) return;
+	if (!token) {
+		 return;
+	}
 
 	const name = (document.getElementById("profileNameInput") as HTMLInputElement).value;
 	const password = (document.getElementById("profilePasswordInput") as HTMLInputElement).value;
@@ -89,7 +91,9 @@ formProfile?.addEventListener("submit", async (e) => {
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error || i18n.t("errorName"));
 			const welcomeMessage: HTMLElement | null = document.getElementById("welcomeMessage");
-			if (welcomeMessage) welcomeMessage.textContent = name;
+			if (welcomeMessage) {
+				welcomeMessage.textContent = name;
+			}
 			sessionStorage.setItem("username", name);
 		}
 
@@ -121,8 +125,12 @@ formProfile?.addEventListener("submit", async (e) => {
 				body: formData,
 			});
 			const data = await res.json();
-			if (!res.ok) throw new Error(data.error || i18n.t("errorPp"));
-			if (userAvatar) userAvatar.src = `${BACKEND_URL}/img/${data.filename}`;
+			if (!res.ok) {
+				throw new Error(data.error || i18n.t("errorPp"));
+			}
+			if (userAvatar) {
+				userAvatar.src = `${BACKEND_URL}/img/${data.filename}`;
+			}
 			sessionStorage.setItem("profilePicture", data.filename);
 		}
 
@@ -147,7 +155,9 @@ closeFriendProfileBtn?.addEventListener("click", () => {
 export async function openFriendProfile(friendId: number) {
 	try {
 		const token = sessionStorage.getItem("token");
-		if (!token) return;
+		if (!token) {
+			 return;
+		}
 
 		const res = await fetch(`${BACKEND_URL}/users/${friendId}`, {
 			headers: { "Authorization": `Bearer ${token}` }

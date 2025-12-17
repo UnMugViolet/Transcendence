@@ -25,8 +25,9 @@ export function sendSysMessage(partyId, message) {
 }
 
 export function sendGameStateToPlayers(partyId, gameState) {
-	const players = partyPlayerQueries.findByPartyId(partyId);
-	// console.log(`DEBUG: sendGameStateToPlayers for party ${partyId}, found ${players.length} players`);
+	// Only send to players who are not 'disconnected' or 'left'
+	const players = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['disconnected', 'left']);
+	// console.log(`DEBUG: sendGameStateToPlayers for party ${partyId}, found ${players.length} active players`);
 	players.forEach(player => {
 		const playerSocket = clients.get(player.user_id);
 		if (playerSocket) {
@@ -34,9 +35,17 @@ export function sendGameStateToPlayers(partyId, gameState) {
 				type: 'game',
 				data: gameState
 			}));
-			console.log(`DEBUG: Sent game state to player ${player.user_id}`);
 		} else {
-			console.log(`DEBUG: No socket found for player ${player.user_id}`);
+			// Only mark as disconnected if not already
+			const currentStatus = player.status;
+			if (currentStatus !== 'disconnected') {
+				console.log(`DEBUG: No socket found for player ${player.user_id}, marking as disconnected.`);
+				partyPlayerQueries.updateStatus('disconnected', partyId, player.user_id);
+			} else {
+				console.log(`DEBUG: Player ${player.user_id} already disconnected, skipping.`);
+			}
+			// Debug: print clients map keys for investigation
+			console.log('DEBUG: Current clients map keys:', Array.from(clients.keys()));
 		}
 	});
 }

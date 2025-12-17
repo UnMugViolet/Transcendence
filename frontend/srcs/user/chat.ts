@@ -37,23 +37,24 @@
  });
 
  export function initChatSocket(token: string, onReady?: () => void) {
-	// If the WS exists and is already opened, do nothing
+	// If the WS exists and is already opened with the same token context, do nothing
     if (ws && ws.readyState === WebSocket.OPEN) {
-        console.log("WebSocket already connected");
-        if (onReady) onReady();
+        if (onReady) {
+			onReady();
+		}
         return;
     }
     
     // Close existing connection if it's in a bad state
     if (ws && ws.readyState !== WebSocket.CLOSED) {
-        console.log("Closing existing WebSocket connection");
+        console.log("Closing existing WebSocket connection, readyState:", ws.readyState);
         ws.close();
+        ws = null; // Set to null immediately to allow new connection
     }
     
 	// Clear global chat messages
 	if (globalChatMessages) globalChatMessages.innerHTML = "";
 
-	console.log("Creating new WebSocket connection...");
 	// Encode the token to avoid '+' and other special characters breaking the query string
 	const encodedToken = encodeURIComponent(token);
 	ws = new WebSocket(`${BACKEND_URL.replace("http", "ws")}/ws?token=${encodedToken}`);
@@ -65,7 +66,6 @@
 	
 	ws.onmessage = async (event) => {
 		const msg = JSON.parse(event.data);
-		// console.log("WebSocket message received:", msg); // DEBUG
 		
 		if (msg.type === 'party') {
 			const msgDiv = document.createElement("div");
@@ -75,9 +75,7 @@
 			globalChatMessages.scrollTop = globalChatMessages.scrollHeight;
 		} else {
 			try {
-				// console.log("Trying to handle game message:", msg); // DEBUG
 				const handled = await handleGameRemote(msg);
-				// console.log("Game message handled:", handled); // DEBUG
 				if (!handled) 
 					receiveMessage(msg);
 			} catch (err) {
@@ -104,14 +102,16 @@ export function closeChatSocket() {
 }
 
 // Ensure the socket is properly closed on page unload to trigger server-side cleanup
-window.addEventListener("beforeunload", () => {
+globalThis.addEventListener("beforeunload", () => {
 	try { ws?.close(); } catch (_) {}
 });
 	
 async function loadHistory(friendId: number, messageEl: HTMLElement) {
 	const token = sessionStorage.getItem("token");
-	if (!token) return;
-	
+	if (!token) {
+		return;
+	}
+
 	const res = await fetch (`${BACKEND_URL}/messages/${friendId}`, {
 		method: "GET",
 		headers: {
@@ -122,7 +122,9 @@ async function loadHistory(friendId: number, messageEl: HTMLElement) {
 	if (!res.ok) throw new Error(data.error || i18n.t("errorHistory"));
 
 	const chatWindow = document.getElementById(`chat-window-${friendId}`);
-	if (!chatWindow) return;
+	if (!chatWindow) {
+		return;
+	}
 
 	messageEl = chatWindow.querySelector("div.flex-1") as HTMLElement;
 	messageEl.innerHTML = "";
@@ -198,7 +200,9 @@ async function receiveMessage(msg: any) {
 
 async function invitePlayer(friendId: number) {
 	const token = sessionStorage.getItem("token");
-	if (!token) return;
+	if (!token) {
+		return ;
+	}
 	const currentPartyId = sessionStorage.getItem("partyId");
 	console.log("Current Party ID:", currentPartyId);
 

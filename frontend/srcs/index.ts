@@ -7,6 +7,7 @@ import { populateLanguageDropdown, initLanguageButton } from "./utils/langs.js";
 import { initChatSocket } from "./user/chat.js";
 import { setSidebarEnabled } from "./user/friends.js";
 import { i18n } from "./utils/i18n.js";
+import { initPongBtns } from "./game/game.js";
 
 /**
  * Language dropdown setup
@@ -16,7 +17,7 @@ class LanguageManager {
   private static langDropdown: HTMLElement | null = null;
   private static currentFlag: HTMLElement | null = null;
   private static currentLangText: HTMLElement | null = null;
-  private static availableLangs: string[] = ["en", "fr", "ch"];
+  static readonly availableLangs: string[] = ["en", "fr", "ch"];
 
   static init(): void {
     this.langButton = document.getElementById("langButton");
@@ -92,13 +93,14 @@ class Application {
         ModalManager.setupModalEventListeners();
         
         // Set up logout callback to avoid circular dependency
-        ModalManager.setLogoutCallback(() => {
-          UserManager.logout();
+        ModalManager.setLogoutCallback(async () => {
+          await UserManager.logout();
         });
         
         FormManager.setupFormListeners();
         LanguageManager.init();
         Router.init();
+        initPongBtns();
 
         // Handle authentication state
         await this.handleAuthenticationState();

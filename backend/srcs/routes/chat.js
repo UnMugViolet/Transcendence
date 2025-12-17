@@ -25,8 +25,7 @@ import {
 	getPartyPlayers,
 	addSenderName
 } from '../services/chat-service.js';
-import { movePlayer, pauseGameFromWS, sendSysMessage } from './game.js';
-import metrics from '../metrics.js';
+import { handleMovePlayer, pauseGameFromWS, sendSysMessage } from './game.js';
 
 const clients = new Map();
 
@@ -153,7 +152,9 @@ async function chat(fastify) {
 	fastify.get('/ws', { websocket: true }, async (connection, req) => {
 		try {
 			const token = req.query.token;
-			if (!token) throw new Error('No token');
+			if (!token) {
+				throw new Error('No token');
+			}
 			console.log("WS token:", token);
 
 			const payload = fastify.jwt.verify(token);
@@ -183,7 +184,7 @@ async function chat(fastify) {
 					
 					// Handle game input
 					if (data.type === 'input') {
-						movePlayer(data);
+						handleMovePlayer(data);
 						return;
 					}
 

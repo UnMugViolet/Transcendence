@@ -11,7 +11,8 @@ export class Router {
   static showView(viewId: ViewId): void {
     const token = AuthManager.getToken();
     
-    if (!token) {
+    // Allow pongMenu to be shown without a token (for anonymous/logged-out users)
+    if (!token && viewId !== "pongMenu") {
       const allViews = document.querySelectorAll(".view");
       allViews.forEach((view) =>
         (view as HTMLDivElement).classList.add("hidden")
@@ -19,13 +20,22 @@ export class Router {
       return;
     }
 
+    // Hide all views with .view class
     const views = document.querySelectorAll(".view");
     views.forEach((view) => (view as HTMLDivElement).classList.add("hidden"));
+
+    // Also handle pongMenu separately since it doesn't have the .view class
+    const pongMenu = document.getElementById("pongMenu");
+    if (pongMenu && viewId !== "pongMenu") {
+      pongMenu.classList.add("hidden");
+    }
 
     const targetView = document.getElementById(viewId);
     if (targetView) {
       targetView.classList.remove("hidden");
       targetView.classList.add("flex");
+    } else {
+      console.warn("NO - targetView was falsy!");
     }
   }
 
@@ -33,7 +43,7 @@ export class Router {
    * Handles route changes based on URL hash
    */
   static handleRoute(): void {
-    const hash = (document.location.hash || "#pongMenu") as string;
+    const hash = (document.location.hash || "#pongMenu");
     
     switch (hash) {
       case "#viewGame":
@@ -55,7 +65,9 @@ export class Router {
    * Initializes the router
    */
   static init(): void {
-    window.addEventListener("hashchange", Router.handleRoute);
+    globalThis.addEventListener("hashchange", () => {
+      Router.handleRoute();
+    });
     Router.handleRoute();
   }
 }
