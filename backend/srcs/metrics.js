@@ -80,7 +80,7 @@ export const metrics = {
   // HTTP tracking
   recordHttpRequest(method, route, status, duration) {
     // Ensure duration is valid
-    if (typeof duration === 'number' && !isNaN(duration) && duration >= 0) {
+    if (typeof duration === 'number' && !Number.isNaN(duration) && duration >= 0) {
       httpRequestDuration.labels(method, route, status).observe(duration);
     }
     httpRequestsTotal.labels(method, route, status).inc();
