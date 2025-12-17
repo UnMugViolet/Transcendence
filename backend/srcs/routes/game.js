@@ -111,10 +111,12 @@ export const pauseLoop = setInterval(() => {
 	partiesPaused = partyQueries.findByStatus('paused');
 }, 1000);
 
-// Player input handler
-export function movePlayer(data) {
+// Player input handler wrapper
+export function handleMovePlayer(data) {
 	const game = games.get(data.game);
-	if (!game) return;
+	if (!game) {
+		return ;
+	}
 	movePlayer(game, data);
 }
 

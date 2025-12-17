@@ -25,7 +25,7 @@ import {
 	getPartyPlayers,
 	addSenderName
 } from '../services/chat-service.js';
-import { movePlayer, pauseGameFromWS, sendSysMessage } from './game.js';
+import { handleMovePlayer, pauseGameFromWS, sendSysMessage } from './game.js';
 
 const clients = new Map();
 
@@ -183,7 +183,7 @@ async function chat(fastify) {
 					
 					// Handle game input
 					if (data.type === 'input') {
-						movePlayer(data);
+						handleMovePlayer(data);
 						return;
 					}
 
