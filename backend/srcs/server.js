@@ -54,6 +54,7 @@ fastify.decorate("authenticate", async function (request, reply) {
 		}
 		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), request.user.id);
 	} catch (err) {
+		console.error('JWT verification failed:', err); // Log the error for debugging
 		metrics.recordAuthFailure('verification_failed');
 		return reply.status(401).send({ error: 'Unauthorized' });
 	}
@@ -85,6 +86,13 @@ fastify.register(chat);
 fastify.get('/', async () => {
 	return { message: 'Hello from Fastify & SQLite 🎉' };
 });
+
+// Prometheus metrics endpoint
+fastify.get('/metrics', async (request, reply) => {
+	reply.header('Content-Type', metrics.getContentType());
+	return metrics.getMetrics();
+});
+
 
 fastify.addHook('onClose', async () => {
 	console.log('🛑 Le serveur Fastify est en train de s’arrêter…');
@@ -131,7 +139,12 @@ fastify.listen({ port: 3000, host: '0.0.0.0' })
 		console.log('✅ Server running on http://localhost:3000');
 		// Update user metrics on startup
 		const totalUsersCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-		const demoUsersCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE role LIKE ?').get('demo%').count;
+		const demoUsersCount = db.prepare(`
+			SELECT COUNT(*) as count 
+			FROM users 
+			JOIN roles ON users.role_id = roles.id 
+			WHERE roles.name = 'demo'
+		`).get().count;
 		metrics.setTotalUsers(totalUsersCount);
 		metrics.setDemoUsers(demoUsersCount);
 	})
@@ -144,6 +157,29 @@ fastify.listen({ port: 3000, host: '0.0.0.0' })
 cron.schedule('0 * * * *', () => {
 	db.prepare('DELETE FROM refresh_tokens WHERE ? - last_used_at > timeout').run(Date.now());
 	console.log('Refresh tokens cleaned at', new Date().toLocaleString());
+});
+
+// Update user count metrics every minute
+cron.schedule('* * * * *', () => {
+	const totalUsersCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+	const demoUsersCount = db.prepare(`
+		SELECT COUNT(*) as count 
+		FROM users 
+		JOIN roles ON users.role_id = roles.id 
+		WHERE roles.name = 'demo'
+	`).get().count;
+	metrics.setTotalUsers(totalUsersCount);
+	metrics.setDemoUsers(demoUsersCount);
+});
+
+// Update database metrics every 30 seconds
+cron.schedule('*/30 * * * * *', () => {
+	try {
+		const stats = fs.statSync(dbPath);
+		metrics.setDatabaseSize(stats.size);
+	} catch (err) {
+		console.error('Error tracking database size:', err);
+	}
 });
 
 // Remove all role demo account every day at 3am that has been created more than 24 hours ago every day at 3am

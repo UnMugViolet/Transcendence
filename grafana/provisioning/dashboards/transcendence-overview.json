@@ -15,7 +15,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "up{job=\"backend\"}",
+          "expr": "max(up{job=\"backend\"})",
           "refId": "A"
         }
       ],
@@ -51,7 +51,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "fastify_users_total",
+          "expr": "sum(fastify_users_total)",
           "refId": "A"
         }
       ],
@@ -68,7 +68,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "fastify_demo_users",
+          "expr": "sum(fastify_demo_users)",
           "refId": "A"
         }
       ],
@@ -85,7 +85,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "rate(fastify_http_requests_total{status=~\"5..\"}[5m]) * 100",
+          "expr": "sum(rate(fastify_http_requests_total{status=~\"5..\"}[5m])) * 100",
           "refId": "A"
         }
       ],
@@ -124,7 +124,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "rate(fastify_http_requests_total[1m])",
+          "expr": "sum by(method, route) (rate(fastify_http_requests_total[1m]))",
           "legendFormat": "{{ method }} {{ route }}",
           "refId": "A"
         }
@@ -142,7 +142,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, rate(fastify_http_request_duration_seconds_bucket[5m])) * 1000",
+          "expr": "histogram_quantile(0.95, sum by(le, method, route) (rate(fastify_http_request_duration_seconds_bucket[5m]))) * 1000",
           "legendFormat": "{{ method }} {{ route }}",
           "refId": "A"
         }
@@ -165,7 +165,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "fastify_websocket_connections_active",
+          "expr": "sum(fastify_websocket_connections_active)",
           "refId": "A"
         }
       ],
@@ -182,7 +182,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "fastify_game_active_games",
+          "expr": "sum(fastify_game_active_games)",
           "refId": "A"
         }
       ],
@@ -199,7 +199,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "sqlite_database_locks",
+          "expr": "max(sqlite_database_locks)",
           "refId": "A"
         }
       ],
@@ -216,7 +216,7 @@
       "type": "gauge",
       "targets": [
         {
-          "expr": "rate(process_cpu_seconds_total[5m]) * 100",
+          "expr": "sum(rate(nodejs_process_cpu_seconds_total{job=\"backend\"}[5m])) * 100",
           "refId": "A"
         }
       ],
@@ -339,7 +339,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "rate(fastify_auth_failures_total[5m])",
+          "expr": "sum by(reason) (rate(fastify_auth_failures_total[5m]))",
           "legendFormat": "{{ reason }}",
           "refId": "A"
         }

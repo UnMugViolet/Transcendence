@@ -1,6 +1,5 @@
 global:
   scrape_interval: 15s
-  evaluation_interval: 15s
   scrape_timeout: 10s
   external_labels:
     monitor: 'transcendence-monitor'
@@ -35,17 +34,20 @@ scrape_configs:
         replacement: 'node_exporter'
 
   # Backend application metrics (Fastify + SQLite)
-  # Works for both dev (backend_dev) and prod (backend) environments
+  # Automatically works with dev (backend_dev) or prod (backend) environments
+  # Prometheus will scrape whichever is available
   - job_name: 'backend'
+    honor_labels: true
     static_configs:
-      - targets: ['backend_dev:3000', 'backend:3000']
+      - targets: ['backend_dev:3000']
+        labels:
+          environment: 'development'
+      - targets: ['backend:3000']
+        labels:
+          environment: 'production'
     metrics_path: '/metrics'
     scrape_interval: 10s
     scrape_timeout: 9s
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: instance
-        replacement: 'backend'
 
   # cAdvisor for Docker container metrics
   - job_name: 'cadvisor'
