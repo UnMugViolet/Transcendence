@@ -55,7 +55,6 @@
 	// Clear global chat messages
 	if (globalChatMessages) globalChatMessages.innerHTML = "";
 
-	console.log("Creating new WebSocket connection with token:", token.substring(0, 20) + "...");
 	// Encode the token to avoid '+' and other special characters breaking the query string
 	const encodedToken = encodeURIComponent(token);
 	ws = new WebSocket(`${BACKEND_URL.replace("http", "ws")}/ws?token=${encodedToken}`);

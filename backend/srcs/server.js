@@ -129,7 +129,7 @@ cron.schedule('0 * * * *', () => {
 
 // Remove all role demo account every day at 3am that has been created more than 24 hours ago every day at 3am
 cron.schedule('0 3 * * *', () => {
-	const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000) ;
+	const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
 	
 	// Get the demo role ID
 	const demoRole = db.prepare('SELECT id FROM roles WHERE name = ?').get('demo');
