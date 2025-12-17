@@ -27,6 +27,16 @@ export class Router {
       targetView.classList.remove("hidden");
       targetView.classList.add("flex");
     }
+
+    // Ensure pong menu (full-screen menu) is hidden except when explicitly showing it
+    const pongMenu = document.getElementById('pongMenu');
+    if (viewId === 'pongMenu') {
+      pongMenu?.classList.remove('hidden');
+      pongMenu?.classList.add('flex');
+    } else {
+      pongMenu?.classList.add('hidden');
+      pongMenu?.classList.remove('flex');
+    }
   }
 
   /**
@@ -45,9 +55,9 @@ export class Router {
       case "#lobby":
         Router.showView("lobby");
         break;
-      // case "#userDashboard":
-      //   Router.showView("userDashboard");
-      //   break;
+      case "#userDashboard":
+        Router.showView("userDashboard");
+        break;
       default:
         Router.showView("pongMenu");
         break;

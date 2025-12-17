@@ -43,7 +43,7 @@ export interface UserStats {
   winRate: number; // percentage
 }
 
-export type ViewId = "viewGame" | "pongMenu" | "lobby";
+export type ViewId = "viewGame" | "pongMenu" | "lobby" | "userDashboard";
 
 export type ModalId = "modalSignUp" | "modalSignIn" | "modalProfile" | "modalFriendProfile" | "modalGamePause" | "modalReconnect";
 

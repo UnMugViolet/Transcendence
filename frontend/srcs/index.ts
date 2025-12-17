@@ -99,6 +99,16 @@ class Application {
         FormManager.setupFormListeners();
         LanguageManager.init();
         Router.init();
+        // Attach stats button behavior: navigate to dashboard
+        const statsBtn = document.getElementById('btnStats');
+        statsBtn?.addEventListener('click', () => {
+          window.location.hash = '#userDashboard';
+        });
+
+        const dashboardBack = document.getElementById('dashboardBack');
+        dashboardBack?.addEventListener('click', () => {
+          window.location.hash = '#pongMenu';
+        });
 
         // Handle authentication state
         await this.handleAuthenticationState();
