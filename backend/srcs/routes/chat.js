@@ -152,7 +152,9 @@ async function chat(fastify) {
 	fastify.get('/ws', { websocket: true }, async (connection, req) => {
 		try {
 			const token = req.query.token;
-			if (!token) throw new Error('No token');
+			if (!token) {
+				throw new Error('No token');
+			}
 			console.log("WS token:", token);
 
 			const payload = fastify.jwt.verify(token);

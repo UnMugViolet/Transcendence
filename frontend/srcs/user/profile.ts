@@ -69,7 +69,9 @@ closeProfileBtn?.addEventListener("click", () => {
 formProfile?.addEventListener("submit", async (e) => {
 	e.preventDefault();
 	const token = sessionStorage.getItem("token");
-	if (!token) return;
+	if (!token) {
+		 return;
+	}
 
 	const name = (document.getElementById("profileNameInput") as HTMLInputElement).value;
 	const password = (document.getElementById("profilePasswordInput") as HTMLInputElement).value;
@@ -153,7 +155,9 @@ closeFriendProfileBtn?.addEventListener("click", () => {
 export async function openFriendProfile(friendId: number) {
 	try {
 		const token = sessionStorage.getItem("token");
-		if (!token) return;
+		if (!token) {
+			 return;
+		}
 
 		const res = await fetch(`${BACKEND_URL}/users/${friendId}`, {
 			headers: { "Authorization": `Bearer ${token}` }

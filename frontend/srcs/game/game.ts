@@ -85,7 +85,11 @@ export function initPongBtns() {
 	}
 }
 
-// Fonction pour arrêter d'appeler 1000 fois /leave
+/**
+ * Function to leave the current game and reset state of the game module
+ * @param options Options to control behavior on leaving
+ * @returns void
+ */
 export async function leaveGame(options: { navigate?: boolean; closeSocket?: boolean; resetState?: boolean } = {}) {
 	const opts = { navigate: true, closeSocket: true, resetState: true, ...options };
 	let token = AuthManager.getToken();
@@ -358,7 +362,9 @@ yes?.addEventListener("click", async () => {
 
 start?.addEventListener("click", async () => {
 	let token = AuthManager.getToken();
-	if (!token) return;
+	if (!token) {
+		return;
+	}
 
 	try {
 		// Ensure WebSocket is connected before starting so we can receive the 'start' event
