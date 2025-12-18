@@ -6,7 +6,7 @@
 set -e
 
 # Load environment variables from .env file
-if [ -z "$ADMIN_USER" ] || [ -z "$GF_SECURITY_ADMIN_USER" ] || [ -z "$GF_SECURITY_ADMIN_PASSWORD" ] || [ -z "$GF_MONITOR_EMAIL" ] || [ -z "$GF_MONITOR_PASSWORD" ] || [ -z "$GF_EDITOR_EMAIL" ] || [ -z "$GF_EDITOR_PASSWORD" ] || [ -z "$GF_DEVELOPER_EMAIL" ] || [ -z "$GF_DEVELOPER_PASSWORD" ]; then
+if [ -z "$GF_SECURITY_ADMIN_USER" ] || [ -z "$GF_SECURITY_ADMIN_PASSWORD" ] || [ -z "$GF_MONITOR_EMAIL" ] || [ -z "$GF_MONITOR_PASSWORD" ] || [ -z "$GF_EDITOR_EMAIL" ] || [ -z "$GF_EDITOR_PASSWORD" ] || [ -z "$GF_DEVELOPER_EMAIL" ] || [ -z "$GF_DEVELOPER_PASSWORD" ]; then
         echo "Error: Required environment variables are missing in .env file."
         exit 1
     fi
@@ -15,7 +15,6 @@ else
 fi
 
 GRAFANA_URL="http://localhost:10100"
-ADMIN_USER="${GF_SECURITY_ADMIN_USER}"
 
 # Pass
 ADMIN_PASSWORD="${GF_SECURITY_ADMIN_PASSWORD}"
@@ -67,7 +66,7 @@ create_user() {
     response=$(curl -s -X POST \
         -H "Content-Type: application/json" \
         -d "{\"name\":\"${username}\",\"email\":\"${email}\",\"login\":\"${username}\",\"password\":\"${password}\",\"OrgId\":1}" \
-        -u "${ADMIN_USER}:${ADMIN_PASSWORD}" \
+        -u "${GF_SECURITY_ADMIN_USER}:${ADMIN_PASSWORD}" \
         "${GRAFANA_URL}/api/admin/users" 2>&1)
     
     if echo "$response" | grep -q "User created"; then
@@ -80,7 +79,7 @@ create_user() {
         curl -s -X PATCH \
             -H "Content-Type: application/json" \
             -d "{\"role\":\"${role}\"}" \
-            -u "${ADMIN_USER}:${ADMIN_PASSWORD}" \
+            -u "${GF_SECURITY_ADMIN_USER}:${ADMIN_PASSWORD}" \
             "${GRAFANA_URL}/api/org/users/${user_id}" > /dev/null
         
         echo -e "${GREEN}✓ User role set to ${role}${NC}"
@@ -109,5 +108,5 @@ echo -e "  - ${GREEN}monitor${NC} (Viewer) - Read-only access"
 echo -e "  - ${GREEN}dashboard-editor${NC} (Editor) - Can edit dashboards"
 echo -e "  - ${GREEN}developer${NC} (Viewer) - Read-only access"
 echo -e "\n${YELLOW}Admin Account:${NC}"
-echo -e "  - ${GREEN}${ADMIN_USER}${NC} (Admin) - Full access"
+echo -e "  - ${GREEN}${GF_SECURITY_ADMIN_USER}${NC} (Admin) - Full access"
 echo -e "\n${YELLOW}Access Grafana at:${NC} ${GRAFANA_URL}"
