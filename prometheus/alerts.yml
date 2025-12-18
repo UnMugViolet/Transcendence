@@ -150,4 +150,4 @@ groups:
           severity: info
         annotations:
           summary: "High request rate detected"
-          description: "Request rate exceeds 1000 req/5m - possible traffic spike or attack"
+          description: "Request rate exceeds 1000 requests/second (5m average) - possible traffic spike or attack"

@@ -101,7 +101,7 @@ make build
 
 ## Documentation
 
-Read the documentation just <a href="./grafana/README.md"> </a>
+Read the documentation just <a href="./grafana/README.md">here</a>
 
 
 Ce qu'il y a déjà à peu près (mais tout fonctionne pas comme il faut)
