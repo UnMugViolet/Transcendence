@@ -34,7 +34,9 @@ export function createGame() {
 		team2: 0,
 		created: Date.now(),
 		send: false,
-		started: false
+		started: false,
+		ballYTarget: 0,
+		lastTargetTime: 0
 	};
 }
 
