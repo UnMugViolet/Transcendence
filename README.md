@@ -97,7 +97,7 @@ make re
 make build
 ```
 
-## Grafana / Prometheus
+## Grafana and Prometheus Monitoring
 
 ## Documentation
 

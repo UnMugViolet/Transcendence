@@ -167,11 +167,11 @@ The current setup exposes Grafana on port 10100. For production:
 | `GF_SECURITY_ADMIN_USER` | Admin username | Yes |
 | `GF_SECURITY_ADMIN_PASSWORD` | Admin password | Yes |
 | `GF_MONITOR_EMAIL` | Monitor user email | Yes |
-| `GF_MONITOR_PASSWORD` | Monitor user email | Yes |
+| `GF_MONITOR_PASSWORD` | Monitor user password | Yes |
 | `GF_EDITOR_EMAIL` | Editor user email | Yes |
-| `GF_EDITOR_PASSWORD` | Editor user email | Yes |
+| `GF_EDITOR_PASSWORD` | Editor user password | Yes |
 | `GF_DEVELOPER_EMAIL` | Dev user email | Yes |
-| `GF_DEVELOPER_PASSWORD` | Dev user email | Yes |
+| `GF_DEVELOPER_PASSWORD` | Dev user password | Yes |
 
 
 ## Troubleshooting
