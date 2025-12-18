@@ -210,6 +210,9 @@ export class UserManager implements User {
     const userInfo = document.getElementById("userInfo");
     const btnLogout = document.getElementById("btnLogout");
 
+    // Close WebSocket first to avoid connection issues
+    closeChatSocket();
+
     // End any active game before logging out
     await leaveGame({ navigate: false, closeSocket: false, resetState: true });
 

@@ -1,5 +1,5 @@
 import { BACKEND_URL } from "../utils/config.js";
-import { ws as socket, initChatSocket} from "../user/chat.js";
+import { getWs, initChatSocket} from "../user/chat.js";
 import { handleRoute, UserManager } from "../index.js";
 import { i18n } from "../utils/i18n.js";
 import { AuthManager } from "../user/auth.js";
@@ -47,6 +47,7 @@ export function initPongBtns() {
 			const userReady = await AuthManager.ensureUserReady();
 			if (userReady) {
 				// Close old socket if it exists, to force reconnection with new token
+				const socket = getWs();
 				if (socket && socket.readyState === WebSocket.OPEN) {
 					socket.close();
 				}
@@ -75,6 +76,7 @@ export function initPongBtns() {
 			const userReady = await AuthManager.ensureUserReady();
 			if (userReady) {
 				// Close old socket if it exists, to force reconnection with new token
+				const socket = getWs();
 				if (socket && socket.readyState === WebSocket.OPEN) {
 					socket.close();
 				}
@@ -111,7 +113,7 @@ export async function leaveGame(options: { navigate?: boolean; closeSocket?: boo
 	// Clear all active game timers
 	clearGameTimers();
 
-	if (opts.closeSocket) socket?.close();
+	if (opts.closeSocket) getWs()?.close();
 
 	if (opts.resetState) {
 		gameId = 0;
@@ -360,7 +362,7 @@ globalThis.addEventListener("popstate", async (event) => {
 		event.preventDefault();
 		started = false;
 		modalReconnect?.classList.remove("hidden");
-		socket?.close();
+		getWs()?.close();
 		isInternalNavigation = true;
 		setTimeout(() => (isInternalNavigation = false), 100);
 	}
@@ -907,6 +909,7 @@ function draw() {
 }
 
 function sendInput() {
+	const socket = getWs();
 	if (!socket || !started) return;
 
 	if (mode === '1v1Offline') {
