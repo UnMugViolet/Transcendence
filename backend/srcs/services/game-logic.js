@@ -79,27 +79,6 @@ function updatePaddle(game, paddleKey, up, down, speed) {
 	}
 }
 
-export function updateAI(game) {
-	const { AI_SPEED, AI_DEAD_ZONE, PADDLE_HEIGHT } = GAME_CONSTANTS;
-	
-	const ballYTarget = game.ballY;
-	const paddle2Center = game.paddle2Y;
-	
-	if (ballYTarget < paddle2Center - AI_DEAD_ZONE) {
-		// Move paddle up
-		game.paddle2Y -= AI_SPEED;
-		if (game.paddle2Y - PADDLE_HEIGHT / 2 < 0) {
-			game.paddle2Y = PADDLE_HEIGHT / 2;
-		}
-	} else if (ballYTarget > paddle2Center + AI_DEAD_ZONE) {
-		// Move paddle down
-		game.paddle2Y += AI_SPEED;
-		if (game.paddle2Y + PADDLE_HEIGHT / 2 > 1) {
-			game.paddle2Y = 1 - PADDLE_HEIGHT / 2;
-		}
-	}
-}
-
 function checkPaddleCollision(game) {
 	const { BALL_RADIUS, POS_X_PLAYER1, POS_X_PLAYER2, PADDLE_WIDTH, PADDLE_HEIGHT, MAX_ANGLE, MAX_BALL_SPEED, BALL_SPEED_INCREMENT } = GAME_CONSTANTS;
 	

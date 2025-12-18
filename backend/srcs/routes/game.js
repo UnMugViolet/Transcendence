@@ -1,10 +1,11 @@
 import { partyQueries, partyPlayerQueries, userQueries } from '../services/database-queries.js';
 import { handlePause, setTeam, handleEndGame,broadcastStartMessage, validateGameStart, cleanupUserGames, findOrCreateParty, assignTeamNumber, sleep } from '../services/party-manager.js';
-import { createGame, resetRound, movePlayer as movePlayerPaddle, updateAI, updateBall, isGameFinished, getGameState } from '../services/game-logic.js';
+import { createGame, resetRound, movePlayer as movePlayerPaddle, updateBall, isGameFinished, getGameState } from '../services/game-logic.js';
 import { initializeTournament, setupNextMatch, sendNextGameMessage } from '../services/tournament-manager.js';
 import { sendSysMessage, sendGameStateToPlayers } from '../services/message-service.js';
 import { GAME_CONSTANTS } from '../services/game-logic.js';
 import { clients } from './chat.js';
+import { updateAI } from '../services/ai.js';
 
 // Game state
 const games = new Map();

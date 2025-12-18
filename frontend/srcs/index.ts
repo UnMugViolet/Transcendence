@@ -7,6 +7,8 @@ import { populateLanguageDropdown, initLanguageButton } from "./utils/langs.js";
 import { initChatSocket } from "./user/chat.js";
 import { setSidebarEnabled } from "./user/friends.js";
 import { i18n } from "./utils/i18n.js";
+import { initNotifications } from "./user/notif.js";
+import { initPongBtns } from "./game/game.js";
 
 /**
  * Language dropdown setup
