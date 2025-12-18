@@ -49,7 +49,7 @@ export const gameLoop = setInterval(() => {
 
 		// AI logic for IA mode
 		if (party.type === 'IA' && game.started) {
-			updateAI(game);
+			updateAI(game, party.id);
 		}
 
 		if (game.started) {

@@ -1,12 +1,15 @@
+import { handleInput } from "../routes/chat.js";
+
+const AI_DIF = 5;
 let ballYTarget = null;
 let lastTargetTime = 0;
 
 
 function findNextCollision(angle, px, py) {
-	wallx;
-	wally;
-	advanceIfWallx;
-	advanceIfWally;
+	var wallx;
+	var wally;
+	var advanceIfWallx;
+	var advanceIfWally;
 	const dx = Math.cos(angle);
 	const dy = Math.sin(angle);
 
@@ -18,8 +21,8 @@ function findNextCollision(angle, px, py) {
 		wally = 1;
 	else
 		wally = 0;
-	offAngle = angle + (Math.random() * AI_DIF) - (Math.random() * AI_DIF);
-	if (dx > 0 && offAngle > (PI / 2) || offAngle < -(PI / 2))
+	var offAngle = angle + (Math.random() * AI_DIF) - (Math.random() * AI_DIF);
+	if (dx > 0 && offAngle > (Math.PI / 2) || offAngle < -(Math.PI / 2))
 		offAngle = angle;
 
 	advanceIfWallx = (wallx - px) / dx;
@@ -45,7 +48,7 @@ function defineDestination(game) {
 }
 
 
-export function updateAI(game) {
+export function updateAI(game, gameId) {
 	// define destination must be called only once per second
 	const now = Date.now();
 
@@ -54,8 +57,8 @@ export function updateAI(game) {
 		lastTargetTime = now;
 	}
 	const paddle2Center = game.paddle2Y;
-	upPlayer2 = false;
-	downPlayer2 = false;
+	var upPlayer2 = false;
+	var downPlayer2 = false;
 	
 	if (ballYTarget < paddle2Center) {
 		// Move paddle up
@@ -66,7 +69,7 @@ export function updateAI(game) {
 	}
 	handleInput({
 		type: "input",
-		game: game.gameId,
+		game: gameId,
 		team: 2,
 		up: upPlayer2,
 		down: downPlayer2
