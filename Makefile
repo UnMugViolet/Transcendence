@@ -1,6 +1,7 @@
 APP_NAME 	= Transcendance
 IP 			= localhost
 PORT_DEV 	= 8080
+PORT_GF 	= 10100
 PORT_PROD 	= 8443
 BACK_PORT 	= 3000
 
@@ -23,6 +24,8 @@ help: ## Outputs this help screen
 dev: ## Launch development environment with live reload
 	@echo "$(YELLOW) $(BOLD) Starting development environment...$(RESET)"
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d
+	@chmod +x grafana/provision-users.sh
+	@./grafana/provision-users.sh
 	@echo "$(GREEN)Development server available at $(RESET) $(WHITE) http://$(IP):$(PORT_DEV) $(RESET)"
 	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) http://$(IP):$(BACK_PORT) $(RESET)"
 
@@ -38,7 +41,9 @@ build-dev: ## Build development docker images
 
 prod: ## Launch the docker services (production)
 	@echo "$(YELLOW) $(BOLD) Starting up production containers...$(RESET)"
-	$(DOCKER_COMPOSE) up -d 
+	@$(DOCKER_COMPOSE) up -d
+	@chmod +x grafana/provision-users.sh
+	@./grafana/provision-users.sh
 	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) https://$(IP):$(PORT_PROD) $(RESET)"
 	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) https://$(IP):$(BACK_PORT) $(RESET)"
 
@@ -78,8 +83,8 @@ clean: ## Remove all containers
 
 fclean: clean ## Remove all containers, images and volumes
 	@echo "$(RED) Removing all related images and volumes...$(RESET)"
-	@sudo rm -rf backend/data/* || true
-	@sudo rm -rf backend/database/* || true
+	@rm -rf backend/data/* || true
+	@rm -rf backend/database/* || true
 	@$(DOCKER_COMPOSE) down --volumes --rmi all
 
 ## —— Rebuild ————————————————————————————————————————————————————————————————

@@ -5,11 +5,12 @@ import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import 'dotenv/config';
 
-
 import path from 'path';
 import cron from 'node-cron';
+import fs from 'fs';
 
-import db from './db.js';
+import db, { dbPath } from './db.js';
+import metrics from './metrics.js';
 import chat from './routes/chat.js';
 import authRoutes from './routes/auth.js';
 import friendsRoutes from './routes/friends.js';
@@ -41,26 +42,39 @@ fastify.register(fastifyStatic, {
 });
 
 fastify.decorate('db', db);
+fastify.decorate('metrics', metrics);
 
 
 fastify.decorate("authenticate", async function (request, reply) {
 	try {
 		await request.jwtVerify();
 		if (request.user.type !== 'access') {
+			metrics.recordAuthFailure('invalid_token_type');
 			return reply.status(401).send({ error: 'Unauthorized' });
 		}
 		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), request.user.id);
 	} catch (err) {
-		console.error('Authentication error:', err);
+		console.error('JWT verification failed:', err); // Log the error for debugging
+		metrics.recordAuthFailure('verification_failed');
 		return reply.status(401).send({ error: 'Unauthorized' });
 	}
 });
 
+// Metrics hook - track request timing and status
 fastify.addHook('onRequest', async (request, reply) => {
+  request.startTime = Date.now();
+  
   const acceptLang = request.headers['accept-language'];
-  // extrait "fr" de "fr-FR,fr;q=0.9,en;q=0.8"
   const lang = acceptLang?.split(',')[0]?.split('-')[0] || 'en';
   request.lang = lang;
+});
+
+fastify.addHook('onResponse', async (request, reply) => {
+  if (request.startTime) {
+    const duration = (Date.now() - request.startTime) / 1000;
+    const route = request.url.split('?')[0];
+    metrics.recordHttpRequest(request.method, route, reply.statusCode, duration);
+  }
 });
 
 fastify.register(friendsRoutes);
@@ -71,6 +85,12 @@ fastify.register(chat);
 
 fastify.get('/', async () => {
 	return { message: 'Hello from Fastify & SQLite 🎉' };
+});
+
+// Prometheus metrics endpoint
+fastify.get('/metrics', async (request, reply) => {
+	reply.header('Content-Type', metrics.getContentType());
+	return metrics.getMetrics();
 });
 
 
@@ -115,7 +135,19 @@ process.on('SIGTERM', async () => {
 
 
 fastify.listen({ port: 3000, host: '0.0.0.0' })
-	.then(() => console.log('✅ Server running on http://localhost:3000'))
+	.then(() => {
+		console.log('✅ Server running on http://localhost:3000');
+		// Update user metrics on startup
+		const totalUsersCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+		const demoUsersCount = db.prepare(`
+			SELECT COUNT(*) as count 
+			FROM users 
+			JOIN roles ON users.role_id = roles.id 
+			WHERE roles.name = 'demo'
+		`).get().count;
+		metrics.setTotalUsers(totalUsersCount);
+		metrics.setDemoUsers(demoUsersCount);
+	})
 	.catch(err => {
 		console.error(err);
 		process.exit(1);
@@ -125,6 +157,29 @@ fastify.listen({ port: 3000, host: '0.0.0.0' })
 cron.schedule('0 * * * *', () => {
 	db.prepare('DELETE FROM refresh_tokens WHERE ? - last_used_at > timeout').run(Date.now());
 	console.log('Refresh tokens cleaned at', new Date().toLocaleString());
+});
+
+// Update user count metrics every minute
+cron.schedule('* * * * *', () => {
+	const totalUsersCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+	const demoUsersCount = db.prepare(`
+		SELECT COUNT(*) as count 
+		FROM users 
+		JOIN roles ON users.role_id = roles.id 
+		WHERE roles.name = 'demo'
+	`).get().count;
+	metrics.setTotalUsers(totalUsersCount);
+	metrics.setDemoUsers(demoUsersCount);
+});
+
+// Update database metrics every 30 seconds
+cron.schedule('*/30 * * * * *', () => {
+	try {
+		const stats = fs.statSync(dbPath);
+		metrics.setDatabaseSize(stats.size);
+	} catch (err) {
+		console.error('Error tracking database size:', err);
+	}
 });
 
 // Remove all role demo account every day at 3am that has been created more than 24 hours ago every day at 3am
