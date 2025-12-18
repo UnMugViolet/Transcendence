@@ -31,11 +31,11 @@ dev: ## Launch development environment with live reload
 
 dev-down: ## Stop development environment
 	@echo "$(CYAN) $(BOLD) Stopping development containers...$(RESET)"
-	$(DOCKER_COMPOSE) -f docker-compose.dev.yml down
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down
 
 build-dev: ## Build development docker images 
 	@echo "$(YELLOW) $(BOLD)  Building development images...$(RESET)"
-	$(DOCKER_COMPOSE) -f docker-compose.dev.yml build --no-cache
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml build --no-cache
 
 ## —— Prod app handling ——————————————————————————————————————————————————————————————
 
