@@ -6,13 +6,15 @@
 set -e
 
 # Load environment variables from .env file
-if [ -z "$GF_SECURITY_ADMIN_USER" ] || [ -z "$GF_SECURITY_ADMIN_PASSWORD" ] || [ -z "$GF_MONITOR_EMAIL" ] || [ -z "$GF_MONITOR_PASSWORD" ] || [ -z "$GF_EDITOR_EMAIL" ] || [ -z "$GF_EDITOR_PASSWORD" ] || [ -z "$GF_DEVELOPER_EMAIL" ] || [ -z "$GF_DEVELOPER_PASSWORD" ]; then
-        echo "Error: Required environment variables are missing in .env file."
-        exit 1
-    fi
-else
+if [ -f .env ]; then
     export $(grep -v '^#' .env | xargs)
 fi
+
+if [ -z "$GF_SECURITY_ADMIN_USER" ] || [ -z "$GF_SECURITY_ADMIN_PASSWORD" ] || [ -z "$GF_MONITOR_EMAIL" ] || [ -z "$GF_MONITOR_PASSWORD" ] || [ -z "$GF_EDITOR_EMAIL" ] || [ -z "$GF_EDITOR_PASSWORD" ] || [ -z "$GF_DEVELOPER_EMAIL" ] || [ -z "$GF_DEVELOPER_PASSWORD" ]; then
+    echo "Error: Required environment variables are missing in .env file."
+    exit 1
+fi
+
 
 GRAFANA_URL="http://localhost:10100"
 
@@ -28,7 +30,9 @@ DEVELOPER_PASSWORD="${GF_DEVELOPER_PASSWORD}"
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+BOLD='\033[1m'
+WHITE='\033[1;37m'
+NC='\033[0m'
 
 echo -e "${YELLOW}========================================${NC}"
 echo -e "${YELLOW}Grafana User Provisioning Script${NC}"
@@ -109,4 +113,4 @@ echo -e "  - ${GREEN}dashboard-editor${NC} (Editor) - Can edit dashboards"
 echo -e "  - ${GREEN}developer${NC} (Viewer) - Read-only access"
 echo -e "\n${YELLOW}Admin Account:${NC}"
 echo -e "  - ${GREEN}${GF_SECURITY_ADMIN_USER}${NC} (Admin) - Full access"
-echo -e "\n${YELLOW}Access Grafana at:${NC} ${GRAFANA_URL}"
+echo -e "\n${YELLOW}Access Grafana at:${WHITE}${BOLD} ${GRAFANA_URL}${NC}"

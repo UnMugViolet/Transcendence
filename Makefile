@@ -28,7 +28,6 @@ dev: ## Launch development environment with live reload
 	@./grafana/provision-users.sh
 	@echo "$(GREEN)Development server available at $(RESET) $(WHITE) http://$(IP):$(PORT_DEV) $(RESET)"
 	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) http://$(IP):$(BACK_PORT) $(RESET)"
-	@echo "$(GREEN)Grafana server available at $(RESET) $(WHITE) http://$(IP):$(PORT_GF) $(RESET)"
 
 dev-down: ## Stop development environment
 	@echo "$(CYAN) $(BOLD) Stopping development containers...$(RESET)"
@@ -47,7 +46,6 @@ prod: ## Launch the docker services (production)
 	@./grafana/provision-users.sh
 	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) https://$(IP):$(PORT_PROD) $(RESET)"
 	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) https://$(IP):$(BACK_PORT) $(RESET)"
-	@echo "$(GREEN)Grafana server available at $(RESET) $(WHITE) http://$(IP):$(PORT_GF) $(RESET)"
 
 down: ## Stop the docker services
 	@echo "$(CYAN) $(BOLD) Stopping containers...$(RESET)"
