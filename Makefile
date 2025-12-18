@@ -24,6 +24,8 @@ help: ## Outputs this help screen
 dev: ## Launch development environment with live reload
 	@echo "$(YELLOW) $(BOLD) Starting development environment...$(RESET)"
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d
+	@chmod +x grafana/provision-users.sh
+	@./grafana/provision-users.sh
 	@echo "$(GREEN)Development server available at $(RESET) $(WHITE) http://$(IP):$(PORT_DEV) $(RESET)"
 	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) http://$(IP):$(BACK_PORT) $(RESET)"
 	@echo "$(GREEN)Grafana server available at $(RESET) $(WHITE) http://$(IP):$(PORT_GF) $(RESET)"

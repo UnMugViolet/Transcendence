@@ -36,6 +36,8 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
+    networks:
+      - default
 
 
   # ===== MONITORING STACK =====
@@ -128,7 +130,7 @@ volumes:
     driver: local
 
 networks:
-  transcendence_dev:
+  default:
     driver: bridge
   monitoring:
     driver: bridge
