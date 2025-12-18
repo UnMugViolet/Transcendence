@@ -29,8 +29,13 @@ import { handleMovePlayer, pauseGameFromWS, sendSysMessage } from './game.js';
 
 const clients = new Map();
 
+let metricsInstance;
+
 async function chat(fastify) {
 	await fastify.register(websocketPlugin);
+	
+	// Store metrics instance for use in WebSocket handlers
+	metricsInstance = fastify.metrics;
 
 	//---------------------- INVITES -----------------------//
 
@@ -162,7 +167,7 @@ async function chat(fastify) {
 			if (payload.type !== 'access') throw new Error('Unauthorized');
 
 			clients.set(payload.id, connection.socket || connection);
-			metrics.recordWebSocketConnection();
+			if (metricsInstance) metricsInstance.recordWebSocketConnection();
 			console.log(`🔌 Client connecté : ${payload.name} (ID: ${payload.id})`);
 			console.log(`DEBUG: Total clients connected: ${clients.size}`);
 			console.log(`DEBUG: Client IDs: [${Array.from(clients.keys()).join(', ')}]`);
@@ -243,7 +248,7 @@ async function chat(fastify) {
 				
 				console.log(`❌ Client ${payload.name} déconnecté (ID: ${payload.id})`);
 				clients.delete(payload.id);
-				metrics.recordWebSocketDisconnection();
+				if (metricsInstance) metricsInstance.recordWebSocketDisconnection();
 				console.log(`DEBUG: Clients after disconnect: ${clients.size} remaining`);
 			});
 

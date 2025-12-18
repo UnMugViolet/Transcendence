@@ -37,7 +37,7 @@
  });
 
  export function initChatSocket(token: string, onReady?: () => void) {
-	// If the WS exists and is already opened with the same token context, do nothing
+	// If the WS exists and is already opened, reuse it
     if (ws && ws.readyState === WebSocket.OPEN) {
         if (onReady) {
 			onReady();
@@ -46,18 +46,16 @@
     }
     
     // Close existing connection if it's in a bad state
-    if (ws && ws.readyState !== WebSocket.CLOSED) {
+    if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.CLOSING)) {
         console.log("Closing existing WebSocket connection, readyState:", ws.readyState);
         ws.close();
-        ws = null; // Set to null immediately to allow new connection
     }
     
 	// Clear global chat messages
 	if (globalChatMessages) globalChatMessages.innerHTML = "";
 
-	// Encode the token to avoid '+' and other special characters breaking the query string
-	const encodedToken = encodeURIComponent(token);
-	ws = new WebSocket(`${BACKEND_URL.replace("http", "ws")}/ws?token=${encodedToken}`);
+	// Create WebSocket connection with token as query parameter
+	ws = new WebSocket(`${BACKEND_URL.replace("http", "ws")}/ws?token=${token}`);
 	
 	ws.onopen = () => {
 		console.log("WebSocket connected");
