@@ -35,7 +35,7 @@ export function handleInput(msg) {
 		
 		// Handle game input
 		if (data.type === 'input') {
-			movePlayer(data);
+			handleMovePlayer(data);
 			return;
 		}
 
