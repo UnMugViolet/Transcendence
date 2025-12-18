@@ -2,7 +2,11 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { USER_CREATION_CONSTANTS } from './utils.js';
-import metrics from './metrics.js';
+import { createRequire } from 'module';
+
+// Import metrics module avoid import so that if db.js is imported in metrics it doesn't cause circular dependency
+const require = createRequire(import.meta.url);
+const metrics = require('./metrics.js').default || require('./metrics.js');
 
 // Ensure the database directory exists
 const dbFile = process.env.DB_FILE || 'default_name.sqlite';

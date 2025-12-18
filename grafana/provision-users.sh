@@ -6,14 +6,12 @@
 set -e
 
 # Load environment variables from .env file
-if [ -f .env ]; then
+if [ -z "$ADMIN_USER" ] || [ -z "$GF_SECURITY_ADMIN_USER" ] || [ -z "$GF_SECURITY_ADMIN_PASSWORD" ] || [ -z "$GF_MONITOR_EMAIL" ] || [ -z "$GF_MONITOR_PASSWORD" ] || [ -z "$GF_EDITOR_EMAIL" ] || [ -z "$GF_EDITOR_PASSWORD" ] || [ -z "$GF_DEVELOPER_EMAIL" ] || [ -z "$GF_DEVELOPER_PASSWORD" ]; then
+        echo "Error: Required environment variables are missing in .env file."
+        exit 1
+    fi
+else
     export $(grep -v '^#' .env | xargs)
-elif [ -z "$ADMIN_USER" ] || [ -z "$GF_SECURITY_ADMIN_USER" ] || [ -z "$GF_SECURITY_ADMIN_PASSWORD" ] || [ -z "$GF_MONITOR_EMAIL" ] || [ -z "$GF_MONITOR_PASSWORD" ] || [ -z "$GF_EDITOR_EMAIL" ] || [ -z "$GF_EDITOR_PASSWORD" ] || [ -z "$GF_DEVELOPER_EMAIL" ] || [ -z "$GF_DEVELOPER_PASSWORD" ]; then
-	echo "Error: Required environment variables are missing in .env file."
-	exit 1
-elif [ ! -f .env ]; then
-    echo "Warning: .env file not found. Cannot run this script."
-    exit 1
 fi
 
 GRAFANA_URL="http://localhost:10100"
