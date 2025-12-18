@@ -50,7 +50,7 @@ function defineDestination(game) {
 export function updateAI(game, gameId) {
 	// define destination must be called only once per second
 	const now = Date.now();
-	AI_DEAD_ZONE = GAME_CONSTANTS;
+	const AI_DEAD_ZONE = GAME_CONSTANTS.AI_DEAD_ZONE;
 
 	if (game.ballYTarget === null || now - game.lastTargetTime >= 1000) {
 		game.ballYTarget = defineDestination(game);
@@ -60,10 +60,10 @@ export function updateAI(game, gameId) {
 	var upPlayer2 = false;
 	var downPlayer2 = false;
 	
-	if (game.ballYTarget < paddle2Center) {
+	if (game.ballYTarget < paddle2Center - AI_DEAD_ZONE) {
 		// Move paddle up
 		upPlayer2 = true;
-	} else if (game.ballYTarget > paddle2Center) {
+	} else if (game.ballYTarget > paddle2Center + AI_DEAD_ZONE) {
 		// Move paddle down
 		downPlayer2 = true;
 	}
