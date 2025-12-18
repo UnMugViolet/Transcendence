@@ -66,7 +66,9 @@ export function initNotifications() {
 
 export async function loadNotifications() {
   const token = sessionStorage.getItem("token");
-  if (!token) return;
+  if (!token) {
+    return;
+  }
 
   try {
     const res = await fetch(`${BACKEND_URL}/friends/requests`, {
@@ -77,7 +79,9 @@ export async function loadNotifications() {
 
     const notifList = document.getElementById("notifList");
 
-    if (!notifList) return;
+    if (!notifList) {
+      return;
+    }
 
     notifList.innerHTML = ""; // reset
 

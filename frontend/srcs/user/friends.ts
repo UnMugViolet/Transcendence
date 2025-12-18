@@ -123,7 +123,9 @@ searchInput?.addEventListener("input", (e) => {
 // repondre aux demandes d'amis depuis les notifications
 export async function respondFriendRequest(userId: number, accept: boolean) {
 	const token = sessionStorage.getItem("token");
-	if (!token) return;
+	if (!token) {
+    return;
+  }
 
   await fetch(`${BACKEND_URL}/friends/respond`, {
     method: "POST",
@@ -141,7 +143,9 @@ export async function respondFriendRequest(userId: number, accept: boolean) {
 // 🔹 Charger la liste d'amis
 export async function loadFriends() {
   const token = sessionStorage.getItem("token");
-  if (!token) return;
+  if (!token) {
+    return;
+  }
 
   try {
     const res = await fetch(`${BACKEND_URL}/friends`, {

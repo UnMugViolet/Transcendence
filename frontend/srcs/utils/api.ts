@@ -19,7 +19,7 @@ export class ApiClient {
 
     // Add authorization header
     options.headers = {
-      ...(options.headers || {}),
+      ...(options.headers),
       Authorization: `Bearer ${token}`,
     };
 
@@ -31,7 +31,7 @@ export class ApiClient {
       if (newToken) {
         // Retry with new token
         options.headers = {
-          ...(options.headers || {}),
+          ...(options.headers),
           Authorization: `Bearer ${newToken}`,
         };
         response = await fetch(url, options);

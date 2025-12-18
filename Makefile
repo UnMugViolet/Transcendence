@@ -1,6 +1,7 @@
 APP_NAME 	= Transcendance
 IP 			= localhost
 PORT_DEV 	= 8080
+PORT_GF 	= 10100
 PORT_PROD 	= 8443
 BACK_PORT 	= 3000
 
@@ -13,17 +14,37 @@ GREEN = \033[0;92m
 YELLOW = \033[0;93m
 CYAN = \033[0;96m
 
-all: up
+all: prod
 
 help: ## Outputs this help screen
 	@grep -E '(^[a-zA-Z0-9_-]+:.*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}{printf "\033[32m%-30s$(CLR_RESET) %s\n", $$1, $$2}' | sed -e 's/\[32m##/[33m/'
 
-## —— App handling ——————————————————————————————————————————————————————————————
+## —— Dev app handling ——————————————————————————————————————————————————————————————
 
-up: ## Launch the docker services
-	@echo "$(YELLOW) $(BOLD) Starting up containers...$(RESET)"
-	$(DOCKER_COMPOSE) up -d 
-	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) dev: http://$(IP):$(PORT_DEV) prod: https://$(IP):$(PORT_PROD) $(RESET)"
+dev: ## Launch development environment with live reload
+	@echo "$(YELLOW) $(BOLD) Starting development environment...$(RESET)"
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d
+	@chmod +x grafana/provision-users.sh
+	@./grafana/provision-users.sh
+	@echo "$(GREEN)Development server available at $(RESET) $(WHITE) http://$(IP):$(PORT_DEV) $(RESET)"
+	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) http://$(IP):$(BACK_PORT) $(RESET)"
+
+dev-down: ## Stop development environment
+	@echo "$(CYAN) $(BOLD) Stopping development containers...$(RESET)"
+	$(DOCKER_COMPOSE) -f docker-compose.dev.yml down
+
+build-dev: ## Build development docker images 
+	@echo "$(YELLOW) $(BOLD)  Building development images...$(RESET)"
+	$(DOCKER_COMPOSE) -f docker-compose.dev.yml build --no-cache
+
+## —— Prod app handling ——————————————————————————————————————————————————————————————
+
+prod: ## Launch the docker services (production)
+	@echo "$(YELLOW) $(BOLD) Starting up production containers...$(RESET)"
+	@$(DOCKER_COMPOSE) up -d
+	@chmod +x grafana/provision-users.sh
+	@./grafana/provision-users.sh
+	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) https://$(IP):$(PORT_PROD) $(RESET)"
 	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) https://$(IP):$(BACK_PORT) $(RESET)"
 
 down: ## Stop the docker services
@@ -39,10 +60,13 @@ push: ## Push all docker images to the registry
 	$(DOCKER_COMPOSE) push
 
 
-## —— Dev utils ——————————————————————————————————————————————————————————————
+## —— Utils ——————————————————————————————————————————————————————————————
 
-logs: ## Show the logs of all containers
-	@$(DOCKER_COMPOSE) logs -f
+prod-logs: ## Show the logs of all containers
+	@$(DOCKER_COMPOSE) logs 
+
+dev-logs: ## Show development logs
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml logs -f
 
 install: ## Install project dependencies
 	@echo "$(GREEN) Installing backend dependencies...$(RESET)"
@@ -59,10 +83,13 @@ clean: ## Remove all containers
 
 fclean: clean ## Remove all containers, images and volumes
 	@echo "$(RED) Removing all related images and volumes...$(RESET)"
+	@rm -rf backend/data/* || true
+	@rm -rf backend/database/* || true
 	@$(DOCKER_COMPOSE) down --volumes --rmi all
 
 ## —— Rebuild ————————————————————————————————————————————————————————————————
 
-re: fclean build all ## Rebuild the whole project
+re: fclean build all ## Rebuild the whole production environment
+re-dev: fclean build-dev dev ## Rebuild the whole development environment
 
-.PHONY: all help up down build push clean fclean re 
+.PHONY: all help up down dev dev-down dev-logs build push clean fclean re install logs 

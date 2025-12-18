@@ -8,12 +8,10 @@ export class ModalManager {
    * Opens a modal by removing 'hidden' class and adding 'flex' class
    */
   static openModal(id: ModalId): void {
-    console.log("Opening modal:", id);
     const modal = document.getElementById(id);
     if (modal) {
       modal.classList.remove("hidden");
       modal.classList.add("flex");
-      console.log(`Modal ${id} opened successfully`);
     } else {
       console.error(`Modal ${id} not found`);
     }
@@ -52,12 +50,10 @@ export class ModalManager {
   static setupModalEventListeners(): void {
     // Open modal listeners
     document.getElementById("btnSignUp")?.addEventListener("click", () => {
-      console.log("Sign Up button clicked");
       ModalManager.openModal("modalSignUp");
     });
 
     document.getElementById("btnSignIn")?.addEventListener("click", () => {
-      console.log("Sign In button clicked");
       ModalManager.openModal("modalSignIn");
     });
 
