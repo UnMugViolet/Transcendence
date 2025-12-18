@@ -1,32 +1,34 @@
 import { handleInput } from "../routes/chat.js";
-import { GAME_CONSTANTS } from "./game-logic.js";
 
-const AI_DIF = 5;
-
+const AI_DIF = 10;
+const AI_DEAD_ZONE = 0.02;
 
 function findNextCollision(angle, px, py) {
 	if (Math.cos(angle) <= 0)
 		return (0.5);
-	console.log(angle);
-	if ((angle <= 0.00001 && angle >= -0.00001) || (angle >= Math.PI - 0.00001 && angle <= Math.PI + 0.00001))
-		return (0.5);
+
+	// Use a random angle near base angle to have decreased precision with each call
 	var offAngle = angle + (Math.random() * AI_DIF * 0.01745) - (Math.random() * AI_DIF * 0.01745);
-	if (offAngle > (Math.PI / 2) || offAngle < -(Math.PI / 2))
+	
+	// Use base angle if random flips offAngle in the other direction
+	if (Math.cos(offAngle) <= 0)
 		offAngle = angle;
 	const dx = Math.cos(offAngle);
 	const dy = Math.sin(offAngle);
 
 	
-    const wallx = dx > 0 ? 0.95 : 0.05;
-    const wally = dy > 0 ? 1 : 0;
-	
+	const wallx = dx > 0 ? 0.95 : 0.05;
+	const wally = dy > 0 ? 1 : 0;
+
 
 	if (dy <= 0.00001 && dy >= -0.00001)
 		return (py);
+
+	// check which wall will be met first
 	const advanceIfWallx = (wallx - px) / dx;
 	const advanceIfWally = (wally - py) / dy;
-	console.log("dx and dy: ", dx, dy);
-	console.log("advances: ", advanceIfWallx, advanceIfWally);
+
+	// if up or down wall is met first calculate again with bounce, else return impact point
 	if (advanceIfWallx <= advanceIfWally) {
 		return (py + (advanceIfWallx * dy));
 	} else {
@@ -48,9 +50,9 @@ function defineDestination(game) {
 
 
 export function updateAI(game, gameId) {
+
 	// define destination must be called only once per second
 	const now = Date.now();
-	const AI_DEAD_ZONE = GAME_CONSTANTS.AI_DEAD_ZONE;
 
 	if (game.ballYTarget === null || now - game.lastTargetTime >= 1000) {
 		game.ballYTarget = defineDestination(game);
@@ -67,6 +69,8 @@ export function updateAI(game, gameId) {
 		// Move paddle down
 		downPlayer2 = true;
 	}
+
+	// simulate player input
 	handleInput(JSON.stringify({
 		type: "input",
 		game: gameId,

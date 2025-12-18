@@ -1,5 +1,5 @@
 /**
- * Game logic service for ball physics, paddle movement, and AI
+ * Game logic service for ball physics and paddle movement
  */
 
 // Game constants
@@ -10,8 +10,6 @@ export const GAME_CONSTANTS = {
 	POS_X_PLAYER1: 0.05,
 	POS_X_PLAYER2: 1 - 0.05,
 	PADDLE_SPEED: 0.008,
-	AI_SPEED: 0.006,
-	AI_DEAD_ZONE: 0.02,
 	INITIAL_BALL_SPEED: 0.005,
 	MAX_BALL_SPEED: 0.025,
 	BALL_SPEED_INCREMENT: 0.001,
