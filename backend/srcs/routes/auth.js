@@ -110,7 +110,7 @@ async function authRoutes(fastify) {
 			return reply.status(404).send({ error: 'User not found' });
 		}
 
-		const isValidPass = bcrypt.compareSync(password, user.pass);
+		const isValidPass = bcrypt.compareSync(password, user.password);
 		if (!isValidPass) {
 			return reply.status(401).send({ error: 'Invalid password' });
 		}

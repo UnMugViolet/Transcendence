@@ -210,6 +210,8 @@ export class UserManager implements User {
     const userInfo = document.getElementById("userInfo");
     const btnLogout = document.getElementById("btnLogout");
 
+    closeChatSocket();
+
     // End any active game before logging out
     await leaveGame({ navigate: false, closeSocket: false, resetState: true });
 
@@ -262,7 +264,6 @@ export class UserManager implements User {
 
     // Disable user features
     setSidebarEnabled(false);
-    closeChatSocket();
 
   }
 
