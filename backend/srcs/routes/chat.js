@@ -29,6 +29,53 @@ import { handleMovePlayer, pauseGameFromWS, sendSysMessage } from './game.js';
 
 const clients = new Map();
 
+export function handleInput(msg) {
+	try {
+		const data = JSON.parse(msg);
+		
+		// Handle game input
+		if (data.type === 'input') {
+			handleMovePlayer(data);
+			return;
+		}
+
+		// Validate message format
+		validateWebSocketMessage(data, payload.id);
+
+		// Add metadata
+		data.from = payload.id;
+		data.send_at = Date.now();
+
+		console.log(`Message from ${data.from} to ${data.to}: ${data.message}`);
+
+		if (data.type === 'private') {
+			// Send to recipient
+			const receiverSocket = clients.get(data.to);
+			if (receiverSocket) {
+				receiverSocket.send(JSON.stringify(data));
+			}
+			
+			// Save to database
+			savePrivateMessage(data.from, data.to, data.message, data.send_at);
+			
+		} else if (data.type === 'party') {
+			// Add sender name and broadcast to party
+			addSenderName(data, data.from);
+			const partyPlayers = getPartyPlayers(data.to);
+			
+			partyPlayers.forEach(player => {
+				if (player.user_id !== data.from) {
+					const playerSocket = clients.get(player.user_id);
+					if (playerSocket) {
+						playerSocket.send(JSON.stringify(data));
+					}
+				}
+			});
+		}
+	} catch (err) {
+		console.log('Error processing message:', err.message);
+	}
+}
 let metricsInstance;
 
 async function chat(fastify) {
@@ -184,51 +231,7 @@ async function chat(fastify) {
 			}
 
 			(connection.socket || connection).on('message', (msg) => {
-				try {
-					const data = JSON.parse(msg);
-					
-					// Handle game input
-					if (data.type === 'input') {
-						handleMovePlayer(data);
-						return;
-					}
-
-					// Validate message format
-					validateWebSocketMessage(data, payload.id);
-
-					// Add metadata
-					data.from = payload.id;
-					data.send_at = Date.now();
-
-					console.log(`Message from ${data.from} to ${data.to}: ${data.message}`);
-
-					if (data.type === 'private') {
-						// Send to recipient
-						const receiverSocket = clients.get(data.to);
-						if (receiverSocket) {
-							receiverSocket.send(JSON.stringify(data));
-						}
-						
-						// Save to database
-						savePrivateMessage(data.from, data.to, data.message, data.send_at);
-						
-					} else if (data.type === 'party') {
-						// Add sender name and broadcast to party
-						addSenderName(data, data.from);
-						const partyPlayers = getPartyPlayers(data.to);
-						
-						partyPlayers.forEach(player => {
-							if (player.user_id !== data.from) {
-								const playerSocket = clients.get(player.user_id);
-								if (playerSocket) {
-									playerSocket.send(JSON.stringify(data));
-								}
-							}
-						});
-					}
-				} catch (err) {
-					console.log('Error processing message:', err.message);
-				}
+					handleInput(msg);
 			});
 
 			(connection.socket || connection).on('close', (code, reason) => {

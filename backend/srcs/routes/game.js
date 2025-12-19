@@ -1,9 +1,10 @@
 import { partyQueries, partyPlayerQueries, userQueries } from '../services/database-queries.js';
 import { handlePause, setTeam, handleEndGame,broadcastStartMessage, validateGameStart, cleanupUserGames, findOrCreateParty, assignTeamNumber } from '../services/party-manager.js';
-import { resetRound, movePlayer, updateAI, updateBall, isGameFinished, getGameState, GAME_CONSTANTS } from '../services/game-logic.js';
+import { resetRound, movePlayer, updateBall, isGameFinished, getGameState, GAME_CONSTANTS } from '../services/game-logic.js';
 import { initializeTournament, setupNextMatch, sendNextGameMessage } from '../services/tournament-manager.js';
 import { sendSysMessage, sendGameStateToPlayers } from '../services/message-service.js';
 import { clients } from './chat.js';
+import { updateAI } from '../services/ai.js';
 import metrics from '../metrics.js';
 import db from '../db.js';
 
@@ -54,7 +55,7 @@ export const gameLoop = setInterval(() => {
 
 		// AI logic for IA mode
 		if (party.type === 'IA' && game.started) {
-			updateAI(game);
+			updateAI(game, party.id);
 		}
 
 		if (game.started) {
