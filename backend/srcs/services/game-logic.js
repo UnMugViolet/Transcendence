@@ -1,5 +1,5 @@
 /**
- * Game logic service for ball physics, paddle movement, and AI
+ * Game logic service for ball physics and paddle movement
  */
 
 // Game constants
@@ -10,8 +10,6 @@ export const GAME_CONSTANTS = {
 	POS_X_PLAYER1: 0.05,
 	POS_X_PLAYER2: 1 - 0.05,
 	PADDLE_SPEED: 0.008,
-	AI_SPEED: 0.006,
-	AI_DEAD_ZONE: 0.02,
 	INITIAL_BALL_SPEED: 0.005,
 	MAX_BALL_SPEED: 0.025,
 	BALL_SPEED_INCREMENT: 0.001,
@@ -19,6 +17,7 @@ export const GAME_CONSTANTS = {
 	WIN_SCORE: 11,
 	UPDATE_INTERVAL_MS: 16
 };
+
 
 export function createGame() {
 	return {
@@ -34,7 +33,9 @@ export function createGame() {
 		team2: 0,
 		created: Date.now(),
 		send: false,
-		started: false
+		started: false,
+		ballYTarget: 0,
+		lastTargetTime: 0
 	};
 }
 
@@ -75,27 +76,6 @@ function updatePaddle(game, paddleKey, up, down, speed) {
 		game[paddleKey] += speed;
 		if (game[paddleKey] + PADDLE_HEIGHT / 2 > 1) {
 			game[paddleKey] = 1 - PADDLE_HEIGHT / 2;
-		}
-	}
-}
-
-export function updateAI(game) {
-	const { AI_SPEED, AI_DEAD_ZONE, PADDLE_HEIGHT } = GAME_CONSTANTS;
-	
-	const ballYTarget = game.ballY;
-	const paddle2Center = game.paddle2Y;
-	
-	if (ballYTarget < paddle2Center - AI_DEAD_ZONE) {
-		// Move paddle up
-		game.paddle2Y -= AI_SPEED;
-		if (game.paddle2Y - PADDLE_HEIGHT / 2 < 0) {
-			game.paddle2Y = PADDLE_HEIGHT / 2;
-		}
-	} else if (ballYTarget > paddle2Center + AI_DEAD_ZONE) {
-		// Move paddle down
-		game.paddle2Y += AI_SPEED;
-		if (game.paddle2Y + PADDLE_HEIGHT / 2 > 1) {
-			game.paddle2Y = 1 - PADDLE_HEIGHT / 2;
 		}
 	}
 }
