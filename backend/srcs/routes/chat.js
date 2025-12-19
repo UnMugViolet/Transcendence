@@ -234,6 +234,15 @@ async function chat(fastify) {
 			(connection.socket || connection).on('close', (code, reason) => {
 				console.log(`WS close for ${payload.name} (id=${payload.id}) code=${code} reason=${reason}`);
 				
+				// Check if user has already left - don't override 'left' status with 'disconnected'
+				const currentParty = partyPlayerQueries.findByUserIdNotStatus(payload.id, 'left');
+				if (!currentParty) {
+					console.log(`User ${payload.name} already left their party, skipping disconnect handling`);
+					clients.delete(payload.id);
+					if (metricsInstance) metricsInstance.recordWebSocketDisconnection();
+					return;
+				}
+				
 				const party = partyPlayerQueries.findByUserIdMultipleStatuses(payload.id, ['active', 'waiting'])[0];
 				if (party) {
 					partyPlayerQueries.updateStatus('disconnected', party.party_id, payload.id);

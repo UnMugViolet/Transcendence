@@ -252,12 +252,28 @@ async function gameRoutes(fastify) {
 		partyPlayerQueries.updateStatus('left', party.id, userId);
 		sendSysMessage(party.id, `${user.name} a quitté la partie.`);
 
-		// Handle paused game cleanup
+		// Handle game cleanup - both active and paused games
 		if (pauses.has(party.id)) {
+			pauses.delete(party.id);
+		}
+
+		// For single-player modes (1v1Offline, IA), end the game immediately
+		if (party.type === '1v1Offline' || party.type === 'IA') {
+			// Clean up the game entirely
+			if (games.has(party.id)) {
+				games.delete(party.id);
+			}
+			// Delete party_players FIRST (due to foreign key constraint), then party
+			partyPlayerQueries.delete(party.id);
+			partyQueries.delete(party.id);
+			// Refresh the parties lists
+			parties = partyQueries.findByStatus('active');
+			partiesPaused = partyQueries.findByStatus('paused');
+		} else if (party.status === 'active' || party.status === 'paused') {
+			// For multiplayer games, handle end game logic
 			partyQueries.updateStatus(party.id, 'active');
 			partiesPaused = partyQueries.findByStatus('paused');
 			parties = partyQueries.findByStatus('active');
-			pauses.delete(party.id);
 			
 			// Ensure game exists before calling handleEndGame
 			if (!games.has(party.id)) {

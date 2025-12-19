@@ -7,6 +7,7 @@ import { AuthManager } from "../user/auth.js";
 const pong = document.getElementById('pongCanvas') as HTMLCanvasElement | null;
 const pongMenu = document.getElementById('pongMenu') as HTMLDivElement | null;
 const backToMenu = document.getElementById('backToMenu') as HTMLButtonElement | null;
+const btnLeaveGame = document.getElementById('btnLeaveGame') as HTMLButtonElement | null;
 
 let mode: string = '';
 
@@ -94,50 +95,69 @@ export function initPongBtns() {
  * @returns void
  */
 export async function leaveGame(options: { navigate?: boolean; closeSocket?: boolean; resetState?: boolean } = {}) {
-	const opts = { navigate: true, closeSocket: true, resetState: true, ...options };
-	let token = AuthManager.getToken();
-	if (!token) {
-		console.warn("No token found, cannot leave game.");
-		return;
-	} 
+    const opts = { navigate: true, closeSocket: true, resetState: true, ...options };
+    let token = AuthManager.getToken();
+    if (!token) {
+        console.warn("No token found, cannot leave game.");
+        return;
+    } 
 
-	try {
-		await fetch(`${BACKEND_URL}/leave`, {
-			method: "POST",
-			headers: { Authorization: `Bearer ${token}` },
-		});
-	} catch (err) {
-		console.error("Error Leave Game:", err);
-	}
+    let leaveSuccess = false;
+    try {
+        const response = await fetch(`${BACKEND_URL}/leave`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        leaveSuccess = response.ok;
+        if (!response.ok) {
+            const data = await response.json();
+            console.warn("Leave game response:", data);
+        }
+    } catch (err) {
+        console.error("Error Leave Game:", err);
+    }
 
-	// Clear all active game timers
-	clearGameTimers();
+    // Clear all active game timers
+    clearGameTimers();
 
-	if (opts.closeSocket) getWs()?.close();
+    // Only close socket after leave request has been processed by backend
+    if (opts.closeSocket && leaveSuccess) {
+        // Small delay to ensure backend has fully processed the leave
+        await new Promise(resolve => setTimeout(resolve, 100));
+        getWs()?.close();
+    } else if (opts.closeSocket) {
+        getWs()?.close();
+    }
 
-	if (opts.resetState) {
-		gameId = 0;
-		team = 0;
-		started = false;
-		// hide local lobby options when leaving
-		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
-		const lobby = document.getElementById('lobby');
-		const startBtn = document.getElementById('btnStart');
-		const backBtn = document.getElementById('backToMenu');
+    if (opts.resetState) {
+        gameId = 0;
+        team = 0;
+        started = false;
+        // hide local lobby options when leaving
+        const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
+        const lobby = document.getElementById('lobby');
+        const startBtn = document.getElementById('btnStart');
+        const backBtn = document.getElementById('backToMenu');
+        const viewGame = document.getElementById('viewGame');
 
-		if (lobbyLocalOptions && lobby && startBtn && backBtn) {
-			lobbyLocalOptions.classList.add('hidden');
-			lobby.classList.add('hidden');
-			startBtn.classList.add('hidden');
-			backBtn.classList.add('hidden');
-		}
+        if (lobbyLocalOptions && lobby && startBtn && backBtn) {
+            lobbyLocalOptions.classList.add('hidden');
+            lobby.classList.add('hidden');
+            startBtn.classList.add('hidden');
+            backBtn.classList.add('hidden');
+        }
+        
+        // Explicitly hide the game view
+        if (viewGame) {
+            viewGame.classList.add('hidden');
+            viewGame.classList.remove('flex');
+        }
+    }
 
-	}
-
-	if (opts.navigate) {
-		navigateTo('pongMenu', true);
-		handleRoute();
-	}
+    if (opts.navigate) {
+        navigateTo('pongMenu', true);
+        handleRoute();
+    }
 }
 
 if (!pong) {
@@ -205,6 +225,33 @@ const yes = document.getElementById("btnReconnectYes");
 const no = document.getElementById("btnReconnectNo");
 const start = document.getElementById("btnStart");
 const goodBye = document.getElementById("goodBye");
+
+// Track if we're handling a popstate-triggered leave (for offline/IA modes)
+let pendingPopstateLeave = false;
+
+/**
+ * Shows the goodbye message and leaves the game
+ * @param options Options to pass to leaveGame
+ */
+async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: boolean; resetState?: boolean } = {}) {
+    // Hide the game view first
+    const viewGame = document.getElementById('viewGame');
+    if (viewGame) {
+        viewGame.classList.add('hidden');
+        viewGame.classList.remove('flex');
+    }
+    // Show lobby with goodbye message
+    const lobby = document.getElementById('lobby');
+    if (lobby) {
+        lobby.classList.remove('hidden');
+        lobby.classList.add('flex');
+    }
+    // Show the "Thanks for playing" message briefly before returning to menu
+    console.log("Thanks for playing!");
+    goodBye?.classList.remove("hidden");
+    await sleep(2000);
+    await leaveGame(options);
+}
 
 // Set up Start button click handler for offline/IA games
 if (start) {
@@ -332,7 +379,9 @@ export function hideLobbyUI() {
 }
 
 globalThis.addEventListener('hashchange', () => {
-	if (location.hash !== '#lobby') hideLobbyUI();
+	if (location.hash !== '#lobby') {
+		hideLobbyUI();
+	}
 });
 
 // A revoir ?
@@ -341,52 +390,65 @@ globalThis.addEventListener("popstate", async (event) => {
 		return;
 	}
 
-	if (started && (mode === '1v1Offline' || mode === 'IA')) {
-		const leave = confirm(i18n.t("confirm"));
-		if (leave) {
-			await leaveGame({ navigate: false, resetState: false });
-			await endingGame({ winner: 0, mode: mode });
-			console.log("Leaving game...");
-			isInternalNavigation = true;
-			history.replaceState(null, "", "#pongMenu");
-			handleRoute();
-			setTimeout(() => (isInternalNavigation = false), 100);
-		} else {
-			isInternalNavigation = true;
-			navigateTo('viewGame', true);
-			handleRoute();
-			started = true;
-			setTimeout(() => (isInternalNavigation = false), 100);
-		}
-	} else if (started && (mode === '1v1Online' || mode === 'Tournament')) {
+	if (started && (mode === '1v1Offline' || mode === 'IA' || mode === '1v1Online' || mode === 'Tournament')) {
 		event.preventDefault();
+		// Mark that we're handling a popstate leave
+		pendingPopstateLeave = true;
 		started = false;
 		modalReconnect?.classList.remove("hidden");
-		getWs()?.close();
+		if (mode === '1v1Online' || mode === 'Tournament') {
+			getWs()?.close();
+		}
 		isInternalNavigation = true;
 		setTimeout(() => (isInternalNavigation = false), 100);
 	}
 });
 
+btnLeaveGame?.addEventListener('click', async () => {
+    console.log("Leaving game...");
+    await showGoodbyeAndLeave();
+});
+
 backToMenu?.addEventListener("click", async () => {
-	console.log("Leaving game...");
-	await leaveGame();
+    console.log("Leaving game...");
+    await showGoodbyeAndLeave();
 });
 
 
 no?.addEventListener("click", async () => {
 	modalReconnect?.classList.add("hidden");
-
-	// Show the "Thanks for playing" message briefly before returning to menu
-	goodBye?.classList.remove("hidden");
-	await sleep(2000);
-
 	console.log("Leaving game...");
-	await leaveGame();
-	// leaveGame handles navigation and state reset
+
+	// Handle popstate-triggered leave for offline/IA modes
+	if (pendingPopstateLeave && (mode === '1v1Offline' || mode === 'IA')) {
+		pendingPopstateLeave = false;
+		await showGoodbyeAndLeave({ navigate: false, resetState: true });
+		await endingGame({ winner: 0, mode: mode });
+		isInternalNavigation = true;
+		history.replaceState(null, "", "#pongMenu");
+		handleRoute();
+		setTimeout(() => (isInternalNavigation = false), 100);
+	} else {
+		pendingPopstateLeave = false;
+		await showGoodbyeAndLeave();
+	}
 });
 
 yes?.addEventListener("click", async () => {
+	modalReconnect?.classList.add("hidden");
+
+	// For offline/IA modes triggered by popstate, "yes" means stay in game
+	if (pendingPopstateLeave && (mode === '1v1Offline' || mode === 'IA')) {
+		pendingPopstateLeave = false;
+		isInternalNavigation = true;
+		navigateTo('viewGame', true);
+		handleRoute();
+		started = true;
+		setTimeout(() => (isInternalNavigation = false), 100);
+		return;
+	}
+
+	// For online modes, "yes" means reconnect/resume
 	let token = AuthManager.getToken();
 	if (!token) {
 		return;
@@ -405,7 +467,6 @@ yes?.addEventListener("click", async () => {
 		console.error("Error Resume Game:", err);
 	}
 
-	modalReconnect?.classList.add("hidden");
 	started = true;
 });
 
