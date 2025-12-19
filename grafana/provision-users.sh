@@ -5,27 +5,6 @@
 
 set -e
 
-# Load environment variables from .env file
-if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
-fi
-
-if [ -z "$GF_SECURITY_ADMIN_USER" ] || [ -z "$GF_SECURITY_ADMIN_PASSWORD" ] || [ -z "$GF_MONITOR_EMAIL" ] || [ -z "$GF_MONITOR_PASSWORD" ] || [ -z "$GF_EDITOR_EMAIL" ] || [ -z "$GF_EDITOR_PASSWORD" ] || [ -z "$GF_DEVELOPER_EMAIL" ] || [ -z "$GF_DEVELOPER_PASSWORD" ]; then
-    echo "Error: Required environment variables are missing in .env file."
-    exit 1
-fi
-
-
-GRAFANA_URL="http://localhost:10100"
-
-# Pass
-ADMIN_PASSWORD="${GF_SECURITY_ADMIN_PASSWORD}"
-MONITOR_PASSWORD="${GF_MONITOR_PASSWORD}"
-EDITOR_PASSWORD="${GF_EDITOR_PASSWORD}"
-DEVELOPER_PASSWORD="${GF_DEVELOPER_PASSWORD}"
-
-
-
 # Colors for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -33,6 +12,19 @@ YELLOW='\033[1;33m'
 BOLD='\033[1m'
 WHITE='\033[1;37m'
 NC='\033[0m'
+
+# Load environment variables from .env file
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
+if [ -z "$GF_SECURITY_ADMIN_USER" ] || [ -z "$GF_SECURITY_ADMIN_PASSWORD" ] || [ -z "$GF_MONITOR_EMAIL" ] || [ -z "$GF_MONITOR_PASSWORD" ] || [ -z "$GF_EDITOR_EMAIL" ] || [ -z "$GF_EDITOR_PASSWORD" ] || [ -z "$GF_DEVELOPER_EMAIL" ] || [ -z "$GF_DEVELOPER_PASSWORD" ]; then
+    echo -e "${RED} ${BOLD}Error: Required environment variables are missing in .env file. Cannot launch create user script.${NC}"
+    exit 1
+fi
+
+GRAFANA_URL="http://localhost:10100"
+
 
 echo -e "${YELLOW}========================================${NC}"
 echo -e "${YELLOW}Grafana User Provisioning Script${NC}"
@@ -66,11 +58,15 @@ create_user() {
     
     echo -e "\n${YELLOW}Creating user: ${username} (${role})${NC}"
     
+    # Escape special characters in password for curl
+    local admin_user="${GF_SECURITY_ADMIN_USER}"
+    local admin_pass="${GF_SECURITY_ADMIN_PASSWORD}"
+    
     # Create user
     response=$(curl -s -X POST \
         -H "Content-Type: application/json" \
         -d "{\"name\":\"${username}\",\"email\":\"${email}\",\"login\":\"${username}\",\"password\":\"${password}\",\"OrgId\":1}" \
-        -u "${GF_SECURITY_ADMIN_USER}:${ADMIN_PASSWORD}" \
+        --user "${admin_user}:${admin_pass}" \
         "${GRAFANA_URL}/api/admin/users" 2>&1)
     
     if echo "$response" | grep -q "User created"; then
@@ -83,7 +79,7 @@ create_user() {
         curl -s -X PATCH \
             -H "Content-Type: application/json" \
             -d "{\"role\":\"${role}\"}" \
-            -u "${GF_SECURITY_ADMIN_USER}:${ADMIN_PASSWORD}" \
+            --user "${admin_user}:${admin_pass}" \
             "${GRAFANA_URL}/api/org/users/${user_id}" > /dev/null
         
         echo -e "${GREEN}✓ User role set to ${role}${NC}"
@@ -96,13 +92,13 @@ create_user() {
 }
 
 # Create read-only viewer account for general monitoring
-create_user "monitor" "${GF_MONITOR_EMAIL}" "${MONITOR_PASSWORD}" "Viewer"
+create_user "monitor" "${GF_MONITOR_EMAIL}" "${GF_MONITOR_PASSWORD}" "Viewer"
 
 # Create editor account for dashboard management (optional)
-create_user "dashboard-editor" "${GF_EDITOR_EMAIL}" "${EDITOR_PASSWORD}" "Editor"
+create_user "dashboard-editor" "${GF_EDITOR_EMAIL}" "${GF_EDITOR_PASSWORD}" "Editor"
 
 # Create developer viewer account
-create_user "developer" "${GF_DEVELOPER_EMAIL}" "${DEVELOPER_PASSWORD}" "Viewer"
+create_user "developer" "${GF_DEVELOPER_EMAIL}" "${GF_DEVELOPER_PASSWORD}" "Viewer"
 
 echo -e "\n${GREEN}========================================${NC}"
 echo -e "${GREEN}User Provisioning Complete!${NC}"

@@ -87,9 +87,17 @@ fclean: clean ## Remove all containers, images and volumes
 	@rm -rf backend/database/* || true
 	@$(DOCKER_COMPOSE) down --volumes --rmi all
 
+fclean-dev: ## Remove all dev containers, images and volumes
+	@echo "$(GREEN)🧹 Removing dev containers...$(RESET)"
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down --remove-orphans
+	@echo "$(RED) Removing all dev images and volumes...$(RESET)"
+	@rm -rf backend/data/* || true
+	@rm -rf backend/database/* || true
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down --volumes --rmi all
+
 ## —— Rebuild ————————————————————————————————————————————————————————————————
 
 re: fclean build all ## Rebuild the whole production environment
-re-dev: fclean build-dev dev ## Rebuild the whole development environment
+re-dev: fclean-dev build-dev dev ## Rebuild the whole development environment
 
 .PHONY: all help up down dev dev-down dev-logs build push clean fclean re install logs 
