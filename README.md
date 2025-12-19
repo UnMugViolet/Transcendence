@@ -1,6 +1,5 @@
 # Transcendence
 
-
 ## How to use
 
 ### Development
@@ -97,26 +96,21 @@ make re
 make build
 ```
 
-## Grafana and Prometheus Monitoring
+# Grafana and Prometheus Monitoring
 
 ## Documentation
 
 Read the documentation just <a href="./grafana/README.md">here</a>
 
 
-Ce qu'il y a déjà à peu près (mais tout fonctionne pas comme il faut)
-- Standard authentication
-- Remote players
-- Live chat
-- JWT (pas complet)
-- Backend (en cours)
-- Frontend (en cours)
-- DB (en cours)
-- Multiple languages (fait à l'arrache mais ca a l'air de fonctionner)
+# Database
 
-==> Beaucoup de choses sont loin d'être parfaites, vous pouvez tout réduire à néant.
+## Documentation
 
-Database : 
+The specific documentation is available followind <a href="https://github.com/UnMugViolet/Transcendence/wiki/Database">this link</a>
 
 <img width="1928" height="2174" alt="image" src="https://github.com/user-attachments/assets/d156ce45-0dfe-4d92-b318-ae1676ddf158" />
 
+## 📚 Wiki
+We got a wiki ongoing for ALL the subjects treated, database modelisation, modules choosen, tasks repartition, and so on... 
+Visit the link bellow <a href="https://github.com/UnMugViolet/Transcendence/wiki" target="_blanl">visit wiki</a>
