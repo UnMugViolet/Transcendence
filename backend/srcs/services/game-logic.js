@@ -18,6 +18,7 @@ export const GAME_CONSTANTS = {
 	UPDATE_INTERVAL_MS: 16
 };
 
+
 export function createGame() {
 	return {
 		paddle1Y: 0.5,

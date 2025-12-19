@@ -1,15 +1,16 @@
 import { handleInput } from "../routes/chat.js";
 
-const AI_DIF = 10;
-const AI_DEAD_ZONE = 0.02;
+const DIFFICULTY = 10;
+const DEAD_ZONE = 0.02; // Dead zone for AI paddle movement
+const RADIANT_OFFSET = DIFFICULTY * (Math.PI / 180); // Max angle offset in radians
 
 function findNextCollision(angle, px, py) {
 	if (Math.cos(angle) <= 0)
 		return (0.5);
 
 	// Use a random angle near base angle to have decreased precision with each call
-	var offAngle = angle + (Math.random() * AI_DIF * 0.01745) - (Math.random() * AI_DIF * 0.01745);
-	
+	var offAngle = angle + (Math.random() * RADIANT_OFFSET) - (Math.random() * RADIANT_OFFSET);
+
 	// Use base angle if random flips offAngle in the other direction
 	if (Math.cos(offAngle) <= 0)
 		offAngle = angle;
@@ -21,7 +22,7 @@ function findNextCollision(angle, px, py) {
 	const wally = dy > 0 ? 1 : 0;
 
 
-	if (dy <= 0.00001 && dy >= -0.00001)
+	if (dy <= Number.EPSILON && dy >= -Number.EPSILON)
 		return (py);
 
 	// check which wall will be met first
@@ -62,10 +63,10 @@ export function updateAI(game, gameId) {
 	var upPlayer2 = false;
 	var downPlayer2 = false;
 	
-	if (game.ballYTarget < paddle2Center - AI_DEAD_ZONE) {
+	if (game.ballYTarget < paddle2Center - DEAD_ZONE) {
 		// Move paddle up
 		upPlayer2 = true;
-	} else if (game.ballYTarget > paddle2Center + AI_DEAD_ZONE) {
+	} else if (game.ballYTarget > paddle2Center + DEAD_ZONE) {
 		// Move paddle down
 		downPlayer2 = true;
 	}
