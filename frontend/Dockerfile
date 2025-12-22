@@ -16,7 +16,7 @@ COPY . .
 
 # Copy data folder to dist (needed for static assets)
 RUN cp -r srcs/data dist/
-RUN mkdir -p languages && cp -r srcs/languages/* languages/
+RUN mkdir -p dist/languages && cp -r srcs/languages/* dist/languages/
 
 
 # Expose port for development server

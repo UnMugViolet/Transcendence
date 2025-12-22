@@ -4,7 +4,7 @@
 
 ### Development
 
-That will create a dev image on your machine an launch a tiny web server to compile typescript and serve all the files<a href="https://www.npmjs.com/package/lite-server">lite-server</a>
+That will create a dev image on your machine and launch a tiny web server to compile typescript and serve all the files<a href="https://www.npmjs.com/package/lite-server">lite-server</a>
 The backend stays the same no matter the version `dev` or `prod`.
 
 #### Start services

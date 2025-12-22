@@ -37,16 +37,6 @@ export class Router {
     } else {
       console.warn("NO - targetView was falsy!");
     }
-
-    // Ensure pong menu (full-screen menu) is hidden except when explicitly showing it
-    const pongMenu = document.getElementById('pongMenu');
-    if (viewId === 'pongMenu') {
-      pongMenu?.classList.remove('hidden');
-      pongMenu?.classList.add('flex');
-    } else {
-      pongMenu?.classList.add('hidden');
-      pongMenu?.classList.remove('flex');
-    }
   }
 
   /**

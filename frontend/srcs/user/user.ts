@@ -106,6 +106,7 @@ export class UserManager implements User {
     const authButtons = document.getElementById("authButtons");
     const userInfo = document.getElementById("userInfo");
     const btnLogout = document.getElementById("btnLogout");
+    const btnStats = document.getElementById("btnStats");
 
     // Hide auth buttons
     authButtons?.classList.add("hidden");
@@ -113,6 +114,8 @@ export class UserManager implements User {
     // Show logout button
     btnLogout?.classList.remove("hidden");
     btnLogout?.classList.add("flex");
+    btnStats?.classList.remove("hidden");
+    btnStats?.classList.add("flex");
 
     // Show user info
     if (userInfo) {
@@ -209,6 +212,10 @@ export class UserManager implements User {
     const authButtons = document.getElementById("authButtons");
     const userInfo = document.getElementById("userInfo");
     const btnLogout = document.getElementById("btnLogout");
+    const btnStats = document.getElementById("btnStats");
+
+    // Hide stats button
+    btnStats?.classList.add("hidden");
 
     // Close WebSocket first to avoid connection issues
     closeChatSocket();

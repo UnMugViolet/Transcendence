@@ -27,8 +27,9 @@ Celine = 👑
 - 0,5 MULTIPLE LANGUAGES
 - 1 IA 🛌
 	+ Finding a great algo
+- 1 API
 
-7,5
+8,5
 
 WHAT WE WILL DO
 
