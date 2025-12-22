@@ -10,6 +10,7 @@ package-lock.json
 
 # Project specifics
 backend/data/
+backend/img/
 frontend/dist/
 
 # Logs
