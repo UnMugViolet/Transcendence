@@ -1,4 +1,4 @@
-# Transcendence
+# 🐐 Transcendence
 
 ## How to use
 
@@ -101,15 +101,6 @@ make build
 ## Documentation
 
 Read the documentation just <a href="./grafana/README.md">here</a>
-
-
-# Database
-
-## Documentation
-
-The specific documentation is available followind <a href="https://github.com/UnMugViolet/Transcendence/wiki/Database">this link</a>
-
-<img width="1928" height="2174" alt="image" src="https://github.com/user-attachments/assets/d156ce45-0dfe-4d92-b318-ae1676ddf158" />
 
 ## 📚 Wiki
 We got a wiki ongoing for ALL the subjects treated, database modelisation, modules choosen, tasks repartition, and so on... 
