@@ -24,8 +24,8 @@ export class Router {
     const views = document.querySelectorAll(".view");
     views.forEach((view) => (view as HTMLDivElement).classList.add("hidden"));
 
-    // Also handle pongMenu separately since it doesn't have the .view class
-    const pongMenu = document.getElementById("pongMenu");
+    // Ensure pong menu (full-screen menu) is hidden except when explicitly showing it
+    const pongMenu = document.getElementById("pongMenu") as HTMLDivElement | null;
     if (pongMenu && viewId !== "pongMenu") {
       pongMenu.classList.add("hidden");
     }
