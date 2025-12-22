@@ -1,9 +1,10 @@
 import { partyQueries, partyPlayerQueries, userQueries } from '../services/database-queries.js';
 import { handlePause, setTeam, handleEndGame,broadcastStartMessage, validateGameStart, cleanupUserGames, findOrCreateParty, assignTeamNumber } from '../services/party-manager.js';
-import { resetRound, movePlayer, updateAI, updateBall, isGameFinished, getGameState, GAME_CONSTANTS } from '../services/game-logic.js';
+import { resetRound, movePlayer, updateBall, isGameFinished, getGameState, GAME_CONSTANTS } from '../services/game-logic.js';
 import { initializeTournament, setupNextMatch, sendNextGameMessage } from '../services/tournament-manager.js';
 import { sendSysMessage, sendGameStateToPlayers } from '../services/message-service.js';
 import { clients } from './chat.js';
+import { updateAI } from '../services/ai.js';
 import metrics from '../metrics.js';
 import db from '../db.js';
 
@@ -54,7 +55,7 @@ export const gameLoop = setInterval(() => {
 
 		// AI logic for IA mode
 		if (party.type === 'IA' && game.started) {
-			updateAI(game);
+			updateAI(game, party.id);
 		}
 
 		if (game.started) {
@@ -252,12 +253,28 @@ async function gameRoutes(fastify) {
 		partyPlayerQueries.updateStatus('left', party.id, userId);
 		sendSysMessage(party.id, `${user.name} a quitté la partie.`);
 
-		// Handle paused game cleanup
+		// Handle game cleanup - both active and paused games
 		if (pauses.has(party.id)) {
+			pauses.delete(party.id);
+		}
+
+		// For single-player modes (1v1Offline, IA), end the game immediately
+		if (party.type === '1v1Offline' || party.type === 'IA') {
+			// Clean up the game entirely
+			if (games.has(party.id)) {
+				games.delete(party.id);
+			}
+			// Delete party_players FIRST (due to foreign key constraint), then party
+			partyPlayerQueries.delete(party.id);
+			partyQueries.delete(party.id);
+			// Refresh the parties lists
+			parties = partyQueries.findByStatus('active');
+			partiesPaused = partyQueries.findByStatus('paused');
+		} else if (party.status === 'active' || party.status === 'paused') {
+			// For multiplayer games, handle end game logic
 			partyQueries.updateStatus(party.id, 'active');
 			partiesPaused = partyQueries.findByStatus('paused');
 			parties = partyQueries.findByStatus('active');
-			pauses.delete(party.id);
 			
 			// Ensure game exists before calling handleEndGame
 			if (!games.has(party.id)) {

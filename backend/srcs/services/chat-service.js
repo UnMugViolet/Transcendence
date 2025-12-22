@@ -29,7 +29,6 @@ export function validateInviteRequest(inviterId, inviteeId) {
 	if (isBlocked(inviterId, inviteeId)) {
 		return { error: 'You cannot invite this user', status: 403 };
 	}
-
 	return { inviter, invitee };
 }
 
