@@ -17,7 +17,7 @@ class I18n {
     this.updateDOM();
     // also update DOM when page loads (in case init was called before DOM was ready)
     if (document.readyState === "loading") {
-      window.addEventListener("load", () => this.updateDOM());
+      globalThis.addEventListener("load", () => this.updateDOM());
     }
   }
 
@@ -32,9 +32,6 @@ class I18n {
           json = await res.json();
           this.translations[lang] = json;
           this.currentLang = lang;
-          console.log(
-            `i18n: loaded ${path} with ${Object.keys(json).length} keys`
-          );
           this.updateDOM();
           return;
         } else {
@@ -74,26 +71,34 @@ class I18n {
   updateDOM() {
     // textContent
     document.querySelectorAll("[data-i18n]").forEach((el) => {
-      const key = el.getAttribute("data-i18n");
-      if (key) (el as HTMLElement).textContent = this.t(key);
+      const key = (el as HTMLElement).dataset.i18n;
+      if (key) {
+        (el as HTMLElement).textContent = this.t(key);
+      }
     });
 
     // placeholder
     document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
-      const key = el.getAttribute("data-i18n-placeholder");
-      if (key) (el as HTMLInputElement).placeholder = this.t(key);
+      const key = (el as HTMLInputElement).dataset.i18nPlaceholder;
+      if (key) {
+        (el as HTMLInputElement).placeholder = this.t(key);
+      }
     });
 
     // title
     document.querySelectorAll("[data-i18n-title]").forEach((el) => {
-      const key = el.getAttribute("data-i18n-title");
-      if (key) (el as HTMLElement).title = this.t(key);
+      const key = (el as HTMLElement).dataset.i18nTitle;
+      if (key) {
+        (el as HTMLElement).title = this.t(key);
+      }
     });
 
     // value (for inputs/buttons)
     document.querySelectorAll("[data-i18n-value]").forEach((el) => {
-      const key = el.getAttribute("data-i18n-value");
-      if (key) (el as HTMLInputElement).value = this.t(key);
+      const key = (el as HTMLInputElement).dataset.i18nValue;
+      if (key) {
+        (el as HTMLInputElement).value = this.t(key);
+      }
     });
   }
 }

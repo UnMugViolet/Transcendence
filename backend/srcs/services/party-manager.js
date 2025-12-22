@@ -136,7 +136,6 @@ export async function broadcastStartMessage(partyId, resume = false, games, paus
 	}
 	
 	const partyPlayers = partyPlayerQueries.findByPartyIdAndStatus(partyId, 'active');
-	console.log(`DEBUG: broadcastStartMessage for party ${partyId}, found ${partyPlayers.length} active players`);
 	
 	// Build players list with names and teams
 	const playersList = partyPlayers.map(p => {
@@ -149,10 +148,8 @@ export async function broadcastStartMessage(partyId, resume = false, games, paus
 		sendStartMessage(partyId, playersList, player.team, player.user_id, resume);
 	});
 	
-	// await sleep(6000);
 	if (!pauses || !pauses.has(partyId)) {
 		game.started = true;
-		console.log(`DEBUG: Game ${partyId} marked as started`);
 	}
 }
 
@@ -222,11 +219,11 @@ export function findOrCreateParty(mode, userId, minPlayers) {
 	const parties = partyQueries.findByTypeAndStatus(mode, 'waiting');
 	const maxPlayers = mode === 'Tournament' ? 8 : minPlayers[mode];
 	
-	// Try to rejoin previous party
+	// Try to rejoin previous party (check all statuses except 'finished')
 	const previousLeft = partyPlayerQueries.findByUserIdAndStatus(userId, 'left');
 	if (previousLeft) {
 		const prevParty = partyQueries.findById(previousLeft.party_id);
-		if (prevParty && prevParty.status === 'waiting') {
+		if (prevParty && prevParty.status !== 'finished') {
 			const presentCount = partyPlayerQueries.countByPartyIdNotStatuses(prevParty.id, ['left', 'disconnected']);
 			if (presentCount < maxPlayers) {
 				partyPlayerQueries.updateStatus('lobby', prevParty.party_id, userId);
@@ -234,6 +231,17 @@ export function findOrCreateParty(mode, userId, minPlayers) {
 				console.log(`User ${userName} rejoined previous party ${prevParty.id}`);
 				return { party: prevParty, rejoined: true };
 			}
+		}
+	}
+	
+	// Check if user is already in an active/paused party (disconnected status)
+	const alreadyInGame = partyPlayerQueries.findByUserIdAndStatus(userId, 'disconnected');
+	if (alreadyInGame) {
+		const party = partyQueries.findById(alreadyInGame.party_id);
+		if (party && party.status !== 'finished') {
+			const userName = userQueries.getNameById(userId);
+			console.log(`User ${userName} is rejoining active party ${party.id}`);
+			return { party, rejoined: true };
 		}
 	}
 	

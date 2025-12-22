@@ -1,13 +1,13 @@
 import { BACKEND_URL } from "../utils/config.js";
-import { ws as socket } from "../user/chat.js";
-import { handleRoute, getToken, ModalManager } from "../index.js";
-import { initChatSocket } from "../user/chat.js";
+import { getWs, initChatSocket} from "../user/chat.js";
+import { handleRoute, UserManager } from "../index.js";
 import { i18n } from "../utils/i18n.js";
 import { AuthManager } from "../user/auth.js";
 
 const pong = document.getElementById('pongCanvas') as HTMLCanvasElement | null;
 const pongMenu = document.getElementById('pongMenu') as HTMLDivElement | null;
 const backToMenu = document.getElementById('backToMenu') as HTMLButtonElement | null;
+const btnLeaveGame = document.getElementById('btnLeaveGame') as HTMLButtonElement | null;
 
 let mode: string = '';
 
@@ -16,91 +16,148 @@ export function initPongBtns() {
 	const btnOnline = document.getElementById('btnOnline') as HTMLButtonElement | null;
 	const btnTournament = document.getElementById('btnTournament') as HTMLButtonElement | null;
 	const btnIA = document.getElementById('btnIA') as HTMLButtonElement | null;
-	const userLoggedIn = getToken() !== null;
 
-	console.log("User logged in status:", userLoggedIn);
+	let userLoggedIn = UserManager.isUserLoggedIn();
+	let isDemoUser = UserManager.isUserDemo();
 
-	// Disable online and tournament buttons if not logged in
-	if (userLoggedIn) {
+	// Show offline and IA buttons for everyone
+	btnOffline?.classList.add('flex');
+	btnOffline?.classList.remove('hidden');
+	btnIA?.classList.add('flex');
+	btnIA?.classList.remove('hidden');
+
+	// Show online and tournament buttons only for authenticated users (not demo users)
+	if (userLoggedIn && !isDemoUser) {
 		btnOnline?.classList.add('flex');
 		btnOnline?.classList.remove('hidden');
 		btnTournament?.classList.add('flex');
 		btnTournament?.classList.remove('hidden');
+	} else {
+		btnOnline?.classList.add('hidden');
+		btnOnline?.classList.remove('flex');
+		btnTournament?.classList.add('hidden');
+		btnTournament?.classList.remove('flex');
 	}
 
+
 	if (btnOffline) {
-		btnOffline.onclick = () => {
+		btnOffline.onclick = async () => {
 			mode = '1v1Offline';
-			console.log("mod selected from init: ", mode);
-			joinGame(mode);
+			
+			// Ensure user is ready (create demo user if needed)
+			const userReady = await AuthManager.ensureUserReady();
+			if (userReady) {
+				// Close old socket if it exists, to force reconnection with new token
+				const socket = getWs();
+				if (socket && socket.readyState === WebSocket.OPEN) {
+					socket.close();
+				}
+				joinGame(mode);
+			} else {
+				console.error("Failed to prepare user for offline play");
+			}
 		};
 	}
-	if (btnOnline && userLoggedIn) {
+	if (btnOnline && userLoggedIn && !isDemoUser) {
 		btnOnline.onclick = () => {
 			mode = '1v1Online';
-			console.log("mod selected from init: ", mode);
 			joinGame(mode);
 		};
 	}
-	if (btnTournament && userLoggedIn) {
+	if (btnTournament && userLoggedIn && !isDemoUser) {
 		btnTournament.onclick = () => {
 			mode = 'Tournament';
-			console.log("mod selected from init: ", mode);
 			joinGame(mode);
 		};
 	}
 	if (btnIA) {
-		btnIA.onclick = () => {
+		btnIA.onclick = async () => {
 			mode = 'IA';
-			console.log("mod selected from init: ", mode);
-			joinGame(mode);
+
+			const userReady = await AuthManager.ensureUserReady();
+			if (userReady) {
+				// Close old socket if it exists, to force reconnection with new token
+				const socket = getWs();
+				if (socket && socket.readyState === WebSocket.OPEN) {
+					socket.close();
+				}
+				joinGame(mode);
+			} else {
+				console.error("Failed to prepare user for offline play");
+			}
 		};
 	}
 }
 
-// Fonction pour arrêter d'appeler 1000 fois /leave
+/**
+ * Function to leave the current game and reset state of the game module
+ * @param options Options to control behavior on leaving
+ * @returns void
+ */
 export async function leaveGame(options: { navigate?: boolean; closeSocket?: boolean; resetState?: boolean } = {}) {
-	const opts = { navigate: true, closeSocket: true, resetState: true, ...options };
-	let token = AuthManager.getToken();
-	if (!token) {
-		console.warn("No token found, cannot leave game.");
-		return;
-	} 
+    const opts = { navigate: true, closeSocket: true, resetState: true, ...options };
+    let token = AuthManager.getToken();
+    if (!token) {
+        console.warn("No token found, cannot leave game.");
+        return;
+    } 
 
-	try {
-		await fetch(`${BACKEND_URL}/leave`, {
-			method: "POST",
-			headers: { Authorization: `Bearer ${token}` },
-		});
-	} catch (err) {
-		console.error("Error Leave Game:", err);
-	}
+    let leaveSuccess = false;
+    try {
+        const response = await fetch(`${BACKEND_URL}/leave`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        leaveSuccess = response.ok;
+        if (!response.ok) {
+            const data = await response.json();
+            console.warn("Leave game response:", data);
+        }
+    } catch (err) {
+        console.error("Error Leave Game:", err);
+    }
 
-	if (opts.closeSocket) socket?.close();
+    // Clear all active game timers
+    clearGameTimers();
 
-	if (opts.resetState) {
-		gameId = 0;
-		team = 0;
-		started = false;
-		// hide local lobby options when leaving
-		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
-		const lobby = document.getElementById('lobby');
-		const startBtn = document.getElementById('btnStart');
-		const backBtn = document.getElementById('backToMenu');
+    // Only close socket after leave request has been processed by backend
+    if (opts.closeSocket && leaveSuccess) {
+        // Small delay to ensure backend has fully processed the leave
+        await new Promise(resolve => setTimeout(resolve, 100));
+        getWs()?.close();
+    } else if (opts.closeSocket) {
+        getWs()?.close();
+    }
 
-		if (lobbyLocalOptions && lobby && startBtn && backBtn) {
-			lobbyLocalOptions.classList.add('hidden');
-			lobby.classList.add('hidden');
-			startBtn.classList.add('hidden');
-			backBtn.classList.add('hidden');
-		}
+    if (opts.resetState) {
+        gameId = 0;
+        team = 0;
+        started = false;
+        // hide local lobby options when leaving
+        const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
+        const lobby = document.getElementById('lobby');
+        const startBtn = document.getElementById('btnStart');
+        const backBtn = document.getElementById('backToMenu');
+        const viewGame = document.getElementById('viewGame');
 
-	}
+        if (lobbyLocalOptions && lobby && startBtn && backBtn) {
+            lobbyLocalOptions.classList.add('hidden');
+            lobby.classList.add('hidden');
+            startBtn.classList.add('hidden');
+            backBtn.classList.add('hidden');
+        }
+        
+        // Explicitly hide the game view
+        if (viewGame) {
+            viewGame.classList.add('hidden');
+            viewGame.classList.remove('flex');
+        }
+    }
 
-	if (opts.navigate) {
-		navigateTo('pongMenu', true);
-		handleRoute();
-	}
+    if (opts.navigate) {
+        navigateTo('pongMenu', true);
+        handleRoute();
+    }
 }
 
 if (!pong) {
@@ -143,8 +200,23 @@ export let gameId = 0;
 let team = 0;
 
 let pauseInterval: any;
+let countdownInterval: any;
 let lastServerUpdateTs = 0;
 let warnedNoServerUpdates = false;
+
+/**
+ * Clears all active game intervals and timers
+ */
+function clearGameTimers() {
+	if (pauseInterval) {
+		clearInterval(pauseInterval);
+		pauseInterval = undefined;
+	}
+	if (countdownInterval) {
+		clearInterval(countdownInterval);
+		countdownInterval = undefined;
+	}
+}
 
 const modalGamePause = document.getElementById("modalGamePause");
 const modalReconnect = document.getElementById("modalReconnect");
@@ -153,6 +225,72 @@ const yes = document.getElementById("btnReconnectYes");
 const no = document.getElementById("btnReconnectNo");
 const start = document.getElementById("btnStart");
 const goodBye = document.getElementById("goodBye");
+
+// Track if we're handling a popstate-triggered leave (for offline/IA modes)
+let pendingPopstateLeave = false;
+
+/**
+ * Shows the goodbye message and leaves the game
+ * @param options Options to pass to leaveGame
+ */
+async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: boolean; resetState?: boolean } = {}) {
+    // Hide the game view first
+    const viewGame = document.getElementById('viewGame');
+    if (viewGame) {
+        viewGame.classList.add('hidden');
+        viewGame.classList.remove('flex');
+    }
+    // Show lobby with goodbye message
+    const lobby = document.getElementById('lobby');
+    if (lobby) {
+        lobby.classList.remove('hidden');
+        lobby.classList.add('flex');
+    }
+    // Show the "Thanks for playing" message briefly before returning to menu
+    console.log("Thanks for playing!");
+    goodBye?.classList.remove("hidden");
+    await sleep(2000);
+    await leaveGame(options);
+}
+
+// Set up Start button click handler for offline/IA games
+if (start) {
+	start.addEventListener('click', async () => {
+		
+		// Send start request to backend with the current mode
+		const token = AuthManager.getToken();
+		if (!token) {
+			console.error("No token found, cannot start game");
+			return;
+		}
+		
+		try {
+			const res = await fetch(`${BACKEND_URL}/start`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify({ mode })
+			});
+			
+			if (!res.ok) {
+				const error = await res.json();
+				console.error("Error starting game:", error);
+				const startMessage = document.getElementById('startMessage');
+				if (startMessage) {
+					startMessage.textContent = error.error || 'Failed to start game';
+					startMessage.classList.remove('hidden');
+				}
+				return;
+			}
+			
+			console.log("Game start request sent successfully");
+		} catch (err) {
+			console.error("Error sending start request:", err);
+		}
+	});
+}
 
 // Ensure canvas matches its visible size and recompute layout-dependent values
 function resizeCanvas(recenter: boolean = false) {
@@ -203,19 +341,26 @@ function resizeCanvas(recenter: boolean = false) {
 resizeCanvas(true);
 
 // Keep canvas in sync on window resize
-window.addEventListener('resize', () => resizeCanvas(false));
+globalThis.addEventListener('resize', () => resizeCanvas(false));
 
 // Pour que le popstate soit trigger seulement quand l'utilisateur clique sur le bouton retour du navigateur
 export let isInternalNavigation = false;
 
 export function navigateTo(viewId: string, replace = false) {
-	isInternalNavigation = true;
-	if (replace) {
-		history.replaceState({ page: viewId }, "", '#' + viewId);
-	} else {
-		window.location.hash = '#' + viewId;
+	try {
+		isInternalNavigation = true;
+		if (replace) {
+			history.replaceState({ page: viewId }, "", '#' + viewId);
+		} else {
+			globalThis.location.hash = '#' + viewId;
+		}
+		setTimeout(() => {
+			isInternalNavigation = false;
+		}, 100);
+	} catch (error) {
+		console.error("ERROR in navigateTo:", error);
+		throw error;
 	}
-	setTimeout(() => (isInternalNavigation = false), 100);
 }
 
 // Ensure lobby UI is hidden when we navigate away from the lobby
@@ -233,62 +378,77 @@ export function hideLobbyUI() {
 	const startMessage = document.getElementById('startMessage'); if (startMessage) { startMessage.textContent = ''; startMessage.classList.add('hidden'); }
 }
 
-window.addEventListener('hashchange', () => {
-	if (location.hash !== '#lobby') hideLobbyUI();
+globalThis.addEventListener('hashchange', () => {
+	if (location.hash !== '#lobby') {
+		hideLobbyUI();
+	}
 });
 
 // A revoir ?
-window.addEventListener("popstate", async (event) => {
+globalThis.addEventListener("popstate", async (event) => {
 	if (isInternalNavigation) {
 		return;
 	}
 
-	if (started && (mode === '1v1Offline' || mode === 'IA')) {
-		const leave = confirm(i18n.t("confirm"));
-		if (leave) {
-			await leaveGame({ navigate: false, resetState: false });
-			await endingGame({ winner: 0, mode: mode });
-			console.log("Leaving game...");
-			isInternalNavigation = true;
-			history.replaceState(null, "", "#pongMenu");
-			handleRoute();
-			setTimeout(() => (isInternalNavigation = false), 100);
-		} else {
-			isInternalNavigation = true;
-			navigateTo('viewGame', true);
-			handleRoute();
-			started = true;
-			setTimeout(() => (isInternalNavigation = false), 100);
-		}
-	} else if (started && (mode === '1v1Online' || mode === 'Tournament')) {
+	if (started && (mode === '1v1Offline' || mode === 'IA' || mode === '1v1Online' || mode === 'Tournament')) {
 		event.preventDefault();
+		// Mark that we're handling a popstate leave
+		pendingPopstateLeave = true;
 		started = false;
 		modalReconnect?.classList.remove("hidden");
-		socket?.close();
+		if (mode === '1v1Online' || mode === 'Tournament') {
+			getWs()?.close();
+		}
 		isInternalNavigation = true;
 		setTimeout(() => (isInternalNavigation = false), 100);
 	}
 });
 
+btnLeaveGame?.addEventListener('click', async () => {
+    console.log("Leaving game...");
+    await showGoodbyeAndLeave();
+});
+
 backToMenu?.addEventListener("click", async () => {
-	console.log("Leaving game...");
-	await leaveGame();
+    console.log("Leaving game...");
+    await showGoodbyeAndLeave();
 });
 
 
 no?.addEventListener("click", async () => {
 	modalReconnect?.classList.add("hidden");
-
-	// Show the "Thanks for playing" message briefly before returning to menu
-	goodBye?.classList.remove("hidden");
-	await sleep(2000);
-
 	console.log("Leaving game...");
-	await leaveGame();
-	// leaveGame handles navigation and state reset
+
+	// Handle popstate-triggered leave for offline/IA modes
+	if (pendingPopstateLeave && (mode === '1v1Offline' || mode === 'IA')) {
+		pendingPopstateLeave = false;
+		await showGoodbyeAndLeave({ navigate: false, resetState: true });
+		await endingGame({ winner: 0, mode: mode });
+		isInternalNavigation = true;
+		history.replaceState(null, "", "#pongMenu");
+		handleRoute();
+		setTimeout(() => (isInternalNavigation = false), 100);
+	} else {
+		pendingPopstateLeave = false;
+		await showGoodbyeAndLeave();
+	}
 });
 
 yes?.addEventListener("click", async () => {
+	modalReconnect?.classList.add("hidden");
+
+	// For offline/IA modes triggered by popstate, "yes" means stay in game
+	if (pendingPopstateLeave && (mode === '1v1Offline' || mode === 'IA')) {
+		pendingPopstateLeave = false;
+		isInternalNavigation = true;
+		navigateTo('viewGame', true);
+		handleRoute();
+		started = true;
+		setTimeout(() => (isInternalNavigation = false), 100);
+		return;
+	}
+
+	// For online modes, "yes" means reconnect/resume
 	let token = AuthManager.getToken();
 	if (!token) {
 		return;
@@ -307,13 +467,14 @@ yes?.addEventListener("click", async () => {
 		console.error("Error Resume Game:", err);
 	}
 
-	modalReconnect?.classList.add("hidden");
 	started = true;
 });
 
 start?.addEventListener("click", async () => {
 	let token = AuthManager.getToken();
-	if (!token) return;
+	if (!token) {
+		return;
+	}
 
 	try {
 		// Ensure WebSocket is connected before starting so we can receive the 'start' event
@@ -330,11 +491,10 @@ start?.addEventListener("click", async () => {
 			body: JSON.stringify({ mode })
 		});
 		const data = await res.json();
-		console.log("Start Game Response:", data); // DEBUG
 
 		if (!res.ok) {
 			// Use backend message if provided
-			throw new Error(data && data.error ? data.error : i18n.t("failedStart"));
+			throw new Error(data?.error ? data.error : i18n.t("failedStart"));
 		}
 
 		if (data.players) {
@@ -374,26 +534,16 @@ start?.addEventListener("click", async () => {
 			const partyId = Number((data && data.partyId) || sessionStorage.getItem('partyId'));
 			if (!gameId && partyId) gameId = partyId;
 			if (!team) team = 1;
-			console.log("Setting fallback timeout for mode:", mode, "gameId:", gameId, "team:", team); // DEBUG
 			setTimeout(async () => {
 				if (!started) {
-					console.log("No WS 'start' received yet; triggering local start fallback."); // DEBUG
 					started = true;
-					// Initialize positions for the fallback case
-					// console.log("Before fallback init - positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
-					// console.log("Canvas dimensions for fallback:", {width, height}); // DEBUG
-					
+
 					// Explicitly set and verify each variable
 					posYPlayer1 = height / 2;
-					// console.log("Set posYPlayer1 to:", posYPlayer1, "current value:", posYPlayer1); // DEBUG
 					posYPlayer2 = height / 2;
-					// console.log("Set posYPlayer2 to:", posYPlayer2, "current value:", posYPlayer2); // DEBUG
 					ballX = width / 2;
-					// console.log("Set ballX to:", ballX, "current value:", ballX); // DEBUG
 					ballY = height / 2;
-					// console.log("Set ballY to:", ballY, "current value:", ballY); // DEBUG
 					
-					// console.log("After fallback init - positions:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
 					await startingGame(false, true);
 				} else {
 					console.log("WS 'start' already received, skipping fallback."); // DEBUG
@@ -430,7 +580,7 @@ async function startingGame(resume = false, timer = true) {
 	ctx.clearRect(0, 0, width, height);
 	// Dynamic font sizes based on canvas height
 	const messageFont = Math.max(28, Math.floor(height * 0.08)); // ~8% of height
-	const countdownFont = Math.max(48, Math.floor(height * 0.20)); // ~20% of height
+	const countdownFont = Math.max(48, Math.floor(height * 0.2)); // ~20% of height
 	ctx.font = `${messageFont}px Arial`;
 	ctx.fillStyle = "rgb(254, 243, 199)";
 	ctx.textAlign = "center";
@@ -441,8 +591,7 @@ async function startingGame(resume = false, timer = true) {
 		ctx.fillText(startMessage, width / 2, height / 2 - 40);
 		
 		let countdown = 5;
-		console.log("Starting countdown from 5"); // DEBUG
-		const countdownInterval = setInterval(() => {
+		countdownInterval = setInterval(() => {
 			// Clear the entire canvas and redraw everything for clean display
 			ctx.clearRect(0, 0, width, height);
 			
@@ -458,20 +607,17 @@ async function startingGame(resume = false, timer = true) {
 			ctx.font = `${countdownFont}px Arial`;
 			ctx.fillText(countdown.toString(), width / 2, height / 2 + 40);
 			
-			console.log("Countdown:", countdown); // DEBUG
 			countdown--;
 			if (countdown < 0) {
 				clearInterval(countdownInterval);
+				countdownInterval = undefined;
 				ctx.clearRect(0, 0, width, height);
-				console.log("Countdown finished"); // DEBUG
 			}
 		}, 1000);
 	}
 	// Wait for countdown to finish before starting the game loop
 	await sleep(6000);
 	
-	console.log("About to start remoteGameLoop"); // DEBUG
-
 	// Backend is authoritative; no local simulation
 
 	// No local physics initialization; relying on backend updates
@@ -524,33 +670,37 @@ function startTimer(sec: number) {
 			if (pauseSeconds <= 10) timerElem.style.color = "red";
 			else timerElem.style.color = "";
 		}
-		if (pauseSeconds <= 0) clearInterval(pauseInterval);
+		if (pauseSeconds <= 0) {
+			clearInterval(pauseInterval);
+		}
 	}, 1000);
 }
 
 export async function handleGameRemote(data: any) {
-	console.log("handleGameRemote called with:", data); // DEBUG
 	
 	if (data.type === "start" && !started) {
-		console.log("Processing start message"); // DEBUG
 		modalGamePause?.classList.add("hidden");
-		if (pauseInterval) clearInterval(pauseInterval);
+		if (pauseInterval) {
+			clearInterval(pauseInterval);
+		}
 		const resume = data.resume || false;
 		const timer = data.timer || true;
 		gameId = data.game;
 		team = data.team;
 
-		console.log("Game ID set to:", gameId, "Team set to:", team); // DEBUG
 
 		if (data.players && Array.isArray(data.players)) {
 			const p1 = (data.players as Array<any>).find(p => p.team === 1);
 			const p2 = (data.players as Array<any>).find(p => p.team === 2);
-			if (p1 && p1.name) sessionStorage.setItem('player1Name', p1.name);
-			if (p2 && p2.name) sessionStorage.setItem('player2Name', p2.name);
+			if (p1?.name) {
+				sessionStorage.setItem('player1Name', p1.name);
+			}
+			if (p2?.name) {
+				sessionStorage.setItem('player2Name', p2.name);
+			}
 		}
 
 		started = true;
-		console.log("About to call startingGame"); // DEBUG
 		await startingGame(resume, timer);
 		return true;
 	}
@@ -573,14 +723,9 @@ export async function handleGameRemote(data: any) {
 	}
 	if (data.type === "game" && started) {
 		const value = data.data;
-		console.log("Received game data from server:", value); // DEBUG
-		console.log("Canvas dimensions:", {width, height}); // DEBUG
 		lastServerUpdateTs = performance.now();
 		warnedNoServerUpdates = false;
-		
-		// Store old positions for comparison
-		const oldPositions = {ballX, ballY, posYPlayer1, posYPlayer2};
-		
+				
 		posYPlayer1 = value.paddle1Y * height;
 		posYPlayer2 = value.paddle2Y * height;
 		ballX = value.ballX * width;
@@ -588,10 +733,8 @@ export async function handleGameRemote(data: any) {
 		player1Score = value.score1;
 		player2Score = value.score2;
 		
-		// console.log("Position update - old:", oldPositions, "new:", {ballX, ballY, posYPlayer1, posYPlayer2}); // DEBUG
 		return true;
 	}
-	console.log("Message not handled, returning false"); // DEBUG
 	return false;
 };
 
@@ -603,12 +746,9 @@ async function joinGame(mode: string) {
 		pongMenu.classList.add('hidden');
 	}
 
-	// If no token and game mode offline or IA, create a temporary token
-	if (!token && (mode === '1v1Offline' || mode === 'IA')) {
-		token = AuthManager.createTemporaryToken();
-		return;
-	} else if (!token) {
-		console.warn("No token found, cannot join game.");
+	// Token should already exist (created by ensureUserReady in button click handlers)
+	if (!token) {
+		console.error("No token found, cannot join game. User should have called ensureUserReady first.");
 		return;
 	}
 
@@ -621,15 +761,13 @@ async function joinGame(mode: string) {
 
 	try {
 		await new Promise<void>((resolve) => {
-			initChatSocket(token, resolve);
+			initChatSocket(token as string, resolve);
 		});
 		const globalChatMessages: HTMLElement | null = document.getElementById("globalChatMessages");
 
 		if (globalChatMessages) {
 			globalChatMessages.innerHTML = "";
 		}
-		console.log("Joining game...");
-		console.log("Trying to join mode:", mode);
 
 		let res = await fetch(`${BACKEND_URL}/join`, {
 			method: "POST",
@@ -672,6 +810,15 @@ async function joinGame(mode: string) {
 			sessionStorage.setItem("team", data.team);
 		}
 
+		// Check if this is a rejoin of an active party
+		const isRejoin = data?.message?.includes('Rejoined');
+		if (isRejoin) {
+			console.log("Rejoined active party, waiting for game state...");
+			// Wait a bit for the server to send game state and resume message
+			await new Promise(resolve => setTimeout(resolve, 500));
+			return;
+		}
+
 		ctx.clearRect(0, 0, width, height);
 		ctx.font = "40px Arial";
 		ctx.fillStyle = "rgb(254, 243, 199)";
@@ -679,7 +826,7 @@ async function joinGame(mode: string) {
 		
 		// Different messages for different modes
 		if (mode === '1v1Offline') {
-			ctx.fillText(i18n.t("offlineGameReady") || "Offline Game Ready - Click Start to Play!", width / 2, height / 2);
+			ctx.fillText(i18n.t("offlineGameReady") || "", width / 2, height / 2);
 		} else if (mode === 'IA') {
 			ctx.fillText(i18n.t("aiGameReady") || "AI Game Ready - Click Start to Play!", width / 2, height / 2);
 		} else {
@@ -689,12 +836,9 @@ async function joinGame(mode: string) {
         const lobby = document.getElementById("lobby");
         if (lobby) {
  			lobby.classList.remove("hidden");
-			console.log("DEBUG: Lobby element found and hidden class removed");
-		} else {
-			console.log("DEBUG: Lobby element not found!");
+ 			lobby.classList.add("flex");
 		}
         navigateTo('lobby');
-		console.log("DEBUG: navigateTo('lobby') called");
 
 		// Show/hide local lobby options depending on mode
 		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
@@ -702,7 +846,6 @@ async function joinGame(mode: string) {
 		if ((mode === '1v1Offline' || mode === 'IA') && lobbyLocalOptions) {
 			lobbyLocalOptions.classList.remove('hidden');
 			lobbyLocalOptions.classList.add('flex');
-			console.log("DEBUG: lobbyLocalOptions shown for mode:", mode);
 			
 			// For IA mode, hide the player 2 name input since it's always "AI"
 			const player2Input = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
@@ -716,23 +859,22 @@ async function joinGame(mode: string) {
 			lobbyLocalOptions.classList.add('hidden');
 		}
 
-		if (start) {
-			start.classList.remove("hidden");
-			console.log("DEBUG: Start button shown");
-		} else {
-			console.log("DEBUG: Start button element not found!");
+		// Ensure start button is properly shown
+		const startBtn = document.getElementById('btnStart');
+		if (startBtn) {
+			startBtn.classList.remove("hidden");
+			startBtn.classList.add("flex");
 		}
 		if (backToMenu) {
 			backToMenu.classList.remove("hidden");
-			console.log("DEBUG: Back to menu button shown");
-		} else {
-			console.log("DEBUG: Back to menu button element not found!");
 		}
 		goodBye?.classList.add("hidden");
 	} catch (err) {
 		console.error("Error Join Game:", err);
 	}
-}function isTyping() {
+}
+
+function isTyping() {
 	const el = document.activeElement as HTMLElement | null;
 	if (!el) return false;
 	const tag = el.tagName;
@@ -745,9 +887,11 @@ async function joinGame(mode: string) {
 	return false;
 }
 
-window.addEventListener("keydown", (event) => {
+globalThis.addEventListener("keydown", (event) => {
 	// ignore movement keys when typing in an input/textarea or contenteditable
-	if (isTyping()) return;
+	if (isTyping()) {
+		return ;
+	}
 	
 	// Player 1 controls (WASD) - always available in offline mode, or when user is team 1
 	if (event.key === "w" || event.key === "W") {
@@ -774,7 +918,7 @@ window.addEventListener("keydown", (event) => {
 	}
 });
 
-window.addEventListener("keyup", (event) => {
+globalThis.addEventListener("keyup", (event) => {
 	if (isTyping()) return;
 	
 	// Player 1 controls (WASD)
@@ -795,7 +939,6 @@ window.addEventListener("keyup", (event) => {
 });
 
 function draw() {
-	// console.log("draw() called - Ball position:", ballX, ballY, "Paddle positions:", posYPlayer1, posYPlayer2); // DEBUG
 	ctx.clearRect(0, 0, width, height);
 	ctx.fillStyle = "rgb(254, 243, 199)";
 
@@ -827,6 +970,7 @@ function draw() {
 }
 
 function sendInput() {
+	const socket = getWs();
 	if (!socket || !started) return;
 
 	if (mode === '1v1Offline') {

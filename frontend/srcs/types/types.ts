@@ -3,6 +3,12 @@ export interface User {
   id: number;
   name: string;
   profile_picture?: string;
+  role: Role;
+}
+
+export interface Role {
+  id: number;
+  name: string;
 }
 
 export interface AuthTokens {
@@ -12,6 +18,7 @@ export interface AuthTokens {
 
 export interface AuthResponse {
   user?: User;
+  role: Role;
   accessToken: string;
   refreshToken: string;
   error?: string;

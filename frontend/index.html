@@ -139,32 +139,41 @@
 	</div>
 
 
-	<div id="viewGame" class="hidden view relative justify-center mt-20 flex-wrap lg:flex-nowrap gap-4">
-		<!-- Zone Pong -->
-		<div id="pongContainer" class="w-full lg:w-3/4 max-w-4xl p-4 bg-rose-950 bg-opacity-80 rounded-lg shadow-lg">
-			<canvas id="pongCanvas" class="bg-black bg-opacity-50 rounded w-full h-[600px]"></canvas>
-		</div>
-
-		<!-- 💬 Global chat -->
-		<div id="gameChat"
-			class="w-full lg:w-80 bg-black bg-opacity-70 text-amber-100 flex flex-col border border-rose-950 rounded-2xl shadow-lg overflow-hidden">
-			<div data-i18n="globalChat"
-				class="p-3 text-lg font-bold border-b border-rose-950 bg-rose-950 rounded-t-2xl flex justify-between items-center">
+	<section id="viewGame" class="hidden flex-col view items-center justify-center p-4 gap-6">
+		<div class="relative flex flex-row justify-center mt-20 flex-wrap lg:flex-nowrap gap-4">
+			<!-- Zone Pong -->
+			<div id="pongContainer" class="w-full lg:w-3/4 max-w-4xl p-4 bg-rose-950 bg-opacity-80 rounded-lg shadow-lg">
+				<canvas id="pongCanvas" class="bg-black bg-opacity-50 rounded w-full h-[600px]"></canvas>
 			</div>
-
-			<!-- Messages added dynamically-->
-			<div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-2 text-sm"></div>
-
-			<!-- Input -->
-			<form id="chatForm" class="p-3 border-t border-rose-950 flex bg-rose-950 rounded-b-2xl">
-				<input id="chatInput" type="text" autocomplete="off" data-i18n-placeholder="messagePlaceholder"
-					class="flex-1 bg-amber-100 text-black p-2 rounded-l outline-none" />
-				<button type="submit" class="bg-red-500 px-4 rounded-r hover:bg-red-400">
-					➤
-				</button>
-			</form>
+	
+			<!-- 💬 Global chat -->
+			<div id="gameChat"
+				class="w-full lg:w-80 bg-black bg-opacity-70 text-amber-100 flex flex-col border border-rose-950 rounded-2xl shadow-lg overflow-hidden">
+				<div data-i18n="globalChat"
+					class="p-3 text-lg font-bold border-b border-rose-950 bg-rose-950 rounded-t-2xl flex justify-between items-center">
+				</div>
+	
+				<!-- Messages added dynamically-->
+				<div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-2 text-sm"></div>
+	
+				<!-- Input -->
+				<form id="chatForm" class="p-3 border-t border-rose-950 flex bg-rose-950 rounded-b-2xl">
+					<input id="chatInput" type="text" autocomplete="off" data-i18n-placeholder="messagePlaceholder"
+						class="flex-1 bg-amber-100 text-black p-2 rounded-l outline-none" />
+					<button type="submit" class="bg-red-500 px-4 rounded-r hover:bg-red-400">
+						➤
+					</button>
+				</form>
+			</div>
 		</div>
-	</div>
+		<div class="w-full flex justify-center items-center">
+			<button
+				id="btnLeaveGame"
+				data-i18n="leaveGame" 
+				class="text-white px-6 py-3 text-2xl font-bold bg-red-500 rounded hover:bg-red-600 shadow-lg transition-transform duration-200 hover:scale-105">
+			</button>
+		</div>
+	</section>
 
 	<!-- Menu Pong -->
 	<div id="pongMenu" class="flex fixed inset-0 flex-col items-center justify-center gap-4 z-20 px-4"
@@ -234,12 +243,14 @@
 			<input id="lobbyPlayer2Name" type="text" placeholder="Player 2 Name"
 				class="p-2 rounded bg-amber-100 text-black w-56" />
 		</div>
-		<button data-i18n="start" id="btnStart"
-			class="hidden text-white px-6 py-3 text-2xl font-bold bg-green-500 rounded hover:bg-green-600 shadow-lg transition-transform duration-200 hover:scale-105">
-		</button>
-		<button data-i18n="back" id="backToMenu"
-			class="hidden text-white px-6 py-3 text-2xl font-bold bg-red-500 rounded hover:bg-red-600 shadow-lg transition-transform duration-200 hover:scale-105">
-		</button>
+		<div class="flex flex-row-reverse items-center justify-center gap-5">
+			<button data-i18n="start" id="btnStart"
+				class="hidden text-white px-6 py-3 text-2xl font-bold bg-green-500 rounded hover:bg-green-600 shadow-lg transition-transform duration-200 hover:scale-105">
+			</button>
+			<button data-i18n="back" id="backToMenu"
+				class="hidden text-white px-6 py-3 text-2xl font-bold bg-red-500 rounded hover:bg-red-600 shadow-lg transition-transform duration-200 hover:scale-105">
+			</button>
+		</div>
 
 		<p id="startMessage" class="text-red-500 mt-2 hidden"></p>
 
@@ -275,7 +286,7 @@
 	<div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-30"></div>
 
 	<!-- 🔹 Modal Profil -->
-	<div id="modalProfile" class="hidden  fixed inset-0 items-center justify-center bg-black bg-opacity-50 z-50">
+	<div id="modalProfile" class="hidden fixed inset-0 items-center justify-center bg-black bg-opacity-50 z-50">
 		<div class="bg-white rounded-lg shadow-lg w-96 p-6 relative">
 			<button id="closeProfile" class="w-full flex justify-end h-5 text-black text-2xl transition-colors duration-200 hover:text-zinc-800">✕</button>
 			<h2 data-i18n="editProfile" class="text-xl font-bold mb-4"></h2>

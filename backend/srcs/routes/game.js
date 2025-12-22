@@ -1,10 +1,12 @@
 import { partyQueries, partyPlayerQueries, userQueries } from '../services/database-queries.js';
-import { handlePause, setTeam, handleEndGame,broadcastStartMessage, validateGameStart, cleanupUserGames, findOrCreateParty, assignTeamNumber, sleep } from '../services/party-manager.js';
-import { createGame, resetRound, movePlayer as movePlayerPaddle, updateAI, updateBall, isGameFinished, getGameState } from '../services/game-logic.js';
+import { handlePause, setTeam, handleEndGame,broadcastStartMessage, validateGameStart, cleanupUserGames, findOrCreateParty, assignTeamNumber } from '../services/party-manager.js';
+import { resetRound, movePlayer, updateBall, isGameFinished, getGameState, GAME_CONSTANTS } from '../services/game-logic.js';
 import { initializeTournament, setupNextMatch, sendNextGameMessage } from '../services/tournament-manager.js';
 import { sendSysMessage, sendGameStateToPlayers } from '../services/message-service.js';
-import { GAME_CONSTANTS } from '../services/game-logic.js';
 import { clients } from './chat.js';
+import { updateAI } from '../services/ai.js';
+import metrics from '../metrics.js';
+import db from '../db.js';
 
 // Game state
 const games = new Map();
@@ -25,10 +27,15 @@ export function pauseGameFromWS(partyId, userId) {
 
 // Game loop for updating ball physics and sending state to clients
 export const gameLoop = setInterval(() => {
+	metrics.recordGameLoopIteration();
+	
 	if (!parties || parties.length === 0) {
 		// Refresh parties list if empty
 		parties = partyQueries.findByStatus('active');
 	}
+	
+	// Update active games metric
+	metrics.setActiveGames(parties?.length || 0);
 	
 	parties?.forEach(party => {
 		const players = partyPlayerQueries.findByPartyId(party.id);
@@ -48,7 +55,7 @@ export const gameLoop = setInterval(() => {
 
 		// AI logic for IA mode
 		if (party.type === 'IA' && game.started) {
-			updateAI(game);
+			updateAI(game, party.id);
 		}
 
 		if (game.started) {
@@ -91,9 +98,15 @@ export const pauseLoop = setInterval(() => {
 
 		if (Date.now() - pause >= 90000) {
 			partyQueries.updateStatus(party.id, 'active');
-			const player = partyPlayerQueries.findByPartyIdAndStatus(party.id, 'disconnected')[0];
-			console.log(`\x1b[33mResuming game for party ${party.id} after timeout, player ${player.user_id} eliminated\x1b[0m`);
-			partyPlayerQueries.updateStatus('left', party.id, player.user_id);
+			const player = partyPlayerQueries.findByPartyIdAndStatus(party.id, 'disconnected')?.[0];
+			
+			if (player) {
+				console.log(`\x1b[33mResuming game for party ${party.id} after timeout, player ${player.user_id} eliminated\x1b[0m`);
+				partyPlayerQueries.updateStatus('left', party.id, player.user_id);
+			} else {
+				console.log(`\x1b[33mResuming game for party ${party.id} after timeout (no disconnected players found)\x1b[0m`);
+			}
+			
 			partiesPaused = partyQueries.findByStatus('paused');
 			parties = partyQueries.findByStatus('active');
 			pauses.delete(party.id);
@@ -105,11 +118,13 @@ export const pauseLoop = setInterval(() => {
 	partiesPaused = partyQueries.findByStatus('paused');
 }, 1000);
 
-// Player input handler
-export function movePlayer(data) {
+// Player input handler wrapper
+export function handleMovePlayer(data) {
 	const game = games.get(data.game);
-	if (!game) return;
-	movePlayerPaddle(game, data);
+	if (!game) {
+		return ;
+	}
+	movePlayer(game, data);
 }
 
 // Route handlers
@@ -130,7 +145,6 @@ async function gameRoutes(fastify) {
 	fastify.post('/start', { preHandler: fastify.authenticate }, async (request, reply) => {
 		const userId = request.user.id;
 		const mode = request.body.mode;
-		const lang = request.lang || 'fr';
 
 		const validation = validateGameStart(userId, mode, minPlayers);
 		if (validation.error) {
@@ -178,11 +192,18 @@ async function gameRoutes(fastify) {
 		const userId = request.user.id;
 		const mode = request.body.mode;
 
+		console.log(`DEBUG: Join request - userId from JWT: ${userId}, mode: ${mode}`);
+
 		const user = userQueries.findById(userId);
 		if (!user) {
+			console.error(`DEBUG: User not found for userId: ${userId}`);
+			// Log all users for debugging
+			const allUsers = db.prepare('SELECT id, name, role_id FROM users').all();
+			console.error(`DEBUG: All users in database:`, allUsers);
 			return reply.status(404).send({ error: 'User not found' });
 		}
 
+		console.log(`DEBUG: Found user: ${user.name} (ID: ${user.id})`);
 		cleanupUserGames(userId);
 
 		// Check if already in active game
@@ -232,12 +253,28 @@ async function gameRoutes(fastify) {
 		partyPlayerQueries.updateStatus('left', party.id, userId);
 		sendSysMessage(party.id, `${user.name} a quitté la partie.`);
 
-		// Handle paused game cleanup
+		// Handle game cleanup - both active and paused games
 		if (pauses.has(party.id)) {
+			pauses.delete(party.id);
+		}
+
+		// For single-player modes (1v1Offline, IA), end the game immediately
+		if (party.type === '1v1Offline' || party.type === 'IA') {
+			// Clean up the game entirely
+			if (games.has(party.id)) {
+				games.delete(party.id);
+			}
+			// Delete party_players FIRST (due to foreign key constraint), then party
+			partyPlayerQueries.delete(party.id);
+			partyQueries.delete(party.id);
+			// Refresh the parties lists
+			parties = partyQueries.findByStatus('active');
+			partiesPaused = partyQueries.findByStatus('paused');
+		} else if (party.status === 'active' || party.status === 'paused') {
+			// For multiplayer games, handle end game logic
 			partyQueries.updateStatus(party.id, 'active');
 			partiesPaused = partyQueries.findByStatus('paused');
 			parties = partyQueries.findByStatus('active');
-			pauses.delete(party.id);
 			
 			// Ensure game exists before calling handleEndGame
 			if (!games.has(party.id)) {

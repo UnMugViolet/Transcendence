@@ -1,5 +1,4 @@
-# Transcendence
-
+# 🐐 Transcendence
 
 ## How to use
 
@@ -97,6 +96,12 @@ make re
 make build
 ```
 
-## TASKS REPARTITION 
+## Grafana and Prometheus Monitoring
 
-<a href="./wiki/TASKS.md">
+## Documentation
+
+Read the documentation just <a href="./grafana/README.md">here</a>
+
+## 📚 Wiki
+We got a wiki ongoing for ALL the subjects treated, database modelisation, modules choosen, tasks repartition, and so on... 
+Visit the link bellow <a href="https://github.com/UnMugViolet/Transcendence/wiki" target="_blanl">visit wiki</a>
