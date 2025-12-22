@@ -247,9 +247,8 @@ async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: 
         lobby.classList.add('flex');
     }
     // Show the "Thanks for playing" message briefly before returning to menu
-    console.log("Thanks for playing!");
     goodBye?.classList.remove("hidden");
-    await sleep(2000);
+    await sleep(1500);
     await leaveGame(options);
 }
 
@@ -500,8 +499,12 @@ start?.addEventListener("click", async () => {
 		if (data.players) {
 			const p1 = (data.players as Array<any>).find(p => p.team === 1);
 			const p2 = (data.players as Array<any>).find(p => p.team === 2);
-			if (p1) sessionStorage.setItem("player1Name", p1.name);
-			if (p2) sessionStorage.setItem("player2Name", p2.name);
+			if (p1) {
+				sessionStorage.setItem("player1Name", p1.name);
+			}
+			if (p2) {
+				sessionStorage.setItem("player2Name", p2.name);
+			}
 		}
 
 		if (mode === '1v1Offline') {
@@ -738,137 +741,206 @@ export async function handleGameRemote(data: any) {
 	return false;
 };
 
-async function joinGame(mode: string) {
-	let token = AuthManager.getToken();
-	const pongMenu = document.getElementById('pongMenu') as HTMLDivElement | null;
+/**
+ * Sends a join request to the backend and handles retries if already in a game
+ */
+async function sendJoinRequest(token: string, gameMode: string): Promise<any> {
+	let res = await fetch(`${BACKEND_URL}/join`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			"Authorization": `Bearer ${token}`
+		},
+		body: JSON.stringify({ mode: gameMode })
+	});
 
-	if (pongMenu) {
-		pongMenu.classList.add('hidden');
+	let data = await res.json();
+	console.log("Join Game Response:", data);
+
+	if (!res.ok) {
+		// If already in a game, attempt a quick leave and retry once
+		if (data?.error && typeof data.error === 'string' && data.error.includes('already in a game')) {
+			console.warn('Already in a game, attempting to leave and retry join...');
+			try {
+				await fetch(`${BACKEND_URL}/leave`, {
+					method: 'POST',
+					headers: { Authorization: `Bearer ${token}` }
+				});
+			} catch (_) {}
+			
+			// Retry join once
+			res = await fetch(`${BACKEND_URL}/join`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+				body: JSON.stringify({ mode: gameMode })
+			});
+			data = await res.json();
+			console.log('Join Retry Response:', data);
+			
+			if (!res.ok) {
+				throw new Error(data.error || i18n.t('failedJoin'));
+			}
+		} else {
+			throw new Error(data.error || i18n.t('failedJoin'));
+		}
 	}
 
-	// Token should already exist (created by ensureUserReady in button click handlers)
-	if (!token) {
-		console.error("No token found, cannot join game. User should have called ensureUserReady first.");
-		return;
+	return data;
+}
+
+/**
+ * Stores game session data (party ID and team) in sessionStorage
+ */
+function storeGameSessionData(data: any): void {
+	if (data.partyId) {
+		sessionStorage.setItem("partyId", data.partyId.toString());
+		console.log("Joined Party ID:", data.partyId);
+	}
+	if (data.team) {
+		sessionStorage.setItem("team", data.team);
+	}
+}
+
+/**
+ * Draws the appropriate message on canvas based on game mode
+ */
+function drawGameReadyMessage(gameMode: string): void {
+	ctx.clearRect(0, 0, width, height);
+	ctx.font = "40px Arial";
+	ctx.fillStyle = "rgb(254, 243, 199)";
+	ctx.textAlign = "center";
+
+	if (gameMode === '1v1Offline') {
+		ctx.fillText(i18n.t("offlineGameReady") || "", width / 2, height / 2);
+	} else if (gameMode === 'IA') {
+		ctx.fillText(i18n.t("aiGameReady") || "AI Game Ready - Click Start to Play!", width / 2, height / 2);
+	} else {
+		ctx.fillText(i18n.t("waitingOpponent"), width / 2, height / 2);
+	}
+}
+
+/**
+ * Configures lobby UI visibility based on game mode
+ */
+function configureLobbyUI(gameMode: string): void {
+	const lobby = document.getElementById("lobby");
+	const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
+	const player2Input = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
+
+	// Handle lobby visibility
+	if (gameMode !== 'IA') {
+		if (lobby) {
+			lobby.classList.remove("hidden");
+			lobby.classList.add("flex");
+		}
+		navigateTo('lobby');
+	} else {
+		if (lobby) {
+			lobby.classList.add("hidden");
+			lobby.classList.remove("flex");
+		}
+		navigateTo('viewGame');
+		// Auto-start IA mode
+		const startBtn = document.getElementById('btnStart');
+		if (startBtn) {
+			startBtn.click();
+		}
 	}
 
-	// Clear any previous start error message when attempting to join
+	// Show/hide local lobby options
+	if ((gameMode === '1v1Offline' || gameMode === 'IA') && lobbyLocalOptions) {
+		lobbyLocalOptions.classList.remove('hidden');
+		lobbyLocalOptions.classList.add('flex');
+		
+		// Show player 2 name input for offline mode
+		if (gameMode === '1v1Offline' && player2Input) {
+			player2Input.style.display = 'block';
+		}
+	} else if (lobbyLocalOptions) {
+		lobbyLocalOptions.classList.add('hidden');
+	}
+}
+
+/**
+ * Displays game control buttons (start, back, goodbye)
+ */
+function showGameControlButtons(): void {
+	const startBtn = document.getElementById('btnStart');
+	if (startBtn) {
+		startBtn.classList.remove("hidden");
+		startBtn.classList.add("flex");
+	}
+	if (backToMenu) {
+		backToMenu.classList.remove("hidden");
+	}
+	goodBye?.classList.add("hidden");
+}
+
+/**
+ * Prepares the game environment (initializes socket, clears UI, etc.)
+ */
+async function prepareGameEnvironment(token: string): Promise<void> {
+	// Initialize chat socket for real-time communication
+	await new Promise<void>((resolve) => {
+		initChatSocket(token, resolve);
+	});
+
+	// Clear global chat messages
+	const globalChatMessages = document.getElementById("globalChatMessages");
+	if (globalChatMessages) {
+		globalChatMessages.innerHTML = "";
+	}
+
+	// Clear any previous error messages
 	const startMessage = document.getElementById('startMessage') as HTMLElement | null;
 	if (startMessage) {
 		startMessage.textContent = '';
 		startMessage.classList.add('hidden');
 	}
+}
+
+/**
+ * Hides the pong menu when entering a game
+ */
+function hidePongMenu(): void {
+	const pongMenu = document.getElementById('pongMenu') as HTMLDivElement | null;
+	if (pongMenu) {
+		pongMenu.classList.add('hidden');
+	}
+}
+
+/**
+ * Main join game function with separation of concerns
+ */
+async function joinGame(gameMode: string) {
+	let token = AuthManager.getToken();
+
+	if (!token) {
+		console.error("No token found, cannot join game. User should have called ensureUserReady first.");
+		return;
+	}
 
 	try {
-		await new Promise<void>((resolve) => {
-			initChatSocket(token as string, resolve);
-		});
-		const globalChatMessages: HTMLElement | null = document.getElementById("globalChatMessages");
+		hidePongMenu();
+		await prepareGameEnvironment(token);
+		
+		const joinData = await sendJoinRequest(token, gameMode);
 
-		if (globalChatMessages) {
-			globalChatMessages.innerHTML = "";
-		}
-
-		let res = await fetch(`${BACKEND_URL}/join`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"Authorization": `Bearer ${token}`
-			},
-			body: JSON.stringify({ mode })
-		});
-
-		let data = await res.json();
-		console.log("Join Game Response:", data); // DEBUG
-
-		if (!res.ok) {
-			// If already in a game, attempt a quick leave and retry once
-			if (data && typeof data.error === 'string' && data.error.includes('already in a game')) {
-				console.warn('Already in a game, attempting to leave and retry join...');
-				try {
-					await fetch(`${BACKEND_URL}/leave`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
-				} catch (_) {}
-				// retry join once
-				res = await fetch(`${BACKEND_URL}/join`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-					body: JSON.stringify({ mode })
-				});
-				data = await res.json();
-				console.log('Join Retry Response:', data);
-				if (!res.ok) throw new Error(data.error || i18n.t('failedJoin'));
-			} else {
-				throw new Error(data.error || i18n.t('failedJoin'));
-			}
-		}
-
-		if (data.partyId) {
-			sessionStorage.setItem("partyId", data.partyId.toString());
-			console.log("Joined Party ID:", data.partyId);
-		}
-		if (data.team) {
-			sessionStorage.setItem("team", data.team);
-		}
-
-		// Check if this is a rejoin of an active party
-		const isRejoin = data?.message?.includes('Rejoined');
+		// Handle rejoin case - don't proceed with UI setup
+		const isRejoin = joinData?.message?.includes('Rejoined');
 		if (isRejoin) {
 			console.log("Rejoined active party, waiting for game state...");
-			// Wait a bit for the server to send game state and resume message
 			await new Promise(resolve => setTimeout(resolve, 500));
 			return;
 		}
 
-		ctx.clearRect(0, 0, width, height);
-		ctx.font = "40px Arial";
-		ctx.fillStyle = "rgb(254, 243, 199)";
-		ctx.textAlign = "center";
-		
-		// Different messages for different modes
-		if (mode === '1v1Offline') {
-			ctx.fillText(i18n.t("offlineGameReady") || "", width / 2, height / 2);
-		} else if (mode === 'IA') {
-			ctx.fillText(i18n.t("aiGameReady") || "AI Game Ready - Click Start to Play!", width / 2, height / 2);
-		} else {
-			ctx.fillText(i18n.t("waitingOpponent"), width / 2, height / 2);
-		}
+		// Set up game state
+		storeGameSessionData(joinData);
 
-        const lobby = document.getElementById("lobby");
-        if (lobby) {
- 			lobby.classList.remove("hidden");
- 			lobby.classList.add("flex");
-		}
-        navigateTo('lobby');
-
-		// Show/hide local lobby options depending on mode
-		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
-
-		if ((mode === '1v1Offline' || mode === 'IA') && lobbyLocalOptions) {
-			lobbyLocalOptions.classList.remove('hidden');
-			lobbyLocalOptions.classList.add('flex');
-			
-			// For IA mode, hide the player 2 name input since it's always "AI"
-			const player2Input = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
-			if (mode === 'IA' && player2Input) {
-				player2Input.style.display = 'none';
-			} else if (mode === '1v1Offline' && player2Input) {
-				player2Input.style.display = 'block';
-			}
-		}
-		else if (lobbyLocalOptions) {
-			lobbyLocalOptions.classList.add('hidden');
-		}
-
-		// Ensure start button is properly shown
-		const startBtn = document.getElementById('btnStart');
-		if (startBtn) {
-			startBtn.classList.remove("hidden");
-			startBtn.classList.add("flex");
-		}
-		if (backToMenu) {
-			backToMenu.classList.remove("hidden");
-		}
-		goodBye?.classList.add("hidden");
+		// Configure UI based on game mode
+		drawGameReadyMessage(gameMode);
+		configureLobbyUI(gameMode);
+		showGameControlButtons();
 	} catch (err) {
 		console.error("Error Join Game:", err);
 	}
