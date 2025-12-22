@@ -24,8 +24,8 @@ export class Router {
     const views = document.querySelectorAll(".view");
     views.forEach((view) => (view as HTMLDivElement).classList.add("hidden"));
 
-    // Also handle pongMenu separately since it doesn't have the .view class
-    const pongMenu = document.getElementById("pongMenu");
+    // Ensure pong menu (full-screen menu) is hidden except when explicitly showing it
+    const pongMenu = document.getElementById("pongMenu") as HTMLDivElement | null;
     if (pongMenu && viewId !== "pongMenu") {
       pongMenu.classList.add("hidden");
     }
@@ -36,16 +36,6 @@ export class Router {
       targetView.classList.add("flex");
     } else {
       console.warn("NO - targetView was falsy!");
-    }
-
-    // Ensure pong menu (full-screen menu) is hidden except when explicitly showing it
-    const pongMenu = document.getElementById('pongMenu');
-    if (viewId === 'pongMenu') {
-      pongMenu?.classList.remove('hidden');
-      pongMenu?.classList.add('flex');
-    } else {
-      pongMenu?.classList.add('hidden');
-      pongMenu?.classList.remove('flex');
     }
   }
 
