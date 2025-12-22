@@ -1,93 +1,114 @@
-// import { ApiClient } from "../utils/api.js";
-// import { BACKEND_URL } from "../utils/config.js";
-// import type { ApiResponse, UserStats } from "../types/types.js";
-// import { Router } from "../route/router.js";
+import { ApiClient } from "../utils/api.js";
+import { BACKEND_URL } from "../utils/config.js";
+import type { ApiResponse, UserStats } from "../types/types.js";
+import { Router } from "../route/router.js";
 
-// export async function getUserStats(): Promise<UserStats> {
-//   const res = await ApiClient.get(`${BACKEND_URL}/stats/me`);
+export async function getUserStats(): Promise<UserStats> {
+  const res = await ApiClient.get(`${BACKEND_URL}/stats/me`);
 
-//   const json: ApiResponse<UserStats> = await res.json();
+  const json: ApiResponse<UserStats> = await res.json();
 
-//   if (!res.ok || !json.data) {
-//     throw new Error(json.error || "Failed to load user stats");
-//   }
+  if (!res.ok || !json.data) {
+    throw new Error(json.error || "Failed to load user stats");
+  }
 
-//   return json.data;
-// }
+  return json.data;
+}
 
-// /**
-//  * Génère le HTML d'une card statistique
-//  */
-// function statCard(label: string, value: number | string): string {
-//   return `
-//     <div class="bg-black bg-opacity-40 rounded-xl p-4">
-//       <p class="text-sm text-amber-200">${label}</p>
-//       <p class="text-3xl font-bold text-amber-100">${value}</p>
-//     </div>
-//   `;
-// }
+export async function loadUserDashboard() {
+  const view = document.getElementById("userDashboard");
+  const content = document.getElementById("dashboardContent");
+  
 
-// /**
-//  * Génère une barre de progression
-//  */
-// function progressBar(value: number): string {
-//   return `
-//     <div class="w-full bg-black bg-opacity-30 rounded-full h-3">
-//       <div
-//         class="bg-green-500 h-3 rounded-full transition-all"
-//         style="width: ${value}%"
-//       ></div>
-//     </div>
-//   `;
-// }
+  if (!view || !content) return;
 
-// /**
-//  * Génère le HTML complet du dashboard
-//  */
-// function renderUserDashboard(stats: UserStats): string {
-//   return `
-//     <h1 class="text-2xl font-bold text-amber-100 mb-6">Your Dashboard</h1>
+  Router.showView("userDashboard");
+  content.innerHTML = `<p class="text-amber-200">Loading stats...</p>`;
 
-//     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-//       ${statCard("Games", stats.totalGames)}
-//       ${statCard("Wins", stats.wins)}
-//       ${statCard("Losses", stats.losses)}
-//       ${statCard("Avg Score", stats.avgScore)}
-//     </div>
+  try {
+    const stats = await getUserStats();
 
-//     <div class="bg-rose-950 bg-opacity-80 p-4 rounded-xl mb-6">
-//       <p class="text-sm text-amber-200 mb-2">Win Rate — ${stats.winRate}%</p>
-//       ${progressBar(stats.winRate)}
-//     </div>
+    content.innerHTML = `
+      ${statsCards(stats)}
+      ${winRateWidget(stats)}
+    `;
 
-//     <button id="backToMenu" class="mt-6 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
-//       Back to Menu
-//     </button>
-//   `;
-// }
+    // bouton retour
+    document.getElementById("dashboardBack")?.addEventListener("click", () => {
+      location.hash = "#pongMenu";
+    });
 
-// /**
-//  * Charge et affiche le dashboard dans le DOM
-//  */
-// export async function loadUserDashboard() {
-//   const container = document.getElementById("userDashboard");
-//   if (!container) return;
+  } catch (err) {
+    console.error(err);
+    content.innerHTML = `<p class="text-red-400">Failed to load dashboard</p>`;
+  }
+}
 
-//   Router.showView("userDashboard");
-//   container.innerHTML = `<p class="text-amber-200">Loading dashboard...</p>`;
+function statsCards(stats: UserStats): string {
+  return `
+    <div class="grid grid-cols-2 gap-4">
+      ${statCard("Games", stats.totalGames)}
+      ${statCard("Wins", stats.wins)}
+      ${statCard("Losses", stats.losses)}
+      ${statCard("Avg Score", stats.avgScore)}
+    </div>
+  `;
+}
 
-//   try {
-//     const stats = await getUserStats();
-//     container.innerHTML = renderUserDashboard(stats);
+function statCard(label: string, value: number | string): string {
+  return `
+    <div class="bg-black bg-opacity-40 rounded-xl p-4">
+      <p class="text-sm text-amber-300">${label}</p>
+      <p class="text-3xl font-bold text-amber-100">${value}</p>
+    </div>
+  `;
+}
 
-//     // Bouton retour
-//     const backBtn = document.getElementById("backToMenu");
-//     backBtn?.addEventListener("click", () => {
-//       location.hash = "#pongMenu";
-//     });
+function winRateWidget(stats: UserStats): string {
+  const total = stats.wins + stats.losses;
+  const winRate = total ? stats.wins / total : 0;
 
-//   } catch (err) {
-//     console.error(err);
-//     container.innerHTML = `<p class="text-red-400">Failed to load dashboard</p>`;
-//   }
-// }
+  const radius = 60;
+  const circumference = 2 * Math.PI * radius;
+  const winLength = winRate * circumference;
+  const lossLength = circumference - winLength;
+
+  return `
+    <div class="bg-rose-950 bg-opacity-80 rounded-xl p-6 flex flex-col items-center gap-4">
+      <h2 class="text-xl font-semibold text-amber-100">Win Rate</h2>
+
+      <svg width="160" height="160" viewBox="0 0 160 160">
+        <circle
+          cx="80"
+          cy="80"
+          r="${radius}"
+          stroke="#3f1d1d"
+          stroke-width="16"
+          fill="none"
+        />
+        <circle
+          cx="80"
+          cy="80"
+          r="${radius}"
+          stroke="#22c55e"
+          stroke-width="16"
+          fill="none"
+          stroke-dasharray="${winLength} ${lossLength}"
+          transform="rotate(-90 80 80)"
+          stroke-linecap="round"
+        />
+      </svg>
+
+      <p class="text-amber-100 text-lg font-bold">
+        ${Math.round(winRate * 100)}%
+      </p>
+
+      <div class="flex gap-4 text-sm">
+        <span class="text-green-400">● Wins: ${stats.wins}</span>
+        <span class="text-red-400">● Losses: ${stats.losses}</span>
+      </div>
+    </div>
+  `;
+}
+
+

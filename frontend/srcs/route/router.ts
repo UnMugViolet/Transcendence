@@ -1,5 +1,6 @@
 import { ViewId } from "../types/types.js";
 import { AuthManager } from "../user/auth.js";
+import { loadUserDashboard } from "../user/dashboard.js";
 
 /**
  * Application routing and view management
@@ -42,7 +43,7 @@ export class Router {
   /**
    * Handles route changes based on URL hash
    */
-  static handleRoute(): void {
+  static async handleRoute(): Promise<void> {
     const hash = (document.location.hash || "#pongMenu");
     
     switch (hash) {
@@ -56,7 +57,7 @@ export class Router {
         Router.showView("lobby");
         break;
       case "#userDashboard":
-        Router.showView("userDashboard");
+        await loadUserDashboard();
         break;
       default:
         Router.showView("pongMenu");
