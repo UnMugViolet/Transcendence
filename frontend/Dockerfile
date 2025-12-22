@@ -15,7 +15,7 @@ RUN npm install
 COPY . .
 
 # Copy data folder to dist (needed for static assets)
-RUN cp -r srcs/data dist/
+RUN mkdir -p dist/data && cp -r srcs/data/* dist/data/
 RUN mkdir -p languages && cp -r srcs/languages/* languages/
 
 
