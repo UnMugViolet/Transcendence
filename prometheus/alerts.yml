@@ -1,0 +1,153 @@
+groups:
+  - name: transcendence_alerts
+    interval: 30s
+    rules:
+      # === Fastify Backend Alerts ===
+      - alert: FastifyBackendDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Fastify backend service is down"
+          description: "Backend has been unreachable for more than 1 minute"
+
+      - alert: FastifyHighErrorRate
+        expr: rate(fastify_http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Fastify error rate detected"
+          description: "Error rate (5xx) is above 5% in the last 5 minutes"
+
+      - alert: FastifyHighLatency
+        expr: histogram_quantile(0.95, rate(fastify_http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency"
+          description: "95th percentile latency is above 1 second"
+
+      - alert: FastifyAuthFailureSpike
+        expr: rate(fastify_auth_failures_total[5m]) > 0.5
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High authentication failure rate"
+          description: "More than 0.5 auth failures per second in the last 5 minutes"
+
+      # === SQLite Database Alerts ===
+      - alert: SQLiteQuerySlowness
+        expr: histogram_quantile(0.95, rate(sqlite_query_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SQLite queries are slow"
+          description: "95th percentile query duration exceeds 500ms"
+
+      - alert: SQLiteDatabaseLocksHigh
+        expr: sqlite_database_locks > 10
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High SQLite database lock count"
+          description: "Database has more than 10 active locks - possible contention"
+
+      - alert: SQLiteDatabaseSizeHigh
+        expr: sqlite_database_size_bytes > 1073741824
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SQLite database size is large"
+          description: "Database file exceeds 1GB - consider cleanup or optimization"
+
+      # === WebSocket Alerts ===
+      - alert: WebSocketConnectionSpike
+        expr: fastify_websocket_connections_active > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High WebSocket connection count"
+          description: "Active WebSocket connections exceed 500"
+
+      - alert: WebSocketErrorRate
+        expr: rate(fastify_websocket_errors_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WebSocket errors detected"
+          description: "WebSocket error rate is above 0.1 errors/second"
+
+      # === Game Server Alerts ===
+      - alert: GameLoopStalled
+        expr: rate(fastify_game_loop_iterations_total[1m]) == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Game loop appears stalled"
+          description: "No game loop iterations recorded in the last 1 minute"
+
+      - alert: ManyActiveGames
+        expr: fastify_game_active_games > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of active games"
+          description: "More than 100 concurrent games running"
+
+      # === Node Exporter / System Alerts ===
+      - alert: NodeHighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High system memory usage"
+          description: "System memory usage exceeds 90%"
+
+      - alert: NodeHighCPUUsage
+        expr: rate(node_cpu_seconds_total{mode!="idle"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage exceeds 80%"
+
+      - alert: NodeDiskSpaceLow
+        expr: (node_filesystem_avail_bytes{fstype=~"ext4|tmpfs"} / node_filesystem_size_bytes{fstype=~"ext4|tmpfs"}) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Less than 10% disk space available"
+
+      - alert: NodeFilesystemReadErrors
+        expr: rate(node_filesystem_read_errors_total[5m]) > 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Filesystem read errors detected"
+          description: "Filesystem is reporting read errors"
+
+      # === User Metrics Alerts ===
+      - alert: UnusualUserActivitySpike
+        expr: rate(fastify_http_requests_total[5m]) > 1000
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "High request rate detected"
+          description: "Request rate exceeds 1000 requests/second (5m average) - possible traffic spike or attack"

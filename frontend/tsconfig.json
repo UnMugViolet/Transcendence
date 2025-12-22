@@ -4,9 +4,15 @@
     "module": "ES6",
     "moduleResolution": "Node",
     "strict": true,
+    "resolveJsonModule": true,
     "esModuleInterop": true,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "srcs",
+    "preserveConstEnums": true,
+    "declaration": false,
+    "removeComments": false,
+    "sourceMap": true
   },
-  "include": ["src"]
+  "include": ["srcs/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

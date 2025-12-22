@@ -6,8 +6,8 @@ import { checkName, checkPassword } from '../utils.js';
 
 async function usersRoutes(fastify) {
 
-	if (!fs.existsSync('./uploads')) {
-		fs.mkdirSync('./uploads');
+	if (!fs.existsSync('./img')) {
+		fs.mkdirSync('./img');
 	}
 
 	fastify.get('/profile', { preHandler: fastify.authenticate }, async (request) => {
@@ -77,14 +77,14 @@ async function usersRoutes(fastify) {
 
 	fastify.post('/update/password', { preHandler: fastify.authenticate }, async (request, reply) => {
 		const userId = request.user.id;
-		const { pass } = request.body;
+		const { password } = request.body;
 
-		const check = checkPassword(pass);
+		const check = checkPassword(password);
 		if (!check.valid) return reply.status(400).send({ error: check.error });
 
-		const hashedPass = bcrypt.hashSync(pass, 10);
+		const hashedPass = bcrypt.hashSync(password, 10);
 		try {
-			db.prepare('UPDATE users SET pass = ? WHERE id = ?').run(hashedPass, userId);
+			db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hashedPass, userId);
 			return { success: true };
 		} catch (err) {
 			return reply.status(500).send({ error: 'Failed to update password' });
@@ -106,7 +106,7 @@ async function usersRoutes(fastify) {
 		const oldFilename = db.prepare('SELECT profile_picture FROM users WHERE id = ?').get(userId).profile_picture;
 		if (oldFilename && oldFilename !== 'default.jpg') {
 			try {
-				fs.unlinkSync(`./uploads/${oldFilename}`);
+				fs.unlinkSync(`./img/${oldFilename}`);
 			} catch (err) {
 				console.error('Failed to delete old profile picture:', err);
 			}
@@ -115,7 +115,7 @@ async function usersRoutes(fastify) {
 		const ext = file.mimetype.split('/')[1];
 		const filename = `${userId}_${Date.now()}.${ext}`;
 
-		await pump(file.file, fs.createWriteStream(`./uploads/${filename}`));
+		await pump(file.file, fs.createWriteStream(`./img/${filename}`));
 
 		db.prepare(`UPDATE users SET profile_picture = ? WHERE id = ?`).run(filename, userId);
 
