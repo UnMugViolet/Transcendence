@@ -20,6 +20,8 @@ export function initPongBtns() {
 	let userLoggedIn = UserManager.isUserLoggedIn();
 	let isDemoUser = UserManager.isUserDemo();
 
+	console.log("User logged in:", userLoggedIn, "Is demo user:", isDemoUser);
+
 	// Show offline and IA buttons for everyone
 	btnOffline?.classList.add('flex');
 	btnOffline?.classList.remove('hidden');

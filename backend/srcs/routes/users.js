@@ -12,8 +12,26 @@ async function usersRoutes(fastify) {
 
 	fastify.get('/profile', { preHandler: fastify.authenticate }, async (request) => {
 		console.log('User profile requested:', request.user.name);
-		const info = db.prepare('SELECT id, name, profile_picture, created_at FROM users WHERE id = ?').get(request.user.id);
-		return { user: info };
+		const info = db.prepare(`
+			SELECT u.id, u.name, u.profile_picture, u.created_at, u.role_id, r.id as role_id, r.name as role_name
+			FROM users u
+			LEFT JOIN roles r ON u.role_id = r.id
+			WHERE u.id = ?
+		`).get(request.user.id);
+		
+		// Format the response to include role object
+		const user = {
+			id: info.id,
+			name: info.name,
+			profile_picture: info.profile_picture,
+			created_at: info.created_at,
+			role: {
+				id: info.role_id,
+				name: info.role_name
+			}
+		};
+		
+		return { user };
 	});
 
 	fastify.get('/users', async () => {
@@ -25,6 +43,7 @@ async function usersRoutes(fastify) {
 
 		const info = db.prepare(`
 			SELECT 
+				u.id,
 				u.name,
 				u.profile_picture,
 				u.created_at,

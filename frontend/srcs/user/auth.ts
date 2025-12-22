@@ -13,7 +13,7 @@ export class AuthManager {
    * @return string | null - The authentication token or null if not found
    */
   static getToken(): string | null {
-    return sessionStorage.getItem("token") || localStorage.getItem("token");
+    return sessionStorage.getItem("token") || localStorage.getItem("token"); // TODO check if token is expired and check if exists in database
   }
 
   /**
