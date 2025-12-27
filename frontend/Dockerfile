@@ -14,8 +14,9 @@ RUN npm install
 
 COPY . .
 
-# Copy data folder to dist (needed for static assets)
-RUN cp -r srcs/data dist/
+# Build TypeScript and copy assets
+RUN npm run build-ts
+RUN npm run copy-assets
 RUN mkdir -p dist/languages && cp -r srcs/languages/* dist/languages/
 
 
@@ -41,6 +42,7 @@ RUN apt-get update && apt-get install -y openssl \
 
 RUN npm run build-ts
 RUN npm run build-css
+RUN npm run copy-assets
 
 # Production stage
 FROM nginx:alpine AS production

@@ -2,7 +2,8 @@
   "name": "transcendance-frontend",
   "version": "1.0.0",
   "scripts": {
-    "dev": "concurrently \"npm run watch-ts\" \"npm run watch-css\" \"npm run serve\"",
+    "copy-assets": "mkdir -p dist/data && cp srcs/data/* dist/data/",
+    "dev": "npm run copy-assets && concurrently \"npm run watch-ts\" \"npm run watch-css\" \"npm run serve\"",
     "watch-ts": "tsc --outDir dist --watch",
     "watch-css": "tailwindcss -i srcs/css/index.css -o dist/css/index.css --watch",
     "serve": "live-server --host=0.0.0.0 --port=3001 --no-browser",
@@ -10,6 +11,7 @@
     "tailwind": "tailwindcss -i srcs/css/index.css -o dist/css/index.css --watch",
     "build-ts": "tsc --outDir dist",
     "build-css": "npm run css && tailwindcss -i srcs/css/index.css -o dist/css/index.css --minify",
+    "build": "npm run copy-assets && npm run build-ts && npm run build-css",
     "build-tailwind": "tailwindcss -i srcs/css/index.css -o dist/css/index.css --minify"
   },
   "devDependencies": {
