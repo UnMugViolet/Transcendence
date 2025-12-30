@@ -1,5 +1,6 @@
 import { BACKEND_URL } from "../utils/config.js";
 import { i18n } from "../utils/i18n.js";
+import { AuthManager } from "./auth.js";
 
 
 // User profile modal elements
@@ -9,8 +10,9 @@ const formProfile: HTMLFormElement | null = document.getElementById("formProfile
 const profilePicturePreview: HTMLImageElement | null = document.getElementById("profilePicturePreview") as HTMLImageElement;
 const editProfilePictureBtn: HTMLElement | null = document.getElementById("editProfilePictureBtn");
 const profilePictureInput: HTMLInputElement | null = document.getElementById("profilePictureInput") as HTMLInputElement;
+const userName: HTMLElement | null = document.getElementById("userName");
 const userAvatar: HTMLImageElement | null = document.getElementById("userAvatar") as HTMLImageElement;
-const messageEl: HTMLParagraphElement | null = document.getElementById("profileMessage") as HTMLParagraphElement;
+const messageEl: HTMLParagraphElement | null = document.getElementById("alert") as HTMLParagraphElement;
 
 // Friend profile modal elements
 const friendProfileModal: HTMLElement | null = document.getElementById("modalFriendProfile");
@@ -22,29 +24,49 @@ const friendProfileBio: HTMLElement | null = document.getElementById("friendProf
 const friendAddBtn: HTMLElement | null = document.getElementById("friendAddBtn");
 const friendInviteBtn: HTMLElement | null = document.getElementById("friendInviteBtn");
 
+
 editProfilePictureBtn?.addEventListener("click", () => {
   profilePictureInput?.click();
 });
 
-document.getElementById("userAvatar")?.addEventListener("click", () => {
-	if (profileModal) {
-		profileModal.classList.remove("hidden");
+/**
+ * Fills the profile name input with the current username
+ */
+function fillProfileNameInput(): void {
+	if (!userName) {
+		return;
 	}
-	// Affiche l'avatar dans le modal
+	
+	const profileNameInput = document.getElementById("profileNameInput") as HTMLInputElement | null;
+	if (profileNameInput && userName.textContent) {
+		profileNameInput.value = userName.textContent;
+	}
+}
+
+/**
+ * Updates profile modal UI with current user data and avatar
+ */
+function updateProfileModalUI(): void {
+	// Show avatar in modal
 	if (profilePicturePreview && userAvatar) {
 		profilePicturePreview.src = userAvatar.src;
 	}
-	const modalAvatar: HTMLImageElement | null = profilePicturePreview;
-	if (!userAvatar)
-		return;
-	const avatarSrc = userAvatar?.src;
-	if (modalAvatar && avatarSrc) {
-		modalAvatar.src = avatarSrc;
-	}
+
+	// Clear previous messages
 	if (messageEl) {
 		messageEl.textContent = "";
 		messageEl.style.color = "";
 	}
+
+	fillProfileNameInput();
+}
+
+document.getElementById("userInfo")?.addEventListener("click", () => {
+	if (profileModal) {
+		profileModal.classList.remove("hidden");
+		profileModal.classList.add("flex");
+	}
+	updateProfileModalUI();
 });
 
 // Update profile picture preview on file selection
@@ -68,18 +90,25 @@ closeProfileBtn?.addEventListener("click", () => {
 
 formProfile?.addEventListener("submit", async (e) => {
 	e.preventDefault();
-	const token = sessionStorage.getItem("token");
+	const token = AuthManager.getToken();
 	if (!token) {
-		 return;
+		return;
 	}
 
 	const name = (document.getElementById("profileNameInput") as HTMLInputElement).value;
 	const password = (document.getElementById("profilePasswordInput") as HTMLInputElement).value;
 	const passwordConfirm = (document.getElementById("profilePasswordConfirm") as HTMLInputElement).value;
 	const pictureInput: HTMLInputElement | null = document.getElementById("profilePictureInput") as HTMLInputElement;
+	const isDemoUser = AuthManager.isDemoUser();
 
 	try {
+		console.log("isDemoUser:", isDemoUser);
+		if (isDemoUser) {
+			throw new Error(i18n.t("demoUserEditError"));
+		}
+
 		if (name) {
+
 			const res = await fetch(`${BACKEND_URL}/update/name`, {
 				method: "POST",
 				headers: {
@@ -89,12 +118,12 @@ formProfile?.addEventListener("submit", async (e) => {
 				body: JSON.stringify({ name }),
 			});
 			const data = await res.json();
-			if (!res.ok) throw new Error(data.error || i18n.t("errorName"));
-			const welcomeMessage: HTMLElement | null = document.getElementById("welcomeMessage");
-			if (welcomeMessage) {
-				welcomeMessage.textContent = name;
+			if (!res.ok) {
+				throw new Error(data.error || i18n.t("errorName"));
 			}
-			sessionStorage.setItem("username", name);
+			if (userName) {
+				userName.textContent = name;
+			}
 		}
 
 		if (password) {
@@ -110,7 +139,10 @@ formProfile?.addEventListener("submit", async (e) => {
 				body: JSON.stringify({ password: password }),
 			});
 			const data = await res.json();
-			if (!res.ok) throw new Error(data.error || i18n.t("errorPassword"));
+			console.log("Password update response:", data);
+			if (!res.ok) {
+				throw new Error(data.error || i18n.t("errorPassword"));
+			}
 		}
 
 		if (pictureInput && pictureInput.files && pictureInput.files[0]) {
@@ -135,8 +167,6 @@ formProfile?.addEventListener("submit", async (e) => {
 		}
 
 		if (messageEl) {
-			messageEl.textContent = i18n.t("profileSuccess");
-			messageEl.style.color = "green";
 			profileModal?.classList.add("hidden");
 		}
 	} catch (err) {

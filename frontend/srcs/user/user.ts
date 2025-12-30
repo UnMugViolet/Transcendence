@@ -122,9 +122,9 @@ export class UserManager implements User {
       userInfo.classList.remove("hidden");
       userInfo.classList.add("flex");
       
-      const welcomeMessage = document.getElementById("welcomeMessage");
-      if (welcomeMessage) {
-        welcomeMessage.textContent = username;
+      const userName = document.getElementById("userName");
+      if (userName) {
+        userName.textContent = username;
       }
 
       // Always set user avatar (for both authenticated users and demo users)
@@ -191,7 +191,18 @@ export class UserManager implements User {
       const response = await ApiClient.get(`${BACKEND_URL}/profile`);
       const data = await response.json();
       
+      console.log("Profile API response:", data);
+      
       if (response.ok && data.user) {
+        // Check if role exists in the response
+        if (!data.user.role) {
+          console.error("Role missing from profile response:", data.user);
+          // Fallback: assume non-demo user if role is missing
+          data.user.role = { id: 2, name: 'user' };
+        }
+        
+        // Create user instance with role from API response
+        this.createUser(data.user.id, data.user.name, data.user.role, data.user.profile_picture);
         // Skip navigation on profile fetch since Router.init() already handles initial routing
         this.setLoggedInState(data.user.name, data.user.profile_picture, true);
         AuthManager.storeUserInfo(data.user.name, data.user.id.toString(), 

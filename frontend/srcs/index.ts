@@ -117,6 +117,9 @@ class Application {
 
         // Handle authentication state
         await this.handleAuthenticationState();
+        
+        // Initialize pong buttons after user state is loaded
+        initPongBtns();
 
       } catch (error) {
         console.error("Application initialization failed:", error);
