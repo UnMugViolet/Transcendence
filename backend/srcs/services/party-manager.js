@@ -2,6 +2,7 @@ import { partyQueries, partyPlayerQueries, userQueries } from './database-querie
 import { sendSysMessage, sendPauseMessage, sendStartMessage } from './message-service.js';
 import { clients } from '../routes/chat.js';
 import { GAME_CONSTANTS } from './game-logic.js';
+import { saveMatchToHistory } from './stats-service.js';
 
 /**
  * Party management service for handling party lifecycle and player state
@@ -43,38 +44,6 @@ export async function setTeam(partyId, games, team1 = null, team2 = null) {
 	console.log(`Game for party ${partyId} set with teams ${game.team1} and ${game.team2}`);
 }
 
-function saveMatchResult(partyId, game, teamLoser) {
-  const players = partyPlayerQueries.findByPartyId(partyId);
-
-  if (players.length < 2) return;
-
-  const p1 = players[0];
-  const p2 = players[1];
-
-  const p1Score = p1.score;
-  const p2Score = p2.score;
-
-  const winnerId = p1Score > p2Score ? p1.user_id : p2.user_id;
-
-  db.prepare(`
-    INSERT INTO match_history (
-      p1_id,
-      p2_id,
-      p1_score,
-      p2_score,
-      winner_id,
-      created_at
-    ) VALUES (?, ?, ?, ?, ?, ?)
-  `).run(
-    p1.user_id,
-    p2.user_id,
-    p1Score,
-    p2Score,
-    winnerId,
-    Date.now()
-  );
-}
-
 export async function handleEndGame(partyId, game, mode, games, tournament) {
 	const teamLoser = determineLosingTeam(partyId, game);
 	
@@ -99,7 +68,11 @@ export async function handleEndGame(partyId, game, mode, games, tournament) {
 	sendStopMessage(partyId, winnerName, info.round, mode);
 	
 	if (!info.round) {
-		// saveMatchResult(partyId, game);
+		try {
+			saveMatchToHistory(partyId, game);
+		} catch (err) {
+			console.error('Error saving match to history:', err);
+		}
 		await cleanupFinishedGame(partyId, games);
 	} else {
 		await handleNextRound(partyId, info, games);
