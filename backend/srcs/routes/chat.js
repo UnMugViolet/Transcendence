@@ -29,7 +29,7 @@ import { handleMovePlayer, pauseGameFromWS, sendSysMessage } from './game.js';
 
 const clients = new Map();
 
-export function handleInput(msg) {
+export function handleInput(msg, userId) {
 	try {
 		const data = JSON.parse(msg);
 		
@@ -40,10 +40,10 @@ export function handleInput(msg) {
 		}
 
 		// Validate message format
-		validateWebSocketMessage(data, payload.id);
+		validateWebSocketMessage(data, userId);
 
 		// Add metadata
-		data.from = payload.id;
+		data.from = userId;
 		data.send_at = Date.now();
 
 		console.log(`Message from ${data.from} to ${data.to}: ${data.message}`);
@@ -231,7 +231,7 @@ async function chat(fastify) {
 			}
 
 			(connection.socket || connection).on('message', (msg) => {
-					handleInput(msg);
+					handleInput(msg, payload.id);
 			});
 
 			(connection.socket || connection).on('close', (code, reason) => {

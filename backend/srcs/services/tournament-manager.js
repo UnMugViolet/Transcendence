@@ -44,7 +44,7 @@ export function setupNextMatch(partyId, tournamentData) {
 	const p2Name = userQueries.getNameById(p2Info.user_id);
 	
 	console.log(`Next match in tournament for party ${partyId} is between team ${p1} (${p1Name}) and team ${p2} (${p2Name})`);
-	
+
 	const playerStates = checkPlayerStates(p1Info, p2Info);
 	
 	sendSysMessage(partyId, `Match entre ${p1Name} et ${p2Name} ! Bonne chance !`);
