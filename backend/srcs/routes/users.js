@@ -1,5 +1,6 @@
 import fs from "fs";
 import pump from 'pump';
+import bcrypt from 'bcrypt';
 
 import db from '../db.js';
 import { checkName, checkPassword } from '../utils.js';
