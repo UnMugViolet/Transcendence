@@ -4,7 +4,7 @@
 
 - 1 Use a framework to build the backend ✅
 - 0,5 Use a framework or toolkit to build the front-end 
-- 0,5 Use a database for the backend -and more ✅
+- 0,5 Use a database for the backend and more ✅
 
 ## V.3 User Management
 
@@ -13,7 +13,6 @@
 ## V.4 Gameplay and user experience
 
 - 1 Remote players ✅
-- 1 Multiple players 
 - 1 Live Chat ✅
 
 ## V.5 AI-Algo
@@ -42,5 +41,5 @@
 
 For 125/100 is: <strong>9,5</strong> and 100/100 is <strong>7</strong>
 
-With all listed features the current score is: <strong>11</strong>
+With all listed features the current score is: <strong>10</strong>
 

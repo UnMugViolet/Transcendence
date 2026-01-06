@@ -58,7 +58,7 @@ function statsCards(stats: UserStats): string {
 function statCard(label: string, value: number | string): string {
   return `
     <div class="bg-black bg-opacity-40 rounded-xl p-4">
-      <p class="text-sm text-amber-300">${label}</p>
+      <p class="text-sm text-amber-200">${label}</p>
       <p class="text-3xl font-bold text-amber-100">${value}</p>
     </div>
   `;
