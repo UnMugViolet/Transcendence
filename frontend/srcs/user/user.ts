@@ -232,7 +232,11 @@ export class UserManager implements User {
     closeChatSocket();
 
     // End any active game before logging out
-    await leaveGame({ navigate: false, closeSocket: false, resetState: true });
+    await leaveGame({ 
+      navigate: false, 
+      closeSocket: false, 
+      resetState: true 
+    });
 
     if (AuthManager.isDemoUser()) {
       console.log("Deleting demo user on logout");

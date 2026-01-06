@@ -2,17 +2,13 @@ import bcrypt from 'bcrypt';
 import db from '../db.js';
 import { checkName, checkPassword } from '../utils.js';
 
-async function authRoutes(fastify) {
-	// DEBUG
-	fastify.get('/token', async () => {
-		return db.prepare('SELECT * FROM refresh_tokens').all();
-	});
-
+async function authRoutes(fastify) 
+{
+	// Generate access and refresh tokens
 	async function genKey(id, name, stayConnect, userAgent, role) {
 		const accessToken = fastify.jwt.sign({ 
 			id: id, 
 			name: name, 
-			roleId: role.id,  // Include in JWT for reference
 			type: 'access' 
 		}, { expiresIn: '20min' });
 

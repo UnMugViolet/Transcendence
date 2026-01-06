@@ -20,10 +20,14 @@ import statsRoutes from './routes/stats.js';
 import { clients } from './routes/chat.js';
 import { gameLoop, pauseLoop } from './routes/game.js';
 
-const fastify = Fastify({ logger: {level: 'warn'}});
+const fastify = Fastify({ 
+	logger: {level: 'warn'}
+});
 
+// TODO: restrict origins in production
 fastify.register(fastifyCors, {
 	origin: '*',
+	credentials: true 
 });
 
 fastify.register(fastifyjwt, {
