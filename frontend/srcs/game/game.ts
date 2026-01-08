@@ -467,7 +467,8 @@ yes?.addEventListener("click", async () => {
 	} catch (err) {
 		console.error("Error Resume Game:", err);
 	}
-
+	isInternalNavigation = false;
+	modalReconnect?.classList.add("hidden");
 	started = true;
 });
 
@@ -722,6 +723,7 @@ export async function handleGameRemote(data: any) {
 		return true;
 	}
 	if (data.type === "reconnect" && !started) {
+		console.log("here unhidden");
 		modalReconnect?.classList.remove("hidden");
 		pongMenu?.classList.add("hidden");
 		return true;
