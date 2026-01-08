@@ -3,7 +3,7 @@ import { getUserStats } from '../services/stats-service.js';
 export default async function statsRoutes(fastify) {
   fastify.get('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
-      const userId = request.user.id;  // maintenant request.user est garanti
+      const userId = request.user.id;
       const stats = getUserStats(userId);
 
       return {

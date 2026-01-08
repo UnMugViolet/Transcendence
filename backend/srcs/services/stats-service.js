@@ -7,7 +7,8 @@ export function getUserStats(userId) {
       p1_id, p2_id,
       p1_score, p2_score,
       winner_id,
-      created_at
+      created_at,
+      duration
     FROM match_history
     WHERE p1_id = ? OR p2_id = ?
     ORDER BY created_at ASC
@@ -27,14 +28,20 @@ export function getUserStats(userId) {
     ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
     : 0;
 
+  const duration = matches.map(m => m.duration).filter(Boolean);
+  const avgDuration = duration.length
+    ? Math.round(duration.reduce((a, b) => a + b, 0) / duration.length)
+    : 0;
+
   return {
     totalGames,
     wins,
     losses,
     winRate: totalGames ? Math.round((wins / totalGames) * 100) : 0,
     avgScore,
-    scoreHistory: scores.slice(-10),   // pour bar chart
-    recentGames: matches.slice(-5).reverse()
+    scoreHistory: scores.slice(-10),
+    recentGames: matches.slice(-5).reverse(),
+    avgDuration
   };
 }
 
@@ -66,6 +73,10 @@ export function saveMatchToHistory(partyId, game) {
     p1Score > p2Score ? p1.user_id :
     p2Score > p1Score ? p2.user_id :
     null;
+  
+  const duration = game.created
+    ? Math.floor((Date.now() - game.created) / 1000)
+    : null;
 
   db.prepare(`
     INSERT INTO match_history (
@@ -74,15 +85,17 @@ export function saveMatchToHistory(partyId, game) {
       p1_score,
       p2_score,
       winner_id,
-      created_at
-    ) VALUES (?, ?, ?, ?, ?, ?)
+      created_at,
+      duration
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(
     p1.user_id,
     p2.user_id,
     p1Score,
     p2Score,
     winnerId,
-    Date.now()
+    game.created,
+    duration
   );
 
   console.log('✅ Match saved to history', {

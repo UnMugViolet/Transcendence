@@ -4,6 +4,11 @@ module.exports = {
     "./src/**/*.{html,js,ts}",
     "./index.html"
   ],
+  safelist: [
+    'text-green-400',
+    'text-red-400',
+    'text-amber-300',
+  ],
   theme: {
     extend: {
       fontFamily: {

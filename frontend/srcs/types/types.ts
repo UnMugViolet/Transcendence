@@ -47,7 +47,18 @@ export interface UserStats {
   wins: number;
   losses: number;
   avgScore: number;
-  winRate: number; // percentage
+  winRate: number;
+  avgDuration: number;
+  scoreHistory: number[];
+  recentGames: {
+    p1_id: number;
+    p2_id: number;
+    p1_score: number;
+    p2_score: number;
+    winner_id: number | null;
+    created_at: number;
+    duration: number;
+  }[];
 }
 
 export type ViewId = "viewGame" | "pongMenu" | "lobby" | "userDashboard";
