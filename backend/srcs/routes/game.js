@@ -324,7 +324,7 @@ async function gameRoutes(fastify) {
 		}
 
 		console.log(`User ${user.name} resumed party ${party.id}`);
-		return { message: 'Resumed party', partyId: party.id };
+		return { message: 'Resumed party', partyId: party.id, mode: party.type };
 	});
 }
 

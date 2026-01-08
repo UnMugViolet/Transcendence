@@ -391,11 +391,13 @@ globalThis.addEventListener("popstate", async (event) => {
 		return;
 	}
 
+	console.log(`started: ${started}, mode: ${mode}`);
 	if (started && (mode === '1v1Offline' || mode === 'IA' || mode === '1v1Online' || mode === 'Tournament')) {
 		event.preventDefault();
 		// Mark that we're handling a popstate leave
 		pendingPopstateLeave = true;
 		started = false;
+		modalReconnect?.classList.remove("hidden");
 		modalReconnect?.classList.remove("hidden");
 		if (mode === '1v1Online' || mode === 'Tournament') {
 			getWs()?.close();
@@ -460,10 +462,13 @@ yes?.addEventListener("click", async () => {
 		await new Promise<void>((resolve) => {
 			initChatSocket(token, resolve);
 		});
-		await fetch(`${BACKEND_URL}/resume`, {
+		const res = await fetch(`${BACKEND_URL}/resume`, {
 			method: "POST",
 			headers: { Authorization: `Bearer ${token}` },
 		});
+		let data = await res.json();
+		console.log(`resume response:`, data);
+		mode = data.mode;
 	} catch (err) {
 		console.error("Error Resume Game:", err);
 	}
