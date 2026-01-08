@@ -248,7 +248,7 @@ async function chat(fastify) {
 				
 				const party = partyPlayerQueries.findByUserIdMultipleStatuses(payload.id, ['active', 'waiting'])[0];
 				if (party) {
-					partyPlayerQueries.updateStatus('disconnected', party.party_id, payload.id);
+					partyPlayerQueries.updateStatus(payload.id, party.party_id, 'disconnected');
 					console.log(`User ${payload.name} set to disconnected in party ${party.party_id}`);
 					sendSysMessage(party.party_id, `${payload.name} a été déconnecté.`);
 					

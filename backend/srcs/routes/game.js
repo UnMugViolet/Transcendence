@@ -250,7 +250,7 @@ async function gameRoutes(fastify) {
 		}
 
 		// Mark player as left
-		partyPlayerQueries.updateStatus('left', party.id, userId);
+		partyPlayerQueries.updateStatus(userId, party.id, 'left');
 		sendSysMessage(party.id, `${user.name} a quitté la partie.`);
 
 		// Handle game cleanup - both active and paused games
@@ -309,7 +309,7 @@ async function gameRoutes(fastify) {
 
 		// Update player status
 		const newStatus = pauses.has(party.id) ? 'active' : 'waiting';
-		partyPlayerQueries.updateStatus(newStatus, party.id, userId);
+		partyPlayerQueries.updateStatus(userId, party.id, newStatus);
 		sendSysMessage(party.id, `${user.name} reconnected !`);
 
 		if (pauses.has(party.id)) {
