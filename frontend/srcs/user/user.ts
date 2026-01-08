@@ -174,11 +174,13 @@ export class UserManager implements User {
         userAvatar.src = `${BACKEND_URL}/img/default.jpg`;
       }
       userAvatar.addEventListener("click", () => {
+        
         const profileModal = document.getElementById("modalProfile");
+
         if (profileModal) {
-			profileModal.classList.remove("hidden");
-			profileModal.classList.add("flex");
-		}
+          profileModal.classList.remove("hidden");
+          profileModal.classList.add("flex");
+        }
       });
     }
   }

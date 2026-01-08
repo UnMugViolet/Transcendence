@@ -62,19 +62,18 @@ export class FormManager {
           refreshToken: data.refreshToken
         }, stayConnected);
         
-        // Decode JWT to get user ID
+        // Store user info for authentication
         const tokenParts = data.accessToken.split('.');
         if (tokenParts.length === 3) {
           const decoded = JSON.parse(atob(tokenParts[1]));
-          const userId = decoded.id;
-          
-          // Create user with role data from auth response
-          UserManager.createUser(userId, username, data.role);
+          AuthManager.storeUserInfo(username, decoded.id.toString(), stayConnected);
         }
 
         ModalManager.closeModal("modalSignUp");
         
-        UserManager.setLoggedInState(username);
+        // Fetch complete user profile (including profile picture) from backend
+        await UserManager.fetchUserProfile();
+        
         initChatSocket(data.accessToken, () => {
           console.log("Chat WebSocket ready after signup");
         });
@@ -122,19 +121,18 @@ export class FormManager {
           refreshToken: data.refreshToken
         }, stayConnected);
         
-        // Decode JWT to get user ID
+        // Store user info for authentication
         const tokenParts = data.accessToken.split('.');
         if (tokenParts.length === 3) {
           const decoded = JSON.parse(atob(tokenParts[1]));
-          const userId = decoded.id;
-          
-          // Create user with role data from auth response
-          UserManager.createUser(userId, username, data.role);
+          AuthManager.storeUserInfo(username, decoded.id.toString(), stayConnected);
         }
 
         ModalManager.closeModal("modalSignIn");
         
-        UserManager.setLoggedInState(username);
+        // Fetch complete user profile (including profile picture) from backend
+        await UserManager.fetchUserProfile();
+        
         initChatSocket(data.accessToken, () => {
           console.log("Chat WebSocket ready after login");
         });
@@ -232,20 +230,18 @@ export class FormManager {
           refreshToken: data.refreshToken
         }, true); // Store in localStorage
 
-        // Decode JWT to get user ID
+        // Store user info for authentication
         const tokenParts = data.accessToken.split('.');
         if (tokenParts.length === 3) {
           const decoded = JSON.parse(atob(tokenParts[1]));
-          const userId = decoded.id;
-          
-          // Create user with role data from auth response
-          UserManager.createUser(userId, demoUsername, data.role);
+          AuthManager.storeUserInfo(demoUsername, decoded.id.toString(), true);
         }
 
         console.log("Demo user created successfully:", demoUsername);
 
-        // Skip navigation here since joinGame will handle navigating to the lobby
-        UserManager.setLoggedInState(demoUsername, undefined, true);
+        // Fetch complete user profile (including profile picture) from backend
+        await UserManager.fetchUserProfile();
+        
         // Re-initialize pong buttons to reflect demo user status
         initPongBtns();
         
