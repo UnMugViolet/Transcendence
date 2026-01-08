@@ -79,20 +79,20 @@ function checkPlayerStates(p1Info, p2Info) {
 function handlePlayerStates(partyId, playerStates, p1Info, p2Info) {
 	if (playerStates.afk) {
 		const activeId = p1Info.user_id === playerStates.afkId ? p2Info.user_id : p1Info.user_id;
-		partyPlayerQueries.updateStatus('active', partyId, activeId);
+		partyPlayerQueries.updateStatus(activeId, partyId, 'active');
 	}
 	
 	if (playerStates.left) {
 		const activeId = p1Info.user_id === playerStates.leftId ? p2Info.user_id : p1Info.user_id;
-		partyPlayerQueries.updateStatus('active', partyId, activeId);
+		partyPlayerQueries.updateStatus(activeId, partyId, 'active');
 		
 		const leftPlayerName = userQueries.getNameById(playerStates.leftId);
 		const activePlayerName = userQueries.getNameById(activeId);
 		sendSysMessage(partyId, `${leftPlayerName} a quitté la partie et est éliminé du tournoi. Victoire pour ${activePlayerName} !`);
 	} else {
 		// Both players active
-		partyPlayerQueries.updateStatus('active', partyId, p1Info.user_id);
-		partyPlayerQueries.updateStatus('active', partyId, p2Info.user_id);
+		partyPlayerQueries.updateStatus(p1Info.user_id, partyId, 'active');
+		partyPlayerQueries.updateStatus(p2Info.user_id, partyId, 'active');
 	}
 }
 

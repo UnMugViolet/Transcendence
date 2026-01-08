@@ -40,7 +40,7 @@ export function sendGameStateToPlayers(partyId, gameState) {
 			const currentStatus = player.status;
 			if (currentStatus !== 'disconnected') {
 				console.log(`DEBUG: No socket found for player ${player.user_id}, marking as disconnected.`);
-				partyPlayerQueries.updateStatus('disconnected', partyId, player.user_id);
+				partyPlayerQueries.updateStatus(player.user_id, partyId, 'disconnected');
 			} else {
 				console.log(`DEBUG: Player ${player.user_id} already disconnected, skipping.`);
 			}

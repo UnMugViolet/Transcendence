@@ -102,7 +102,7 @@ export const pauseLoop = setInterval(() => {
 			
 			if (player) {
 				console.log(`\x1b[33mResuming game for party ${party.id} after timeout, player ${player.user_id} eliminated\x1b[0m`);
-				partyPlayerQueries.updateStatus('left', party.id, player.user_id);
+				partyPlayerQueries.updateStatus(player.user_id, party.id, 'left');
 			} else {
 				console.log(`\x1b[33mResuming game for party ${party.id} after timeout (no disconnected players found)\x1b[0m`);
 			}
