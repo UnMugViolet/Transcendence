@@ -163,6 +163,7 @@ async function gameRoutes(fastify) {
 			console.log(`DEBUG: Updated player status to active for party ${party.id}`);
 		} else {
 			// Initialize tournament
+			partyPlayerQueries.updateStatusByPartyAndCurrentStatus('waiting', party.id, 'lobby');
 			const players = partyPlayerQueries.findByPartyId(party.id);
 			tournament[party.id] = initializeTournament(party.id, players);
 			info = setupNextMatch(party.id, tournament[party.id]);

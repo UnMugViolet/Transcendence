@@ -78,7 +78,7 @@ export function sendPauseMessage(partyId, excludeUserId) {
 	});
 }
 
-export function sendStartMessage(partyId, playersList, playerTeam, userId, resume = false) {
+export function sendStartMessage(partyId, playersList, playerTeam, userId, resume = false, team1, team2) {
 	const playerSocket = clients.get(userId);
 	console.log(`DEBUG: sendStartMessage for user ${userId}, socket exists: ${!!playerSocket}`);
 	if (playerSocket) {
@@ -87,7 +87,9 @@ export function sendStartMessage(partyId, playersList, playerTeam, userId, resum
 		const startMsg = { 
 			type: 'start', 
 			game: partyId, 
-			team: playerTeam, 
+			team: playerTeam,
+			team1: team1,
+			team2: team2,
 			resume: resume, 
 			players: playersList 
 		};

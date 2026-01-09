@@ -59,6 +59,8 @@ export async function handleEndGame(partyId, game, mode, games, tournament) {
 	if (mode === 'Tournament') {
 		const { setupNextMatch } = await import('./tournament-manager.js');
 		info = setupNextMatch(partyId, tournament[partyId]);
+		game.score1 = 0;
+		game.score2 = 0;
 	}
 	
 	console.log(`Round : ${info.round}`);
@@ -129,11 +131,11 @@ async function handleNextRound(partyId, info, games) {
 		const party = partyQueries.findById(partyId);
 		await handleEndGame(partyId, games.get(partyId), party.type, games, {});
 	} else {
-		await broadcastStartMessage(partyId);
+		await broadcastStartMessage(partyId, false, games, null, info.p1, info.p2);
 	}
 }
 
-export async function broadcastStartMessage(partyId, resume = false, games, pauses) {
+export async function broadcastStartMessage(partyId, resume = false, games, pauses, p1 = 1, p2 = 2) {
 	const game = games.get(partyId);
 	
 	// Clear any lingering pause
@@ -141,7 +143,7 @@ export async function broadcastStartMessage(partyId, resume = false, games, paus
 		pauses.delete(partyId);
 	}
 	
-	const partyPlayers = partyPlayerQueries.findByPartyIdAndStatus(partyId, 'active');
+	const partyPlayers = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['left', 'disconnected']);
 	
 	// Build players list with names and teams
 	const playersList = partyPlayers.map(p => {
@@ -151,7 +153,7 @@ export async function broadcastStartMessage(partyId, resume = false, games, paus
 	
 	partyPlayers.forEach(player => {
 		console.log(`Starting game for user ${player.user_id}`);
-		sendStartMessage(partyId, playersList, player.team, player.user_id, resume);
+		sendStartMessage(partyId, playersList, player.team, player.user_id, resume, p1, p2);
 	});
 	
 	if (!pauses || !pauses.has(partyId)) {
