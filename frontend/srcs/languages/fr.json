@@ -94,7 +94,7 @@
   "avgScore": "Score moyen",
   "tournamentsWon": "Tournois gagnés",
   "avgDuration": "Durée moyenne",
-  "recentGmes": "Dernières parties",
+  "recentGames": "Dernières parties",
   "noRecentGames": "Pas de parties récentes.",
   "you": "TOI",
   "opponent": "ADVERSAIRE",
@@ -102,6 +102,7 @@
   "timeDuration": "Heure : Durée",
   "justNow": "À l'instant",
   "minutesAgo": "minutes",
-  "hoursAgo": "heures"
+  "hoursAgo": "heures",
+  "matchHistory": "Historique des matchs"
 
 }

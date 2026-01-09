@@ -38,6 +38,7 @@ export async function loadUserDashboard() {
         ${graphicWidget(stats)}
     `;
 
+    i18n.updateDOM();
     document.getElementById("dashboardBack")?.addEventListener("click", () => {
       location.hash = "#pongMenu";
     });
@@ -86,7 +87,7 @@ function winRateWidget(stats: UserStats): string {
 
   return `
     <div class="bg-rose-950 bg-opacity-80 rounded-xl p-6 flex flex-col items-center justify-center gap-4">
-      <h2 class="text-xl font-semibold text-amber-100">${i18n.t("winRate")}</h2>
+      <h2 data-i18n="winRate" class="text-xl font-semibold text-amber-100"></h2>
       
         <svg width="200" height="200" viewBox="0 0 160 160">
           <circle
@@ -131,7 +132,7 @@ function recentGameWidget(stats: UserStats, myId: number): string {
   return `
     <div id="recentGamesCard" class="bg-black bg-opacity-40 rounded-xl p-4 mx-auto max-w-md relative">
       <div class="flex justify-between items-start mb-3">
-        <h2 class="text-lg font-semibold text-amber-100">${i18n.t("recentGames")}</h2>
+        <h2 data-i18n="recentGames" class="text-lg font-semibold text-amber-100"></h2>
       </div>
 
       <div class="space-y-3 overflow-y-scroll max-h-20 pr-2">
@@ -144,8 +145,8 @@ function recentGameWidget(stats: UserStats, myId: number): string {
           return `
             <div class="flex flex-col bg-black bg-opacity-30 rounded-lg p-3">
               <div class="flex justify-between text-xs text-amber-200 mb-1">
-                <span class="font-semibold">${i18n.t("you")}</span>
-                <span class="font-semibold">${i18n.t("opponent")}</span>
+                <span data-i18n="you" class="font-semibold"></span>
+                <span data-i18n="opponent" class="font-semibold"></span>
               </div>
               <div class="flex justify-between items-center text-xl font-bold mb-1">
                 <span class="${isWin ? 'text-green-400' : 'text-red-400'}">${myScore}</span>
@@ -168,8 +169,8 @@ function graphicWidget(stats: UserStats): string {
   if (games.length === 0) {
     return `
       <div class="bg-black bg-opacity-40 rounded-xl p-4 w-96 flex flex-col">
-        <h3 class="text-amber-100 font-semibold mb-2">Score Trend</h3>
-        <p class="text-amber-200 text-sm">${i18n.t("noRecentGames")}</p>
+        <h3 data-i18n="scoreTrend" class="text-amber-100 font-semibold mb-2"></h3>
+        <p data-i18n="noRecentGames" class="text-amber-200 text-sm"></p>
       </div>
     `;
   }
@@ -220,8 +221,7 @@ function graphicWidget(stats: UserStats): string {
 
   return `
     <div class="bg-black bg-opacity-40 rounded-xl p-4 w-[500px] flex flex-col">
-      <h3 class="text-amber-100 font-semibold mb-2">${i18n.t("scoreTrend")}</h3>
-
+      <h3 data-i18n="scoreTrend" class="text-amber-100 font-semibold mb-2"></h3>
       <svg width="${width}" height="${height}">
         <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#fff" stroke-width="1"></line>
         <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#fff" stroke-width="1"></line>
@@ -230,17 +230,11 @@ function graphicWidget(stats: UserStats): string {
         <polyline points="${points}" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round"></polyline>
         ${circles}
       </svg>
-
       <div class="mt-2 w-full text-amber-200 text-xs">
-        
-        <div class="text-center text-[10px] text-amber-300 font-semibold mb-1">
-          ${i18n.t("timeDuration")}
-        </div>
-
+        <div data-i18n="timeDuration" class="text-center text-[10px] text-amber-300 font-semibold mb-1"></div>
         <div class="inline-grid w-full grid-cols-${games.length}">
           ${durationDiv}
         </div>
-
       </div>
     </div>
   `;

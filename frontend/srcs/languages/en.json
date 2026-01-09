@@ -102,6 +102,7 @@
   "timeDuration": "Time : Duration",
   "justNow": "Just now",
   "minutesAgo": "minutes ago",
-  "hoursAgo": "hours ago"
+  "hoursAgo": "hours ago",
+  "matchHistory": "Match History"
 
 }
