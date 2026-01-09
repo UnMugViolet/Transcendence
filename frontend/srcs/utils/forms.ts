@@ -3,7 +3,7 @@ import { AuthManager } from "../user/auth.js";
 import { UserManager } from "../user/user.js";
 import { ModalManager } from "./modal.js";
 import { initChatSocket } from "../user/chat.js";
-import { AuthResponse } from "../types/types.js";
+import { AuthResponse, LoginResponse } from "../types/types.js";
 import { i18n } from "./i18n.js";
 import { initPongBtns } from "../game/game.js";
 import { TwoFactorAuthManager } from "./twofa.js";
@@ -57,12 +57,23 @@ export class FormManager {
           throw new Error(data.error || i18n.t("failedRegister"));
         }
 
-        // Store authentication data
+        // If 2FA is requested at signup, require successful verification before continuing
+        if (enable2FA) {
+          const verified = await TwoFactorAuthManager.showSetupModal(data.accessToken, stayConnected, () => {
+            console.log("2FA setup completed");
+          }, { enforced: true });
+
+          if (!verified) {
+            throw new Error('2FA setup is required');
+          }
+        }
+
+        // Store authentication data only after signup (+ optional 2FA setup) succeeds
         AuthManager.storeTokens({
           accessToken: data.accessToken,
           refreshToken: data.refreshToken
         }, stayConnected);
-        
+
         // Store user info for authentication
         const tokenParts = data.accessToken.split('.');
         if (tokenParts.length === 3) {
@@ -71,20 +82,13 @@ export class FormManager {
         }
 
         ModalManager.closeModal("modalSignUp");
-        
+
         // Fetch complete user profile (including profile picture) from backend
         await UserManager.fetchUserProfile();
-        
+
         initChatSocket(data.accessToken, () => {
           console.log("Chat WebSocket ready after signup");
         });
-
-        // If 2FA is enabled, show setup modal
-        if (enable2FA) {
-          await TwoFactorAuthManager.showSetupModal(data.accessToken, stayConnected, () => {
-            console.log("2FA setup completed");
-          });
-        }
 
       } catch (err: any) {
         messageEl.textContent = "❌ " + err.message;
@@ -118,9 +122,9 @@ export class FormManager {
           }),
         });
 
-        const data: AuthResponse = await response.json();
+        const data: LoginResponse = await response.json();
         if (!response.ok) {
-          throw new Error(data.error || i18n.t("failedLogin"));
+          throw new Error((data as any).error || i18n.t("failedLogin"));
         }
 
         // Check if 2FA is required
@@ -128,14 +132,14 @@ export class FormManager {
           ModalManager.closeModal("modalSignIn");
           
           // Show 2FA verification modal
-          TwoFactorAuthManager.showLoginModal((data as any).userId, stayConnected, async (code: string) => {
+          TwoFactorAuthManager.showLoginModal((data as any).tempToken, stayConnected, async (code: string) => {
             try {
               // Complete login with 2FA code
               const verify2FAResponse = await fetch(`${BACKEND_URL}/login/2fa`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  userId: (data as any).userId,
+                  tempToken: (data as any).tempToken,
                   token: code,
                   stayConnect: stayConnected,
                 }),
@@ -149,7 +153,7 @@ export class FormManager {
               }
 
               // Complete login
-              await this.completeLogin(verify2FAData, username, stayConnected);
+              await this.completeLogin(verify2FAData as AuthResponse, username, stayConnected);
               TwoFactorAuthManager.closeLoginModal();
               
             } catch (err: any) {
@@ -161,7 +165,7 @@ export class FormManager {
         }
 
         // Normal login without 2FA
-        await this.completeLogin(data, username, stayConnected);
+        await this.completeLogin(data as AuthResponse, username, stayConnected);
         ModalManager.closeModal("modalSignIn");
 
       } catch (err: any) {

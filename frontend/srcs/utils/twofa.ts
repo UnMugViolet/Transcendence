@@ -7,15 +7,27 @@ import { ModalManager } from "./modal.js";
  */
 export class TwoFactorAuthManager {
   private static currentUserId: number | null = null;
+  private static currentTempToken: string | null = null;
+  private static setupAccessToken: string | null = null;
+  private static setupResolve: ((verified: boolean) => void) | null = null;
+  private static setupEnforced: boolean = false;
+  private static codeResolve: ((code: string | null) => void) | null = null;
   private static stayConnected: boolean = false;
   private static onComplete: (() => void) | null = null;
 
   /**
    * Initialize 2FA setup modal with QR code and backup codes
    */
-  static async showSetupModal(accessToken: string, stayConnected: boolean, onComplete: () => void): Promise<void> {
+  static async showSetupModal(
+    accessToken: string,
+    stayConnected: boolean,
+    onComplete: () => void,
+    options?: { enforced?: boolean }
+  ): Promise<boolean> {
     this.stayConnected = stayConnected;
     this.onComplete = onComplete;
+    this.setupAccessToken = accessToken;
+    this.setupEnforced = Boolean(options?.enforced);
 
     try {
       // Call backend to enable 2FA and get QR code
@@ -70,6 +82,9 @@ export class TwoFactorAuthManager {
         setTimeout(() => input.focus(), 100);
       }
 
+      return await new Promise<boolean>((resolve) => {
+        this.setupResolve = resolve;
+      });
     } catch (error) {
       console.error('Error setting up 2FA:', error);
       throw error;
@@ -105,8 +120,8 @@ export class TwoFactorAuthManager {
   /**
    * Show 2FA login verification modal
    */
-  static showLoginModal(userId: number, stayConnected: boolean, onSuccess: (code: string) => void): void {
-    this.currentUserId = userId;
+  static showLoginModal(tempToken: string, stayConnected: boolean, onSuccess: (code: string) => void): void {
+    this.currentTempToken = tempToken;
     this.stayConnected = stayConnected;
 
     const modal = document.getElementById('modal2FALogin');
@@ -124,6 +139,33 @@ export class TwoFactorAuthManager {
       input.value = '';
       setTimeout(() => input.focus(), 100);
     }
+  }
+
+  /**
+   * Ask the user for a 2FA code (TOTP or backup code) using the existing login modal.
+   * Resolves with the code, or null if the user cancels.
+   */
+  static async requestCode(): Promise<string | null> {
+    const modal = document.getElementById('modal2FALogin');
+    if (!modal) return null;
+
+    // Clear any previous error message
+    const msgEl = document.getElementById('message2FALogin');
+    if (msgEl) msgEl.textContent = '';
+
+    // Show modal
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    const input = document.getElementById('input2FALoginCode') as HTMLInputElement;
+    if (input) {
+      input.value = '';
+      setTimeout(() => input.focus(), 100);
+    }
+
+    return await new Promise<string | null>((resolve) => {
+      this.codeResolve = resolve;
+    });
   }
 
   /**
@@ -167,16 +209,20 @@ export class TwoFactorAuthManager {
       }
 
       try {
-        // Get the access token from storage
-        const accessToken = sessionStorage.getItem('token') || localStorage.getItem('token');
-        if (!accessToken) {
-          throw new Error('No access token found');
-        }
+        const accessToken = this.setupAccessToken || sessionStorage.getItem('token') || localStorage.getItem('token');
+        if (!accessToken) throw new Error('No access token found');
 
         await this.verifySetupCode(accessToken, code);
         
         if (messageEl) messageEl.textContent = '';
         this.closeSetupModal();
+
+        if (this.setupResolve) {
+          this.setupResolve(true);
+          this.setupResolve = null;
+        }
+        this.setupAccessToken = null;
+        this.setupEnforced = false;
         
         // Call completion callback
         if (this.onComplete) {
@@ -190,10 +236,22 @@ export class TwoFactorAuthManager {
     // Skip 2FA button
     const skip2FA = document.getElementById('skip2FA');
     skip2FA?.addEventListener('click', () => {
-      this.closeSetupModal();
-      if (this.onComplete) {
-        this.onComplete();
+      if (this.setupEnforced) {
+        const messageEl = document.getElementById('message2FA');
+        if (messageEl) messageEl.textContent = '2FA setup is required';
+        return;
       }
+
+      this.closeSetupModal();
+
+      if (this.setupResolve) {
+        this.setupResolve(false);
+        this.setupResolve = null;
+      }
+      this.setupAccessToken = null;
+      this.setupEnforced = false;
+
+      if (this.onComplete) this.onComplete();
     });
 
     // Copy backup codes
@@ -235,6 +293,13 @@ export class TwoFactorAuthManager {
       if (callback) {
         callback(code);
       }
+
+      if (this.codeResolve) {
+        const resolve = this.codeResolve;
+        this.codeResolve = null;
+        this.closeLoginModal();
+        resolve(code);
+      }
     });
 
     // Cancel 2FA login
@@ -242,6 +307,12 @@ export class TwoFactorAuthManager {
     cancel2FALogin?.addEventListener('click', () => {
       this.closeLoginModal();
       delete (window as any).__2faLoginCallback;
+
+      if (this.codeResolve) {
+        const resolve = this.codeResolve;
+        this.codeResolve = null;
+        resolve(null);
+      }
     });
 
     // Auto-format 2FA input (digits only)

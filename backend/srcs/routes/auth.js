@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import db from '../db.js';
+import speakeasy from 'speakeasy';
 
 import { BACKEND_URL } from "../config.js";
 import { checkName, checkPassword } from '../utils.js';
@@ -137,26 +138,56 @@ async function authRoutes(fastify)
 
 
 	fastify.post('/login/2fa', async (request, reply) => {
-		const { userId, token, stayConnect } = request.body;
+		const { tempToken, token, stayConnect } = request.body;
 
-		if (!userId || !token) {
-			return reply.status(400).send({ error: 'User ID and token are required' });
+		if (!tempToken || !token) {
+			return reply.status(400).send({ error: 'tempToken and token are required' });
 		}
 
-		const verifyResponse = await fetch(`${BACKEND_URL}/2fa/verify`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ userId, token })
-		}).then(res => res.json());
-
-		if (verifyResponse.error) {
-			return reply.status(401).send({ error: verifyResponse.error });
+		let payload;
+		try {
+			payload = fastify.jwt.verify(tempToken);
+		} catch (err) {
+			return reply.status(401).send({ error: 'Invalid or expired tempToken' });
+		}
+		if (payload?.type !== '2fa' || !payload?.id) {
+			return reply.status(401).send({ error: 'Invalid tempToken' });
 		}
 
-		// Gen token
+		const userId = payload.id;
 		const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
 		if (!user) {
 			return reply.status(404).send({ error: 'User not found' });
+		}
+		if (!user.two_fa_enabled || !user.two_fa_secret) {
+			return reply.status(400).send({ error: '2FA not enabled for this user' });
+		}
+
+		// Verify TOTP first
+		let verified = speakeasy.totp.verify({
+			secret: user.two_fa_secret,
+			encoding: 'base32',
+			token: token,
+			window: 2
+		});
+
+		// If TOTP fails, check backup codes
+		if (!verified && user.two_fa_backup_codes) {
+			try {
+				const backupCodes = JSON.parse(user.two_fa_backup_codes);
+				const codeIndex = backupCodes.indexOf(String(token).toUpperCase());
+				if (codeIndex !== -1) {
+					backupCodes.splice(codeIndex, 1);
+					db.prepare('UPDATE users SET two_fa_backup_codes = ? WHERE id = ?').run(JSON.stringify(backupCodes), userId);
+					verified = true;
+				}
+			} catch (err) {
+				// Ignore malformed backup codes and fall through to invalid token
+			}
+		}
+
+		if (!verified) {
+			return reply.status(401).send({ error: 'Invalid token' });
 		}
 
 		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), user.id);

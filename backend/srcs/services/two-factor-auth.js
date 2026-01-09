@@ -8,7 +8,6 @@ async function twoFaRoutes(fastify) {
 
 	fastify.post('/enable', { preHandler: fastify.authenticate }, async (request, reply) => {
     console.log('2FA enable called, user:', JSON.stringify(request.user, null, 2));
-    console.log('User ID:', request.user?.id);
     console.log('User object keys:', request.user ? Object.keys(request.user) : 'no user');
     
     if (!request.user || !request.user.id) {
@@ -103,13 +102,31 @@ async function twoFaRoutes(fastify) {
       return reply.status(401).send({ error: 'Invalid password' });
     }
 
-    // Verify 2FA token
-    const verified = speakeasy.totp.verify({
+    // Verify 2FA token (TOTP or backup code)
+    let verified = speakeasy.totp.verify({
       secret: user.two_fa_secret,
       encoding: 'base32',
       token: token,
       window: 2
     });
+
+    // If TOTP fails, check backup codes
+    if (!verified) {
+      const userBackup = db.prepare('SELECT two_fa_backup_codes FROM users WHERE id = ?').get(userId);
+      if (userBackup?.two_fa_backup_codes) {
+        try {
+          const backupCodes = JSON.parse(userBackup.two_fa_backup_codes);
+          const codeIndex = backupCodes.indexOf(String(token).toUpperCase());
+          if (codeIndex !== -1) {
+            backupCodes.splice(codeIndex, 1);
+            db.prepare('UPDATE users SET two_fa_backup_codes = ? WHERE id = ?').run(JSON.stringify(backupCodes), userId);
+            verified = true;
+          }
+        } catch (_) {
+          // Ignore malformed backup codes
+        }
+      }
+    }
 
     if (!verified) {
       return reply.status(401).send({ error: 'Invalid token' });
