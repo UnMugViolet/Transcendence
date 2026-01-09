@@ -466,7 +466,7 @@ yes?.addEventListener("click", async () => {
 		});
 		if (!res.ok) {
 			const error = await res.json();
-			console.error("Error starting game:", error);
+			console.error("Error resuming game:", error);
 			showGoodbyeAndLeave();
 			return;
 		}
