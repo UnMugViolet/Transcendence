@@ -460,14 +460,25 @@ yes?.addEventListener("click", async () => {
 		await new Promise<void>((resolve) => {
 			initChatSocket(token, resolve);
 		});
-		await fetch(`${BACKEND_URL}/resume`, {
+		const res = await fetch(`${BACKEND_URL}/resume`, {
 			method: "POST",
 			headers: { Authorization: `Bearer ${token}` },
 		});
+		if (!res.ok) {
+			const error = await res.json();
+			console.error("Error resuming game:", error);
+			showGoodbyeAndLeave();
+			return;
+		}
+		let data = await res.json();
+		console.log(`resume response:`, data);
+		mode = data.mode;
 	} catch (err) {
 		console.error("Error Resume Game:", err);
+		showGoodbyeAndLeave();
 	}
-
+	isInternalNavigation = false;
+	modalReconnect?.classList.add("hidden");
 	started = true;
 });
 
@@ -722,6 +733,7 @@ export async function handleGameRemote(data: any) {
 		return true;
 	}
 	if (data.type === "reconnect" && !started) {
+		console.log("here unhidden");
 		modalReconnect?.classList.remove("hidden");
 		pongMenu?.classList.add("hidden");
 		return true;

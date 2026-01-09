@@ -201,7 +201,7 @@ export function cleanupUserGames(userId) {
 	if (activeRow && !clients.get(userId)) {
 		const userName = userQueries.getNameById(userId);
 		console.log(`Cleaning stale active game for user ${userName} in party ${activeRow.party_id}`);
-		partyPlayerQueries.updateStatus('left', activeRow.party_id, userId);
+		partyPlayerQueries.updateStatus(userId, activeRow.party_id, 'left');
 	}
 	
 	// Always clean up 'left' status records - they should be completely removed
@@ -215,7 +215,7 @@ export function cleanupUserGames(userId) {
 	// Disconnect from other waiting/lobby/disconnected games
 	const existingParties = partyPlayerQueries.findByUserIdMultipleStatuses(userId, ['lobby', 'waiting', 'disconnected']);
 	existingParties.forEach(partyPlayer => {
-		partyPlayerQueries.updateStatus('left', partyPlayer.party_id, userId);
+		partyPlayerQueries.updateStatus(userId, partyPlayer.party_id, 'left');
 		const userName = userQueries.getNameById(userId);
 		console.log(`User ${userName} left previous party ${partyPlayer.party_id} to join new game`);
 	});
@@ -232,7 +232,7 @@ export function findOrCreateParty(mode, userId, minPlayers) {
 		if (prevParty && prevParty.status !== 'finished') {
 			const presentCount = partyPlayerQueries.countByPartyIdNotStatuses(prevParty.id, ['left', 'disconnected']);
 			if (presentCount < maxPlayers) {
-				partyPlayerQueries.updateStatus('lobby', prevParty.party_id, userId);
+				partyPlayerQueries.updateStatus(userId, prevParty.party_id, 'lobby');
 				const userName = userQueries.getNameById(userId);
 				console.log(`User ${userName} rejoined previous party ${prevParty.id}`);
 				return { party: prevParty, rejoined: true };

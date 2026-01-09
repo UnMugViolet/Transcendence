@@ -102,7 +102,7 @@ export const pauseLoop = setInterval(() => {
 			
 			if (player) {
 				console.log(`\x1b[33mResuming game for party ${party.id} after timeout, player ${player.user_id} eliminated\x1b[0m`);
-				partyPlayerQueries.updateStatus('left', party.id, player.user_id);
+				partyPlayerQueries.updateStatus(player.user_id, party.id, 'left');
 			} else {
 				console.log(`\x1b[33mResuming game for party ${party.id} after timeout (no disconnected players found)\x1b[0m`);
 			}
@@ -250,7 +250,7 @@ async function gameRoutes(fastify) {
 		}
 
 		// Mark player as left
-		partyPlayerQueries.updateStatus('left', party.id, userId);
+		partyPlayerQueries.updateStatus(userId, party.id, 'left');
 		sendSysMessage(party.id, `${user.name} a quitté la partie.`);
 
 		// Handle game cleanup - both active and paused games
@@ -309,7 +309,7 @@ async function gameRoutes(fastify) {
 
 		// Update player status
 		const newStatus = pauses.has(party.id) ? 'active' : 'waiting';
-		partyPlayerQueries.updateStatus(newStatus, party.id, userId);
+		partyPlayerQueries.updateStatus(userId, party.id, newStatus);
 		sendSysMessage(party.id, `${user.name} reconnected !`);
 
 		if (pauses.has(party.id)) {
@@ -324,7 +324,7 @@ async function gameRoutes(fastify) {
 		}
 
 		console.log(`User ${user.name} resumed party ${party.id}`);
-		return { message: 'Resumed party', partyId: party.id };
+		return { message: 'Resumed party', partyId: party.id, mode: party.type };
 	});
 }
 
