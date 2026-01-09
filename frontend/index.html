@@ -102,14 +102,19 @@
 					class="border p-2 rounded" />
 				<input type="password" id="passwordSignUpConfirm" data-i18n-placeholder="confirmNewPasswordPlaceholder"
 					class="border p-2 rounded" />
-
+					
 				<label class="flex items-center gap-2 text-sm">
+					<input data-i18n="enable2FA" type="checkbox" id="enable2FASignUp" class="h-4 w-4" />
+					<span data-i18n="enable2FA"></span>
+				</label>
+					
+				<button data-i18n="register" type="submit"
+					class="bg-green-500 text-white p-2 rounded hover:bg-green-600"></button>
+
+				<label class="flex items-center justify-center gap-2 text-sm">
 					<input data-i18n="stayConnected" type="checkbox" id="staySignUp" class="h-4 w-4" />
 					<span data-i18n="stayConnected"></span>
 				</label>
-
-				<button data-i18n="register" type="submit"
-					class="bg-green-500 text-white p-2 rounded hover:bg-green-600"></button>
 			</form>
 			<p id="messageSignUp" class="text-red-500 mt-2"></p>
 		</div>
@@ -135,6 +140,85 @@
 					class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"></button>
 			</form>
 			<p id="messageSignIn" class="text-red-500 mt-2"></p>
+		</div>
+	</div>
+
+	<!-- MODALE 2FA Setup -->
+	<div id="modal2FASetup" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+		<div class="bg-white p-6 rounded shadow-md w-full max-w-md">
+			<h2 class="text-xl font-bold mb-4">🔐 Setup Two-Factor Authentication</h2>
+			
+			<!-- QR Code Section -->
+			<div id="qrCodeSection" class="flex flex-col items-center gap-4 mb-6">
+				<p class="text-sm text-gray-600 text-center">Scan this QR code with Google Authenticator or any TOTP app:</p>
+				<div id="qrCodeContainer" class="bg-white p-4 border-2 border-gray-300 rounded">
+					<!-- QR code will be inserted here -->
+				</div>
+				<div class="w-full">
+					<p class="text-xs text-gray-500 mb-2">Or enter this code manually:</p>
+					<div class="bg-gray-100 p-2 rounded border border-gray-300">
+						<code id="manualSecret" class="text-sm font-mono break-all"></code>
+					</div>
+				</div>
+			</div>
+
+			<!-- Backup Codes Section -->
+			<div id="backupCodesSection" class="mb-6">
+				<p class="text-sm font-semibold text-gray-700 mb-2">⚠️ Save these backup codes:</p>
+				<p class="text-xs text-gray-500 mb-2">You can use these if you lose access to your authenticator app.</p>
+				<div class="bg-yellow-50 border border-yellow-300 rounded p-3 max-h-32 overflow-y-auto">
+					<div id="backupCodesList" class="grid grid-cols-2 gap-1 text-xs font-mono">
+						<!-- Backup codes will be inserted here -->
+					</div>
+				</div>
+				<button id="copyBackupCodes" class="mt-2 text-xs bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 w-full">
+					📋 Copy All Backup Codes
+				</button>
+			</div>
+
+			<!-- Verification Section -->
+			<form id="form2FAVerify" class="flex flex-col gap-4">
+				<div>
+					<label class="block text-sm font-medium mb-2">Enter the 6-digit code from your app:</label>
+					<input type="text" id="input2FACode" 
+						placeholder="000000" 
+						maxlength="6" 
+						pattern="[0-9]{6}"
+						class="border p-2 rounded w-full text-center text-2xl font-mono tracking-widest" 
+						autocomplete="off" />
+				</div>
+				<button type="submit" class="bg-green-500 text-white p-2 rounded hover:bg-green-600 font-semibold">
+					✓ Verify and Complete Setup
+				</button>
+				<button type="button" id="skip2FA" class="text-sm text-gray-500 hover:text-gray-700 underline">
+					Skip for now (not recommended)
+				</button>
+			</form>
+			<p id="message2FA" class="text-red-500 mt-2 text-sm"></p>
+		</div>
+	</div>
+
+	<!-- MODALE 2FA Login Verification -->
+	<div id="modal2FALogin" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+		<div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
+			<h2 class="text-xl font-bold mb-4">🔐 Two-Factor Authentication</h2>
+			<p class="text-sm text-gray-600 mb-4">Enter the 6-digit code from your authenticator app:</p>
+			<form id="form2FALogin" class="flex flex-col gap-4">
+				<input type="text" id="input2FALoginCode" 
+					placeholder="000000" 
+					maxlength="6" 
+					pattern="[0-9]{6}"
+					class="border p-2 rounded text-center text-2xl font-mono tracking-widest" 
+					autocomplete="off" />
+				<button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 font-semibold">
+					Verify
+				</button>
+				<button type="button" id="cancel2FALogin" class="text-sm text-gray-500 hover:text-gray-700 underline">
+					Cancel
+				</button>
+			</form>
+			<p class="text-xs text-gray-500 mt-4">💡 You can also use a backup code if you've lost access to your authenticator app.</p>
+			<p id="message2FALogin" class="text-red-500 mt-2 text-sm"></p>
 		</div>
 	</div>
 

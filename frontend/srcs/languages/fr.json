@@ -15,6 +15,7 @@
   "start": "Démarrer",
   "back": "Retour au menu",
   "thanks": "Merci d'avoir joué !",
+  "enable2FA": "Activer l'authentification à deux facteurs (2FA)",
   "stayConnected": "Rester connecté",
   "register": "S'inscrire",
   "friends": "🔫 Amis",

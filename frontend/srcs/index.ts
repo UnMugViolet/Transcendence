@@ -9,6 +9,7 @@ import { setSidebarEnabled } from "./user/friends.js";
 import { i18n } from "./utils/i18n.js";
 import { initNotifications } from "./user/notif.js";
 import { initPongBtns } from "./game/game.js";
+import { TwoFactorAuthManager } from "./utils/twofa.js";
 
 /**
  * Language dropdown setup
@@ -99,6 +100,7 @@ class Application {
         });
         
         FormManager.setupFormListeners();
+        TwoFactorAuthManager.setupEventListeners();
         LanguageManager.init();
         Router.init();
 

@@ -3,6 +3,7 @@ import fastifyCors from '@fastify/cors';
 import fastifyjwt from '@fastify/jwt';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
+import twoFaRoutes from './services/two-factor-auth.js';
 import 'dotenv/config';
 
 import path from 'path';
@@ -24,7 +25,7 @@ const fastify = Fastify({
 	logger: {level: 'warn'}
 });
 
-// TODO: restrict origins in production
+
 fastify.register(fastifyCors, {
 	origin: '*',
 	credentials: true 
@@ -90,6 +91,8 @@ fastify.register(authRoutes);
 fastify.register(usersRoutes);
 fastify.register(gameRoutes);
 fastify.register(chat);
+fastify.register(twoFaRoutes, { prefix: '/2fa' });
+
 
 fastify.get('/', async () => {
 	return { message: 'Hello from Fastify & SQLite 🎉' };
