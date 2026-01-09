@@ -84,6 +84,24 @@
   "errorProfile": "Error loading profile",
   "unknownUser": "Unknown user",
   "online1": "Online",
-  "offline": "Offline"
+  "offline": "Offline",
+
+  "userDashboard": "User Dashboard",
+  "games": "Games",
+  "wins": "Wins",
+  "losses": "Losses",
+  "winRate": "Win Rate",
+  "avgScore": "Average Score",
+  "tournamentsWon": "Tournaments Won",
+  "avgDuration": "Average Duration",
+  "recentGames": "Recent Games",
+  "noRecentGames": "No recent games.",
+  "you": "YOU",
+  "opponent": "OPPONENT",
+  "scoreTrend": "Score Trend",
+  "timeDuration": "Time : Duration",
+  "justNow": "Just now",
+  "minutesAgo": "minutes ago",
+  "hoursAgo": "hours ago"
 
 }

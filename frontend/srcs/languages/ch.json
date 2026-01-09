@@ -84,6 +84,24 @@
   "errorProfile": "错误加载个人资料",
   "unknownUser": "未知用户",
   "online1": "在线",
-  "offline": "离线"
+  "offline": "离线",
+
+    "userDashboard": "用户仪表板",
+  "games": "游戏",
+  "wins": "胜利",
+  "losses": "失败",
+  "winRate": "胜率",
+  "avgScore": "平均得分",
+  "tournamentsWon": "赢得的锦标赛",
+  "avgDuration": "平均持续时间",
+  "recentGames": "最近的游戏",
+  "noRecentGames": "没有最近的游戏。",
+  "you": "你",
+  "opponent": "对手",
+  "scoreTrend": "得分趋势",
+  "timeDuration": "时间 : 持续时间",
+  "justNow": "刚刚",
+  "minutesAgo": "分钟前",
+  "hoursAgo": "小时前"
   
 }

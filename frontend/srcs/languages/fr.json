@@ -84,6 +84,24 @@
   "errorProfile": "Erreur lors du chargement du profil",
   "unknownUser": "Utilisateur inconnu",
   "online1": "En ligne",
-  "offline": "Hors ligne"
+  "offline": "Hors ligne",
+
+  "userDashboard": "Tableau de bord utilisateur",
+  "games": "Parties",
+  "wins": "Victoires",
+  "losses": "Défaites",
+  "winRate": "Taux de victoire",
+  "avgScore": "Score moyen",
+  "tournamentsWon": "Tournois gagnés",
+  "avgDuration": "Durée moyenne",
+  "recentGmes": "Dernières parties",
+  "noRecentGames": "Pas de parties récentes.",
+  "you": "TOI",
+  "opponent": "ADVERSAIRE",
+  "scoreTrend": "Tendance des scores",
+  "timeDuration": "Heure : Durée",
+  "justNow": "À l'instant",
+  "minutesAgo": "minutes",
+  "hoursAgo": "heures"
 
 }
