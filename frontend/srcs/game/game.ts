@@ -200,6 +200,7 @@ let ballY = height / 2;
 let started = false;
 export let gameId = 0;
 let team = 0;
+let tournamentTeam = 0;
 
 let pauseInterval: any;
 let countdownInterval: any;
@@ -252,45 +253,6 @@ async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: 
     goodBye?.classList.remove("hidden");
     await sleep(1500);
     await leaveGame(options);
-}
-
-// Set up Start button click handler for offline/IA games
-if (start) {
-	start.addEventListener('click', async () => {
-		
-		// Send start request to backend with the current mode
-		const token = AuthManager.getToken();
-		if (!token) {
-			console.error("No token found, cannot start game");
-			return;
-		}
-		
-		try {
-			const res = await fetch(`${BACKEND_URL}/start`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${token}`
-				},
-				body: JSON.stringify({ mode })
-			});
-			
-			if (!res.ok) {
-				const error = await res.json();
-				console.error("Error starting game:", error);
-				const startMessage = document.getElementById('startMessage');
-				if (startMessage) {
-					startMessage.textContent = error.error || 'Failed to start game';
-					startMessage.classList.remove('hidden');
-				}
-				return;
-			}
-			
-			console.log("Game start request sent successfully");
-		} catch (err) {
-			console.error("Error sending start request:", err);
-		}
-	});
 }
 
 // Ensure canvas matches its visible size and recompute layout-dependent values
@@ -655,10 +617,14 @@ async function endingGame(data: any) {
 		ctx.fillText(`${data.winner} ${i18n.t("wonTournament")}`, width / 2, height / 2);
 	else if (data.winner)
 		ctx.fillText(`${data.winner} ${i18n.t("wonGame")}`, width / 2, height / 2);
-	goodBye?.classList.remove("hidden");
-	await sleep(3000);
-	navigateTo('pongMenu', true);
-	handleRoute();
+	if (!(data.winner && data.round && data.mode === 'Tournament'))
+	{
+		goodBye?.classList.remove("hidden");
+		await sleep(3000);
+		navigateTo('pongMenu', true);
+		handleRoute();
+	}
+	
 }
 
 function formatTime(sec: number) {
@@ -694,7 +660,7 @@ function startTimer(sec: number) {
 
 export async function handleGameRemote(data: any) {
 	
-	if (data.type === "start" && !started) {
+	if (data.type === "start") {
 		modalGamePause?.classList.add("hidden");
 		if (pauseInterval) {
 			clearInterval(pauseInterval);
@@ -703,11 +669,17 @@ export async function handleGameRemote(data: any) {
 		const timer = data.timer || true;
 		gameId = data.game;
 		team = data.team;
-
-
+		tournamentTeam = team;
+		if (team === data.team1)
+			team = 1;
+		else if (team === data.team2)
+			team = 2;
+		else
+			team = 0;
+		console.log("data:", data);
 		if (data.players && Array.isArray(data.players)) {
-			const p1 = (data.players as Array<any>).find(p => p.team === 1);
-			const p2 = (data.players as Array<any>).find(p => p.team === 2);
+			const p1 = (data.players as Array<any>).find(p => p.team === data.team1);
+			const p2 = (data.players as Array<any>).find(p => p.team === data.team2);
 			if (p1?.name) {
 				sessionStorage.setItem('player1Name', p1.name);
 			}
@@ -1063,6 +1035,14 @@ function sendInput() {
 		// Send inputs for both paddles from one client (shared keyboard)
 		socket.send(JSON.stringify({ type: "input", game: gameId, team: 1, up: upPlayer1, down: downPlayer1 }));
 		socket.send(JSON.stringify({ type: "input", game: gameId, team: 2, up: upPlayer2, down: downPlayer2 }));
+	} else if (mode === 'Tournament') {
+		socket.send(JSON.stringify({
+			type: "input",
+			game: gameId,
+			team: tournamentTeam,
+			up: (team === 1 ? upPlayer1 : upPlayer2),
+			down: (team === 1 ? downPlayer1 : downPlayer2)
+		}));
 	} else {
 		// Online and IA: send only assigned team input; backend moves AI when needed
 		socket.send(JSON.stringify({
