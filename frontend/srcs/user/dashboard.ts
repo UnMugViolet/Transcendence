@@ -159,6 +159,10 @@ function recentGameWidget(stats: UserStats, myId: number): string {
   `;
 }
 
+function twoDigits(n: number): string {
+  return n < 10 ? "0" + n : String(n);
+}
+
 function graphicWidget(stats: UserStats): string {
   const myId = Number(localStorage.getItem("userId"));
   const games = stats.recentGames;
@@ -176,17 +180,20 @@ function graphicWidget(stats: UserStats): string {
   const height = 220;
   const padding = 40;
   const maxScore = 11;
-  const stepX = (width - 2 * padding) / (games.length - 1);
+  const stepX =
+    games.length > 1
+      ? (width - 2 * padding) / (games.length - 1)
+      : 0;
 
   const points = games.map((game, i) => {
-    const score = game.myScore === myId ? game.myScore : game.oppScore;
+    const score = game.myScore;
     const x = padding + i * stepX;
     const y = height - padding - (score / maxScore) * (height - 2 * padding);
     return `${x},${y}`;
   }).join(" ");
 
   const circles = games.map((game, i) => {
-    const score = game.myScore === myId ? game.myScore : game.oppScore;
+    const score = game.myScore;
     const x = padding + i * stepX;
     const y = height - padding - (score / maxScore) * (height - 2 * padding);
     return `<circle cx="${x}" cy="${y}" r="4" fill="#facc15"></circle>`;
@@ -203,7 +210,7 @@ function graphicWidget(stats: UserStats): string {
   const xLabels = games.map((game, i) => {
     const x = padding + i * stepX;
     const date = new Date(game.created_at);
-    const label = `${date.getHours()}:${String(date.getMinutes())}`;
+    const label = `${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
     return `<text x="${x}" y="${height - padding + 15}" text-anchor="middle" font-size="10" fill="#facc15">${label}</text>`;
   }).join("");
 
