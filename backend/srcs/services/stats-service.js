@@ -4,14 +4,20 @@ import { partyPlayerQueries } from './database-queries.js'
 export function getUserStats(userId) {
   const stmt = db.prepare(`
     SELECT
-      p1_id, p2_id,
-      p1_score, p2_score,
-      winner_id,
-      created_at,
-      duration
-    FROM match_history
-    WHERE p1_id = ? OR p2_id = ?
-    ORDER BY created_at ASC
+      mh.p1_id,
+      u1.name AS p1_name,
+      mh.p2_id,
+      u2.name AS p2_name,
+      mh.p1_score,
+      mh.p2_score,
+      mh.winner_id,
+      mh.created_at,
+      mh.duration
+    FROM match_history AS mh
+    JOIN users AS u1 ON mh.p1_id = u1.id
+    JOIN users AS u2 ON mh.p2_id = u2.id
+    WHERE mh.p1_id = ? OR mh.p2_id = ?
+    ORDER BY mh.created_at ASC
   `);
 
   const matches = stmt.all(userId, userId);
@@ -37,6 +43,7 @@ export function getUserStats(userId) {
     const isP1 = m.p1_id === userId;
     return {
       opponent_id: isP1 ? m.p2_id : m.p1_id,
+      opponent_name: isP1 ? m.p2_name : m.p1_name,
       myScore: isP1 ? m.p1_score : m.p2_score,
       oppScore: isP1 ? m.p2_score : m.p1_score,
       isWin: m.winner_id === userId,
@@ -51,11 +58,12 @@ export function getUserStats(userId) {
     losses,
     winRate: totalGames ? Math.round((wins / totalGames) * 100) : 0,
     avgScore,
+    avgDuration,
     scoreHistory: scores.slice(-10),
-    recentGames: normalizedMatches,
-    avgDuration
+    recentGames: normalizedMatches
   };
 }
+
 
 export function saveMatchToHistory(partyId, game) {
   const players = partyPlayerQueries.findByPartyId(partyId);

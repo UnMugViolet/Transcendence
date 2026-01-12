@@ -17,6 +17,8 @@ export async function getUserStats(): Promise<UserStats> {
   return json.data;
 }
 
+// ---- USER DASHBOARD --- //
+
 export async function loadUserDashboard() {
   const view = document.getElementById("userDashboard");
   const content = document.getElementById("dashboardContent");
@@ -42,6 +44,15 @@ export async function loadUserDashboard() {
     document.getElementById("dashboardBack")?.addEventListener("click", () => {
       location.hash = "#pongMenu";
     });
+
+    document.getElementById("matchHistory")?.addEventListener("click", () => {
+      document.getElementById("matchHistoryModal")?.classList.remove("hidden");
+    });
+
+    document.getElementById("closeMatchHistory")?.addEventListener("click", () => {
+      document.getElementById("matchHistoryModal")?.classList.add("hidden");
+    });
+    populateMatchHistoryTable(stats, myId);
 
   } catch (err) {
     console.error(err);
@@ -243,4 +254,30 @@ function graphicWidget(stats: UserStats): string {
     </div>
   `;
 }
+
+// --- MATCH HISTORY --- //
+
+function populateMatchHistoryTable(stats: UserStats, myId: number) {
+  const tbody = document.getElementById("matchHistoryTableBody");
+  if (!tbody) return;
+
+  tbody.innerHTML = stats.recentGames
+    .map(game => {
+      const opponent = game.opponent_name;
+      return `
+        <tr class="border-b border-amber-900/40">
+          <td class="py-2">${new Date(game.created_at).toLocaleString()}</td>
+          <td>${opponent}</td>
+          <td class="text-center font-bold">${game.myScore} - ${game.oppScore}</td>
+          <td class="text-center ${game.isWin ? "text-green-400" : "text-red-400"}">
+            ${game.isWin ? "Win" : "Loss"}
+          </td>
+          <td class="text-center">${Math.floor(game.duration/60)}m ${game.duration%60}s</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+
 

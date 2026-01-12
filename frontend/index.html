@@ -272,6 +272,45 @@
 		</div>
 	</div>
 
+	<div id="matchHistoryModal"
+		class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
+
+		<div class="bg-neutral-900 w-[90%] max-w-5xl max-h-[85vh] rounded-xl p-6 flex flex-col">
+			<div class="flex justify-between items-center mb-4">
+				<h2 class="text-xl font-semibold text-amber-100">
+					Match History
+				</h2>
+				<button id="closeMatchHistory"
+					class="text-amber-200 hover:text-red-400 text-xl">
+					✕
+				</button>
+			</div>
+
+			<div class="flex gap-4 mb-4 text-sm">
+				<select id="filterResult" class="bg-black text-amber-200 p-2 rounded">
+					<option value="all">All</option>
+					<option value="win">Wins</option>
+					<option value="loss">Losses</option>
+				</select>
+
+				<select id="filterSort" class="bg-black text-amber-200 p-2 rounded">
+					<option value="dateDesc">Date ↓</option>
+					<option value="dateAsc">Date ↑</option>
+					<option value="duration">Duration</option>
+				</select>
+			</div>
+
+			<div class="overflow-y-auto flex-1">
+				<table class="w-full text-sm text-amber-200">
+					<tbody id="matchHistoryTableBody">
+					</tbody>
+				</table>
+			</div>
+
+		</div>
+	</div>
+
+
 	<!-- Sidebar friends -->
 	<div id="sidebarHandle"
 		class="fixed top-1/3 left-0 z-50 bg-rose-950 text-amber-100 px-2 py-4 rounded-r cursor-pointer transition-transform duration-300">

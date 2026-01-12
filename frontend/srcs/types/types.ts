@@ -44,6 +44,7 @@ export interface User {
 
 export interface RecentGame {
   opponent_id: number;
+  opponent_name: string;
   myScore: number;
   oppScore: number;
   isWin: boolean;
