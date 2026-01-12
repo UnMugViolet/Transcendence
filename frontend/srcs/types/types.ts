@@ -42,13 +42,26 @@ export interface User {
   profile_picture?: string;
 }
 
+export interface RecentGame {
+  opponent_id: number;
+  myScore: number;
+  oppScore: number;
+  isWin: boolean;
+  created_at: number;
+  duration: number;
+}
+
 export interface UserStats {
   totalGames: number;
   wins: number;
   losses: number;
   avgScore: number;
-  winRate: number; // percentage
+  winRate: number;
+  avgDuration: number;
+  scoreHistory: number[];
+  recentGames: RecentGame[];
 }
+
 
 export type ViewId = "viewGame" | "pongMenu" | "lobby" | "userDashboard";
 

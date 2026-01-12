@@ -70,6 +70,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS match_history (
 	p2_score INTEGER NOT NULL,
 	winner_id INTEGER NOT NULL,
 	created_at INTEGER NOT NULL,
+	duration INTEGER,
 	FOREIGN KEY (p1_id) REFERENCES users(id),
 	FOREIGN KEY (p2_id) REFERENCES users(id),
 	FOREIGN KEY (winner_id) REFERENCES users(id)
