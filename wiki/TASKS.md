@@ -1,42 +1,44 @@
-Paul = 🕺
-Antonin = 🛌
-Yann = 🪨
-Celine = 👑
+# FEATURES
 
-# WHAT WE STARTED
+## V.2 Web
 
-- 1 STANDARD AUTHENTICATION:
-- 1 REMOTE PLAYERS
-- 1 LIVE CHAT
-- 1 JWT 🕺
-	+ Two-Factor Authentication (mail + qr code (google authenticator))
-- 1 BACKEND
-	+
-- 0,5 FRONTEND 👑
-	+ using \block and \unblock routes
-	+ no friends in "stay connected" ?
-	+ views appear when refresh page
-	+ back to menu when click on "transcendence"
-	+ adding the name of the already co users in the lobby
-	+ 2v2 (button + chose your team in the lobby)
-	+ add game history in user profile
-	+ resume game online doesn't work anymore + popup not in the middle + refresh doesn't show the popup yes/no (CA FAIT TOUT BUGGER)
-	+ tournament doesn't work
-- 0,5 DB
-	+ delete users
-- 0,5 MULTIPLE LANGUAGES
-- 1 IA 🛌
-	+ Finding a great algo
-- 1 API
+- 1 Use a framework to build the backend ✅
+- 0,5 Use a framework or toolkit to build the front-end ✅
+- 0,5 Use a database for the backend -and more ✅
 
-8,5
+## V.3 User Management
 
-WHAT WE WILL DO
+- 1 Standard user management, authentication and users across tournaments ✅
 
-- 0,5 User and game dashboard 👑
-- 1 Multiplayer
-	+ thinking about a gameplay
-- 0,5 Monitoring 🕺
-- 0,5 Custom
+## V.4 Gameplay and user experience
 
-10 needed for 125/100
+- 1 Remote players ✅
+- 1 Live Chat ✅
+
+## V.5 AI-Algo
+
+- 1 Introduce an AI opponent ✅
+- 0,5 User and Game Stats Dashboards 
+
+## V.6 Cybersecurity
+
+- 1 Implement Two-Factor Authentication (2FA) and JWT
+
+## V.7 Devops
+
+- 0.5 Monitoring system ✅
+
+## V.9 Accessibility
+
+- 0,5 Multiple language support ✅
+
+## V.10 Server-Side Pong
+
+- 1 Replace Basic Pong with Server-Side Pong and Implementing an API 
+
+## Score 
+
+For 125/100 is: <strong>9,5</strong> and 100/100 is <strong>7</strong>
+
+With all listed features the current score is: <strong>9,5</strong>
+

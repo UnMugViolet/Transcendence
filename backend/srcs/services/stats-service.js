@@ -33,6 +33,18 @@ export function getUserStats(userId) {
     ? Math.round(duration.reduce((a, b) => a + b, 0) / duration.length)
     : 0;
 
+  const normalizedMatches = matches.map(m => {
+    const isP1 = m.p1_id === userId;
+    return {
+      opponent_id: isP1 ? m.p2_id : m.p1_id,
+      myScore: isP1 ? m.p1_score : m.p2_score,
+      oppScore: isP1 ? m.p2_score : m.p1_score,
+      isWin: m.winner_id === userId,
+      created_at: m.created_at,
+      duration: m.duration
+    };
+  });
+
   return {
     totalGames,
     wins,
@@ -40,7 +52,7 @@ export function getUserStats(userId) {
     winRate: totalGames ? Math.round((wins / totalGames) * 100) : 0,
     avgScore,
     scoreHistory: scores.slice(-10),
-    recentGames: matches.slice(-5).reverse(),
+    recentGames: normalizedMatches,
     avgDuration
   };
 }

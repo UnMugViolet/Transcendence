@@ -137,21 +137,18 @@ function recentGameWidget(stats: UserStats, myId: number): string {
 
       <div class="space-y-3 overflow-y-scroll max-h-20 pr-2">
         ${stats.recentGames.map(game => {
-          const isP1 = game.p1_id === myId;
-          const myScore = isP1 ? game.p1_score : game.p2_score;
-          const oppScore = isP1 ? game.p2_score : game.p1_score;
-          const isWin = myScore > oppScore;
-
+          console.log("recentGames FRONT", stats.recentGames);
           return `
             <div class="flex flex-col bg-black bg-opacity-30 rounded-lg p-3">
               <div class="flex justify-between text-xs text-amber-200 mb-1">
                 <span data-i18n="you" class="font-semibold"></span>
                 <span data-i18n="opponent" class="font-semibold"></span>
               </div>
+
               <div class="flex justify-between items-center text-xl font-bold mb-1">
-                <span class="${isWin ? 'text-green-400' : 'text-red-400'}">${myScore}</span>
+                <span class="${game.isWin ? 'text-green-400' : 'text-red-400'}">${game.myScore}</span>
                 <span class="text-amber-100">–</span>
-                <span class="text-amber-200">${oppScore}</span>
+                <span class="text-amber-200">${game.oppScore}</span>
               </div>
               <p class="text-xs text-amber-300 text-right">${timeAgo(game.created_at)}</p>
             </div>
@@ -182,14 +179,14 @@ function graphicWidget(stats: UserStats): string {
   const stepX = (width - 2 * padding) / (games.length - 1);
 
   const points = games.map((game, i) => {
-    const score = game.p1_id === myId ? game.p1_score : game.p2_score;
+    const score = game.myScore === myId ? game.myScore : game.oppScore;
     const x = padding + i * stepX;
     const y = height - padding - (score / maxScore) * (height - 2 * padding);
     return `${x},${y}`;
   }).join(" ");
 
   const circles = games.map((game, i) => {
-    const score = game.p1_id === myId ? game.p1_score : game.p2_score;
+    const score = game.myScore === myId ? game.myScore : game.oppScore;
     const x = padding + i * stepX;
     const y = height - padding - (score / maxScore) * (height - 2 * padding);
     return `<circle cx="${x}" cy="${y}" r="4" fill="#facc15"></circle>`;
