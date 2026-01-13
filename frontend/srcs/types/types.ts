@@ -69,6 +69,7 @@ export interface UserStats {
   avgDuration: number;
   scoreHistory: number[];
   recentGames: RecentGame[];
+  tournamentWins: number;
 }
 
 

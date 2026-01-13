@@ -47,12 +47,26 @@ export async function setTeam(partyId, games, team1 = null, team2 = null) {
 export async function handleEndGame(partyId, game, mode, games, tournament) {
 	const teamLoser = determineLosingTeam(partyId, game);
 	
-	if (tournament[partyId]) {
+	if (mode === 'Tournament' && tournament[partyId]) {
 		tournament[partyId][teamLoser] = 0;
 	}
 	
 	updatePlayerStatuses(partyId, teamLoser);
 	const winnerName = getWinnerName(partyId, game, teamLoser);
+
+	try {
+		saveMatchToHistory(partyId, {
+			mode: mode,
+			team1: game.team1,
+			team2: game.team2,
+			score1: game.score1,
+			score2: game.score2,
+			created: game.created
+		});
+	}
+	catch (err) {
+		console.error('Error saving match to history:', err);
+	}
 	
 	let info = { round: 0, p1: 1, p2: 2, afk: -1, left: -1 };
 	
@@ -70,11 +84,6 @@ export async function handleEndGame(partyId, game, mode, games, tournament) {
 	sendStopMessage(partyId, winnerName, info.round, mode);
 	
 	if (!info.round) {
-		try {
-			saveMatchToHistory(partyId, game);
-		} catch (err) {
-			console.error('Error saving match to history:', err);
-		}
 		await cleanupFinishedGame(partyId, games);
 	} else {
 		await handleNextRound(partyId, info, games);

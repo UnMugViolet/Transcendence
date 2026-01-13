@@ -83,6 +83,7 @@ function statsCards(stats: UserStats): string {
       ${statCard(i18n.t("losses"), stats.losses)}
       ${statCard(i18n.t("avgScore"), stats.avgScore)}
       ${statCard(i18n.t("avgDuration"), formatDuration(stats.avgDuration))}
+      ${statCard("🏆 Tournaments Won", stats.tournamentWins)}
     </div>
   `;
 }
