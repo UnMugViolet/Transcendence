@@ -20,6 +20,15 @@ export function getUserStats(userId) {
     ORDER BY mh.created_at ASC
   `);
 
+  const tournamentWinsStmt = db.prepare(`
+    SELECT COUNT(DISTINCT party_id) AS tournament_wins
+    FROM match_history
+    WHERE mode = 'Tournament' AND winner_id = ?
+  `);
+  const tournamentWinsRow = tournamentWinsStmt.get(userId);
+  const tournamentWins = tournamentWinsRow?.tournament_wins ?? 0;
+
+
   const matches = stmt.all(userId, userId);
 
   const totalGames = matches.length;
@@ -60,7 +69,8 @@ export function getUserStats(userId) {
     avgScore,
     avgDuration,
     scoreHistory: scores.slice(-10),
-    recentGames: normalizedMatches
+    recentGames: normalizedMatches,
+    tournamentWins
   };
 }
 
@@ -98,8 +108,19 @@ export function saveMatchToHistory(partyId, game) {
     ? Math.floor((Date.now() - game.created) / 1000)
     : null;
 
+  console.log("🏆 Saving tournament match", {
+  partyId,
+  mode: game.mode,
+  winnerId,
+  p1Score,
+  p2Score
+  });
+
+
   db.prepare(`
     INSERT INTO match_history (
+      party_id,
+      mode,
       p1_id,
       p2_id,
       p1_score,
@@ -107,8 +128,10 @@ export function saveMatchToHistory(partyId, game) {
       winner_id,
       created_at,
       duration
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
+    partyId,
+    game.mode,
     p1.user_id,
     p2.user_id,
     p1Score,

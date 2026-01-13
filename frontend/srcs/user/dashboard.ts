@@ -1,6 +1,6 @@
 import { ApiClient } from "../utils/api.js";
 import { BACKEND_URL } from "../utils/config.js";
-import type { ApiResponse, UserStats } from "../types/types.js";
+import type { ApiResponse, UserStats, RecentGame } from "../types/types.js";
 import { Router } from "../route/router.js";
 import { i18n } from "../utils/i18n.js";
 
@@ -49,6 +49,15 @@ export async function loadUserDashboard() {
       document.getElementById("matchHistoryModal")?.classList.remove("hidden");
     });
 
+    renderMatchHistoryTable(stats.recentGames);
+
+    document.getElementById("filterResult")?.addEventListener("change", (e) => {
+      applyMatchHistoryFilters(stats);
+    });
+    document.getElementById("filterSort")?.addEventListener("change", (e) => {
+      applyMatchHistoryFilters(stats);
+    });
+
     document.getElementById("closeMatchHistory")?.addEventListener("click", () => {
       document.getElementById("matchHistoryModal")?.classList.add("hidden");
     });
@@ -74,6 +83,7 @@ function statsCards(stats: UserStats): string {
       ${statCard(i18n.t("losses"), stats.losses)}
       ${statCard(i18n.t("avgScore"), stats.avgScore)}
       ${statCard(i18n.t("avgDuration"), formatDuration(stats.avgDuration))}
+      ${statCard("🏆 Tournaments Won", stats.tournamentWins)}
     </div>
   `;
 }
@@ -277,6 +287,48 @@ function populateMatchHistoryTable(stats: UserStats, myId: number) {
       `;
     })
     .join("");
+}
+
+function renderMatchHistoryTable(games: RecentGame[]) {
+  const tbody = document.getElementById("matchHistoryTableBody");
+  if (!tbody) return;
+
+  tbody.innerHTML = games.map(game => `
+    <tr class="border-b border-amber-900/40">
+      <td class="py-2">${new Date(game.created_at).toLocaleString()}</td>
+      <td>${game.opponent_name}</td>
+      <td class="text-center font-bold">${game.myScore} - ${game.oppScore}</td>
+      <td class="text-center ${game.isWin ? "text-green-400" : "text-red-400"}">
+        ${game.isWin ? "Win" : "Loss"}
+      </td>
+      <td class="text-center">
+        ${Math.floor(game.duration / 60)}m ${game.duration % 60}s
+      </td>
+    </tr>
+  `).join("");
+}
+
+function applyMatchHistoryFilters(stats: UserStats) {
+  const resultFilter = (document.getElementById("filterResult") as HTMLSelectElement).value;
+  const sortFilter = (document.getElementById("filterSort") as HTMLSelectElement).value;
+
+  let games = [...stats.recentGames];
+
+  if (resultFilter === "win") {
+    games = games.filter(g => g.isWin);
+  } else if (resultFilter === "loss") {
+    games = games.filter(g => !g.isWin);
+  }
+
+  if (sortFilter === "dateDesc") {
+    games.sort((a, b) => b.created_at - a.created_at);
+  } else if (sortFilter === "dateAsc") {
+    games.sort((a, b) => a.created_at - b.created_at);
+  } else if (sortFilter === "duration") {
+    games.sort((a, b) => b.duration - a.duration);
+  }
+
+  renderMatchHistoryTable(games);
 }
 
 
