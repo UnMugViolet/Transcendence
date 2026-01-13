@@ -111,10 +111,6 @@ export async function leaveGame(options: { navigate?: boolean; closeSocket?: boo
             headers: { Authorization: `Bearer ${token}` },
         });
         leaveSuccess = response.ok;
-        if (!response.ok) {
-            const data = await response.json();
-            console.warn("Leave game response:", data);
-        }
     } catch (err) {
         console.error("Error Leave Game:", err);
     }

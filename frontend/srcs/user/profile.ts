@@ -1,6 +1,7 @@
 import { BACKEND_URL } from "../utils/config.js";
 import { i18n } from "../utils/i18n.js";
 import { AuthManager } from "./auth.js";
+import { TwoFactorAuthManager } from "../utils/twofa.js";
 
 
 // User profile modal elements
@@ -13,6 +14,8 @@ const profilePictureInput: HTMLInputElement | null = document.getElementById("pr
 const userName: HTMLElement | null = document.getElementById("userName");
 const userAvatar: HTMLImageElement | null = document.getElementById("userAvatar") as HTMLImageElement;
 const messageEl: HTMLParagraphElement | null = document.getElementById("alert") as HTMLParagraphElement;
+
+let profileTwoFAEnabled: boolean = false;
 
 // Friend profile modal elements
 const friendProfileModal: HTMLElement | null = document.getElementById("modalFriendProfile");
@@ -61,12 +64,33 @@ function updateProfileModalUI(): void {
 	fillProfileNameInput();
 }
 
+async function refreshProfileTwoFAStatus(): Promise<void> {
+	const token = AuthManager.getToken();
+	const checkbox = document.getElementById('enable2FA') as HTMLInputElement | null;
+	if (!token || !checkbox) return;
+
+	try {
+		const res = await fetch(`${BACKEND_URL}/2fa/status`, {
+			headers: { 'Authorization': `Bearer ${token}` }
+		});
+		if (!res.ok) {
+			return;
+		}
+		const data = await res.json();
+		profileTwoFAEnabled = Boolean(data.enabled);
+		checkbox.checked = profileTwoFAEnabled;
+	} catch (_) {
+		// ignore
+	}
+}
+
 document.getElementById("userInfo")?.addEventListener("click", () => {
 	if (profileModal) {
 		profileModal.classList.remove("hidden");
 		profileModal.classList.add("flex");
 	}
 	updateProfileModalUI();
+	refreshProfileTwoFAStatus();
 });
 
 // Update profile picture preview on file selection
@@ -100,6 +124,10 @@ formProfile?.addEventListener("submit", async (e) => {
 	const passwordConfirm = (document.getElementById("profilePasswordConfirm") as HTMLInputElement).value;
 	const pictureInput: HTMLInputElement | null = document.getElementById("profilePictureInput") as HTMLInputElement;
 	const isDemoUser = AuthManager.isDemoUser();
+	const twoFaCheckbox = document.getElementById('enable2FA') as HTMLInputElement | null;
+	const wantsTwoFA = Boolean(twoFaCheckbox?.checked);
+	const twoFAChanged = twoFaCheckbox ? (wantsTwoFA !== profileTwoFAEnabled) : false;
+	const stayConnected = AuthManager.getStorageType() === localStorage;
 
 	try {
 		console.log("isDemoUser:", isDemoUser);
@@ -164,6 +192,43 @@ formProfile?.addEventListener("submit", async (e) => {
 				userAvatar.src = `${BACKEND_URL}/img/${data.filename}`;
 			}
 			sessionStorage.setItem("profilePicture", data.filename);
+		}
+
+		// Handle 2FA changes from profile
+		if (twoFAChanged) {
+			if (wantsTwoFA) {
+				// Enable 2FA: enforce verification before closing
+				const verified = await TwoFactorAuthManager.showSetupModal(token, stayConnected, () => {}, { enforced: true });
+				if (!verified) {
+					throw new Error('2FA setup is required');
+				}
+				profileTwoFAEnabled = true;
+			} else {
+				// Disable 2FA: require password + 2FA code
+				if (!password) {
+					throw new Error('Password is required to disable 2FA');
+				}
+
+				const code = await TwoFactorAuthManager.requestCode();
+				if (!code) {
+					throw new Error('2FA code is required');
+				}
+
+				const res = await fetch(`${BACKEND_URL}/2fa/disable`, {
+					method: 'POST',
+					headers: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ token: code, password })
+				});
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) {
+					throw new Error(data.error || 'Failed to disable 2FA');
+				}
+
+				profileTwoFAEnabled = false;
+			}
 		}
 
 		if (messageEl) {

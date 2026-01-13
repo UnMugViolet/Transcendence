@@ -9,7 +9,9 @@ module.exports = {
     'text-red-400',
     'text-amber-300',
     'bg-purple-800',
-    'bg-red-600'
+    'bg-red-600',
+    "translate-x-64",
+    "-translate-x-full"
   ],
   theme: {
     extend: {

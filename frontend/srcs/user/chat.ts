@@ -8,13 +8,10 @@ let ws: WebSocket | null = null;
 export function getWs(): WebSocket | null {
   return ws;
 }
-const globalChatMessages = document.getElementById(
-  "chatMessages"
-) as HTMLElement;
+
+const globalChatMessages = document.getElementById("chatMessages") as HTMLElement;
 const globalChatForm = document.getElementById("chatForm") as HTMLFormElement;
-const globalChatInput = document.getElementById(
-  "chatInput"
-) as HTMLInputElement;
+const globalChatInput = document.getElementById("chatInput") as HTMLInputElement;
 
 globalChatForm.addEventListener("submit", (e) => {
   e.preventDefault();

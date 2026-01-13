@@ -1,18 +1,17 @@
 import bcrypt from 'bcrypt';
 import db from '../db.js';
+import speakeasy from 'speakeasy';
+
+import { BACKEND_URL } from "../config.js";
 import { checkName, checkPassword } from '../utils.js';
 
-async function authRoutes(fastify) {
-	// DEBUG
-	fastify.get('/token', async () => {
-		return db.prepare('SELECT * FROM refresh_tokens').all();
-	});
-
-	async function genKey(id, name, stayConnect, userAgent, role) {
+async function authRoutes(fastify) 
+{
+	// Generate access and refresh tokens
+	async function genKey(id, name, stayConnect, userAgent) {
 		const accessToken = fastify.jwt.sign({ 
 			id: id, 
 			name: name, 
-			roleId: role.id,  // Include in JWT for reference
 			type: 'access' 
 		}, { expiresIn: '20min' });
 
@@ -80,7 +79,7 @@ async function authRoutes(fastify) {
 			const role = db.prepare('SELECT id, name FROM roles WHERE id = ?').get(roleRecord.id);
 
 			console.log("User ", name, " added with ID:", info.lastInsertRowid, "and role:", role.name);
-			const tokens = await genKey(info.lastInsertRowid, name, stayConnect, request.headers['user-agent'], role);
+			const tokens = await genKey(info.lastInsertRowid, name, stayConnect, request.headers['user-agent']);
 			return { ...tokens, role };
 		} catch (err) {
 			if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -115,16 +114,90 @@ async function authRoutes(fastify) {
 			return reply.status(401).send({ error: 'Invalid password' });
 		}
 
+		// Check if 2FA is enabled
+		if (user.two_fa_enabled) { 
+			return {
+				requiresTwoFA: true,
+				userId: user.id,
+				tempToken: fastify.jwt.sign({ 
+					id: user.id,
+					name: user.name, 
+					type: '2fa'
+				}, { expiresIn: '5min' })
+			};
+		}
+
 		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), user.id);
 
-		// Fetch the role data
 		const role = db.prepare('SELECT id, name FROM roles WHERE id = ?').get(user.role_id);
 
 		console.log("User ", name, " logged in successfully with role:", role.name);
-		const tokens = await genKey(user.id, user.name, stayConnect, request.headers['user-agent'], role);
+		const tokens = await genKey(user.id, user.name, stayConnect, request.headers['user-agent']);
 		return { ...tokens, role };
 	});
 
+
+	fastify.post('/login/2fa', async (request, reply) => {
+		const { tempToken, token, stayConnect } = request.body;
+
+		if (!tempToken || !token) {
+			return reply.status(400).send({ error: 'tempToken and token are required' });
+		}
+
+		let payload;
+		try {
+			payload = fastify.jwt.verify(tempToken);
+		} catch (err) {
+			return reply.status(401).send({ error: 'Invalid or expired tempToken' });
+		}
+		if (payload?.type !== '2fa' || !payload?.id) {
+			return reply.status(401).send({ error: 'Invalid tempToken' });
+		}
+
+		const userId = payload.id;
+		const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+		if (!user) {
+			return reply.status(404).send({ error: 'User not found' });
+		}
+		if (!user.two_fa_enabled || !user.two_fa_secret) {
+			return reply.status(400).send({ error: '2FA not enabled for this user' });
+		}
+
+		// Verify TOTP first
+		let verified = speakeasy.totp.verify({
+			secret: user.two_fa_secret,
+			encoding: 'base32',
+			token: token,
+			window: 2
+		});
+
+		// If TOTP fails, check backup codes
+		if (!verified && user.two_fa_backup_codes) {
+			try {
+				const backupCodes = JSON.parse(user.two_fa_backup_codes);
+				const codeIndex = backupCodes.indexOf(String(token).toUpperCase());
+				if (codeIndex !== -1) {
+					backupCodes.splice(codeIndex, 1);
+					db.prepare('UPDATE users SET two_fa_backup_codes = ? WHERE id = ?').run(JSON.stringify(backupCodes), userId);
+					verified = true;
+				}
+			} catch (err) {
+				// Ignore malformed backup codes and fall through to invalid token
+			}
+		}
+
+		if (!verified) {
+			return reply.status(401).send({ error: 'Invalid token' });
+		}
+
+		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), user.id);
+
+		const role = db.prepare('SELECT id, name FROM roles WHERE id = ?').get(user.role_id);
+
+		console.log("User ", user.name, " logged in successfully with 2FA and role:", role.name);
+		const tokens = await genKey(user.id, user.name, stayConnect, request.headers['user-agent']);
+		return { ...tokens, role };
+	});
 
 	fastify.post('/refresh', async (request, reply) => {
 
@@ -145,8 +218,6 @@ async function authRoutes(fastify) {
 		}
 		const now = Date.now();
 
-		// DEV : ignore user agent
-		// const tokenInfo = db.prepare('SELECT * FROM refresh_tokens WHERE token = ? AND user_agent = ?').get(token, request.headers['user-agent']);
 		const tokenInfo = db.prepare('SELECT * FROM refresh_tokens WHERE token = ?').get(token);
 		if (!tokenInfo) {
 			return reply.status(404).send({ error: 'Token not found' });

@@ -3,8 +3,8 @@
 ## V.2 Web
 
 - 1 Use a framework to build the backend ✅
-- 0,5 Use a framework or toolkit to build the front-end ✅
-- 0,5 Use a database for the backend -and more ✅
+- 0,5 Use a framework or toolkit to build the front-end 
+- 0,5 Use a database for the backend and more ✅
 
 ## V.3 User Management
 

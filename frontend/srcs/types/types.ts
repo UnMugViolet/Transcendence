@@ -3,7 +3,7 @@ export interface User {
   id: number;
   name: string;
   profile_picture?: string;
-  role: Role;
+  role?: Role;
 }
 
 export interface Role {
@@ -23,6 +23,14 @@ export interface AuthResponse {
   refreshToken: string;
   error?: string;
 }
+
+export interface TwoFAChallengeResponse {
+  requiresTwoFA: true;
+  userId: number;
+  tempToken: string;
+}
+
+export type LoginResponse = AuthResponse | TwoFAChallengeResponse;
 
 export interface ApiResponse<T = any> {
   success: boolean;

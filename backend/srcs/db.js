@@ -45,6 +45,9 @@ db.prepare(`CREATE TABLE IF NOT EXISTS users (
 	last_seen INTEGER NOT NULL,
 	created_at INTEGER NOT NULL,
     role_id INTEGER NOT NULL DEFAULT 1,
+	two_fa_enabled INTEGER NOT NULL DEFAULT 0,
+	two_fa_secret TEXT,
+	two_fa_backup_codes TEXT,
     FOREIGN KEY (role_id) REFERENCES roles(id)
 )`).run();
 

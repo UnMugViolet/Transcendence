@@ -3,9 +3,10 @@ import { AuthManager } from "../user/auth.js";
 import { UserManager } from "../user/user.js";
 import { ModalManager } from "./modal.js";
 import { initChatSocket } from "../user/chat.js";
-import { AuthResponse } from "../types/types.js";
+import { AuthResponse, LoginResponse } from "../types/types.js";
 import { i18n } from "./i18n.js";
 import { initPongBtns } from "../game/game.js";
+import { TwoFactorAuthManager } from "./twofa.js";
 
 /**
  * Form handling for authentication
@@ -31,7 +32,7 @@ export class FormManager {
       const formData = this.getSignUpFormData();
       if (!formData) return;
 
-      const { username, password, passwordConfirm, stayConnected } = formData;
+      const { username, password, passwordConfirm, stayConnected, enable2FA } = formData;
       const messageEl = document.getElementById("messageSignUp") as HTMLElement;
 
       if (password !== passwordConfirm) {
@@ -56,25 +57,35 @@ export class FormManager {
           throw new Error(data.error || i18n.t("failedRegister"));
         }
 
-        // Store authentication data
+        // If 2FA is requested at signup, require successful verification before continuing
+        if (enable2FA) {
+          const verified = await TwoFactorAuthManager.showSetupModal(data.accessToken, stayConnected, () => {
+            console.log("2FA setup completed");
+          }, { enforced: true });
+
+          if (!verified) {
+            throw new Error('2FA setup is required');
+          }
+        }
+
+        // Store authentication data only after signup (+ optional 2FA setup) succeeds
         AuthManager.storeTokens({
           accessToken: data.accessToken,
           refreshToken: data.refreshToken
         }, stayConnected);
-        
-        // Decode JWT to get user ID
+
+        // Store user info for authentication
         const tokenParts = data.accessToken.split('.');
         if (tokenParts.length === 3) {
           const decoded = JSON.parse(atob(tokenParts[1]));
-          const userId = decoded.id;
-          
-          // Create user with role data from auth response
-          UserManager.createUser(userId, username, data.role);
+          AuthManager.storeUserInfo(username, decoded.id.toString(), stayConnected);
         }
 
         ModalManager.closeModal("modalSignUp");
-        
-        UserManager.setLoggedInState(username);
+
+        // Fetch complete user profile (including profile picture) from backend
+        await UserManager.fetchUserProfile();
+
         initChatSocket(data.accessToken, () => {
           console.log("Chat WebSocket ready after signup");
         });
@@ -111,37 +122,80 @@ export class FormManager {
           }),
         });
 
-        const data: AuthResponse = await response.json();
+        const data: LoginResponse = await response.json();
         if (!response.ok) {
-          throw new Error(data.error || i18n.t("failedLogin"));
+          throw new Error((data as any).error || i18n.t("failedLogin"));
         }
 
-        // Store authentication data
-        AuthManager.storeTokens({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken
-        }, stayConnected);
-        
-        // Decode JWT to get user ID
-        const tokenParts = data.accessToken.split('.');
-        if (tokenParts.length === 3) {
-          const decoded = JSON.parse(atob(tokenParts[1]));
-          const userId = decoded.id;
+        // Check if 2FA is required
+        if ((data as any).requiresTwoFA) {
+          ModalManager.closeModal("modalSignIn");
           
-          // Create user with role data from auth response
-          UserManager.createUser(userId, username, data.role);
+          // Show 2FA verification modal
+          TwoFactorAuthManager.showLoginModal((data as any).tempToken, stayConnected, async (code: string) => {
+            try {
+              // Complete login with 2FA code
+              const verify2FAResponse = await fetch(`${BACKEND_URL}/login/2fa`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  tempToken: (data as any).tempToken,
+                  token: code,
+                  stayConnect: stayConnected,
+                }),
+              });
+
+              const verify2FAData = await verify2FAResponse.json();
+              if (!verify2FAResponse.ok) {
+                const msg2FAEl = document.getElementById("message2FALogin");
+                if (msg2FAEl) msg2FAEl.textContent = `❌ ${verify2FAData.error || 'Invalid code'}`;
+                return;
+              }
+
+              // Complete login
+              await this.completeLogin(verify2FAData as AuthResponse, username, stayConnected);
+              TwoFactorAuthManager.closeLoginModal();
+              
+            } catch (err: any) {
+              const msg2FAEl = document.getElementById("message2FALogin");
+              if (msg2FAEl) msg2FAEl.textContent = `❌ ${err.message}`;
+            }
+          });
+          return;
         }
 
+        // Normal login without 2FA
+        await this.completeLogin(data as AuthResponse, username, stayConnected);
         ModalManager.closeModal("modalSignIn");
-        
-        UserManager.setLoggedInState(username);
-        initChatSocket(data.accessToken, () => {
-          console.log("Chat WebSocket ready after login");
-        });
 
       } catch (err: any) {
         messageEl.textContent = "❌ " + err.message;
       }
+    });
+  }
+
+  /**
+   * Complete login process after authentication
+   */
+  private static async completeLogin(data: AuthResponse, username: string, stayConnected: boolean): Promise<void> {
+    // Store authentication data
+    AuthManager.storeTokens({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken
+    }, stayConnected);
+    
+    // Store user info for authentication
+    const tokenParts = data.accessToken.split('.');
+    if (tokenParts.length === 3) {
+      const decoded = JSON.parse(atob(tokenParts[1]));
+      AuthManager.storeUserInfo(username, decoded.id.toString(), stayConnected);
+    }
+
+    // Fetch complete user profile (including profile picture) from backend
+    await UserManager.fetchUserProfile();
+    
+    initChatSocket(data.accessToken, () => {
+      console.log("Chat WebSocket ready after login");
     });
   }
 
@@ -152,12 +206,14 @@ export class FormManager {
     username: string; 
     password: string; 
     passwordConfirm: string; 
-    stayConnected: boolean; 
+    stayConnected: boolean;
+    enable2FA: boolean;
   } | null {
     const usernameEl = document.getElementById("usernameSignUp") as HTMLInputElement;
     const passwordEl = document.getElementById("passwordSignUp") as HTMLInputElement;
     const passwordConfirmEl = document.getElementById("passwordSignUpConfirm") as HTMLInputElement;
     const stayConnectedEl = document.getElementById("staySignUp") as HTMLInputElement;
+    const enable2FAEl = document.getElementById("enable2FASignUp") as HTMLInputElement;
 
     if (!usernameEl || !passwordEl || !passwordConfirmEl || !stayConnectedEl) {
       console.error("Sign-up form elements not found");
@@ -169,6 +225,7 @@ export class FormManager {
       password: passwordEl.value.trim(),
       passwordConfirm: passwordConfirmEl.value.trim(),
       stayConnected: stayConnectedEl.checked,
+      enable2FA: enable2FAEl?.checked || false,
     };
   }
 
@@ -232,20 +289,18 @@ export class FormManager {
           refreshToken: data.refreshToken
         }, true); // Store in localStorage
 
-        // Decode JWT to get user ID
+        // Store user info for authentication
         const tokenParts = data.accessToken.split('.');
         if (tokenParts.length === 3) {
           const decoded = JSON.parse(atob(tokenParts[1]));
-          const userId = decoded.id;
-          
-          // Create user with role data from auth response
-          UserManager.createUser(userId, demoUsername, data.role);
+          AuthManager.storeUserInfo(demoUsername, decoded.id.toString(), true);
         }
 
         console.log("Demo user created successfully:", demoUsername);
 
-        // Skip navigation here since joinGame will handle navigating to the lobby
-        UserManager.setLoggedInState(demoUsername, undefined, true);
+        // Fetch complete user profile (including profile picture) from backend
+        await UserManager.fetchUserProfile();
+        
         // Re-initialize pong buttons to reflect demo user status
         initPongBtns();
         
