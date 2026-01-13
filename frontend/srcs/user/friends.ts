@@ -7,7 +7,7 @@ const sidebarHandle = document.getElementById("sidebarHandle");
 const sidebar = document.getElementById("sidebar");
 const overlay = document.getElementById("overlay");
 
-// Ouvre/ferme la sidebar
+// Open close friends sidebar
 function toggleSidebar() {
   sidebar?.classList.toggle("-translate-x-full");
   overlay?.classList.toggle("hidden");
@@ -25,16 +25,18 @@ function closeSidebar() {
   sidebarHandle?.classList.remove("translate-x-64");
 }
 
-// Fonction pour activer/désactiver la sidebar
+// Function to activate / deactivate the sidebar
 export function setSidebarEnabled(enabled: boolean) {
-  if (!sidebarHandle || !sidebar || !overlay) return;
+  if (!sidebarHandle || !sidebar || !overlay) {
+    return;
+  }
 
   if (enabled) {
-    sidebarHandle.classList.remove("opacity-50", "pointer-events-none");
+    sidebarHandle.classList.remove("hidden", "pointer-events-none");
     sidebarHandle.addEventListener("click", toggleSidebar);
     overlay.addEventListener("click", closeSidebar);
   } else {
-    sidebarHandle.classList.add("opacity-50", "pointer-events-none");
+    sidebarHandle.classList.add("hidden", "pointer-events-none");
     sidebarHandle.removeEventListener("click", toggleSidebar);
     overlay.removeEventListener("click", closeSidebar);
     closeSidebar();

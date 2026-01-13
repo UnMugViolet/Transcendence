@@ -4,6 +4,10 @@ module.exports = {
     "./src/**/*.{html,js,ts}",
     "./index.html"
   ],
+  safelist: [
+    "translate-x-64",
+    "-translate-x-full",
+  ],
   theme: {
     extend: {
       fontFamily: {
