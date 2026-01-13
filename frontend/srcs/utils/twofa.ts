@@ -70,10 +70,14 @@ export class TwoFactorAuthManager {
       }
 
       // Show the modal
-      const modal = document.getElementById('modal2FASetup');
+      const modal = document.getElementById('modal2FASetup') as HTMLElement;
+      const modalProfile = document.getElementById('modalProfile') as HTMLElement;
+      
       if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+        modalProfile.classList.add('hidden');
+        modalProfile.classList.remove('flex');
       }
 
       // Focus on the input
@@ -125,9 +129,16 @@ export class TwoFactorAuthManager {
     this.stayConnected = stayConnected;
 
     const modal = document.getElementById('modal2FALogin');
+    const editModal = document.getElementById('modalProfile') as HTMLElement;
+
     if (modal) {
       modal.classList.remove('hidden');
       modal.classList.add('flex');
+    }
+    // hide the edit profile modal if 
+    if (editModal) {
+      editModal.classList.remove('fixed');
+      editModal.classList.add('hidden');
     }
 
     // Store callback for when verification succeeds
@@ -237,8 +248,18 @@ export class TwoFactorAuthManager {
     const skip2FA = document.getElementById('skip2FA');
     skip2FA?.addEventListener('click', () => {
       if (this.setupEnforced) {
-        const messageEl = document.getElementById('message2FA');
-        if (messageEl) messageEl.textContent = '2FA setup is required';
+        const TwoFAModal = document.getElementById('modal2FASetup') as HTMLElement;
+        const modalSignup = document.getElementById('id="modalSignUp"') as HTMLElement;
+
+        if (TwoFAModal) {
+          TwoFAModal.classList.remove('flex');
+          TwoFAModal.classList.add('hidden');
+        }
+        if (modalSignup) {
+          modalSignup.classList.remove('hidden');
+          modalSignup.classList.add('flex');
+        }
+        
         return;
       }
 
