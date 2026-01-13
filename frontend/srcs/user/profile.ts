@@ -67,7 +67,8 @@ function updateProfileModalUI(): void {
 async function refreshProfileTwoFAStatus(): Promise<void> {
 	const token = AuthManager.getToken();
 	const checkbox = document.getElementById('enable2FA') as HTMLInputElement | null;
-	if (!token || !checkbox) return;
+	if (!token || !checkbox) 
+		return;
 
 	try {
 		const res = await fetch(`${BACKEND_URL}/2fa/status`, {

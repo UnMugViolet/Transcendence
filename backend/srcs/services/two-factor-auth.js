@@ -20,8 +20,8 @@ async function twoFaRoutes(fastify) {
 
     // Generate secret
     const secret = speakeasy.generateSecret({
-      name: `Trans_gh (${userName})`,
-      issuer: 'Trans_gh'
+      name: `LLDBQIA + (${userName})`,
+      issuer: 'LLDBQIA +'
     });
 
     // Generate backup codes (10 codes)

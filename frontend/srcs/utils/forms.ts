@@ -106,7 +106,9 @@ export class FormManager {
       e.preventDefault();
 
       const formData = this.getSignInFormData();
-      if (!formData) return;
+      if (!formData) {
+        return;
+      }
 
       const { username, password, stayConnected } = formData;
       const messageEl = document.getElementById("messageSignIn") as HTMLElement;
