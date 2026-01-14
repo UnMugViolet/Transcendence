@@ -2,6 +2,7 @@ import { BACKEND_URL } from "../utils/config.js";
 import { respondFriendRequest, respondGameInvite} from "./friends.js";
 import { loadFriends } from "./friends.js";
 import { i18n } from "../utils/i18n.js";
+import { openLobby } from "../game/game.js";
 
 let notifAnimationInterval: number | null = null;
 
@@ -153,7 +154,8 @@ export async function loadNotifications() {
     		acceptBtn.setAttribute("data-i18n", "accept");
     		acceptBtn.textContent = i18n.t("accept");
     		acceptBtn.addEventListener("click", async () => {
-    		await respondGameInvite(inv.id, true);
+    		const res = await respondGameInvite(inv.id, true);
+			openLobby(res, res.gameMode);
     		await loadNotifications(); // recharge après action
     		});
 

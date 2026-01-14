@@ -148,7 +148,7 @@ export async function respondGameInvite(inviteId: number, accept: boolean) {
 		return;
 	}
 
-	await fetch(`${BACKEND_URL}/invite/respond`, {
+	const res = await fetch(`${BACKEND_URL}/invite/respond`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -158,8 +158,11 @@ export async function respondGameInvite(inviteId: number, accept: boolean) {
       inviteId: inviteId,
       status: accept ? i18n.t("accepted") : i18n.t("rejected")
     })
-  });
-  
+  	});
+	if (!res.ok) {
+      throw new Error('Failed to load demo user data');
+    }
+	return res.json();
 }
 
 // 🔹 Charger la liste d'amis

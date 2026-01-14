@@ -12,6 +12,16 @@ const btnLeaveGame = document.getElementById('btnLeaveGame') as HTMLButtonElemen
 
 let mode: string = '';
 
+export function openLobby(joinData: any, gameMode: string) {
+	// Set up game state
+	storeGameSessionData(joinData);
+
+	// Configure UI based on game mode
+	drawGameReadyMessage(gameMode);
+	configureLobbyUI(gameMode);
+	showGameControlButtons();
+}
+
 export function initPongBtns() {
 	const btnOffline = document.getElementById('btnOffline') as HTMLButtonElement | null;
 	const btnOnline = document.getElementById('btnOnline') as HTMLButtonElement | null;
@@ -920,13 +930,7 @@ async function joinGame(gameMode: string) {
 			return;
 		}
 
-		// Set up game state
-		storeGameSessionData(joinData);
-
-		// Configure UI based on game mode
-		drawGameReadyMessage(gameMode);
-		configureLobbyUI(gameMode);
-		showGameControlButtons();
+		openLobby(joinData, gameMode);
 	} catch (err) {
 		console.error("Error Join Game:", err);
 	}

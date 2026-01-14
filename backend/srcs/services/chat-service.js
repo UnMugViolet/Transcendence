@@ -124,11 +124,15 @@ export function processInviteAcceptance(inviteeId, invite) {
 		return { error: 'You are already in a party', status: 409 };
 	}
 
+	const party = partyQueries.findById(invite.party_id);
+	if (!party) {
+		return { error: 'Party not found', status: 404 };
+	}
 	// Add user to party and update invite
 	partyPlayerQueries.updateStatus(inviteeId, invite.party_id, 'lobby');
 	inviteQueries.updateStatus(invite.id, 'accepted');
 
-	return { success: true };
+	return { message: 'Joined party from invite', partyId: invite.party_id, status: 'waiting', gameMode: party.type};
 }
 
 export function processInviteRejection(inviteeId, inviteId) {
