@@ -1,6 +1,5 @@
 import { BACKEND_URL } from "../utils/config.js";
 import { openChatWindow } from "./chat.js";
-import { loadNotifications } from "../user/notif.js";
 import { i18n } from "../utils/i18n.js";
 
 // 🔹 Sidebar amis
@@ -141,6 +140,26 @@ export async function respondFriendRequest(userId: number, accept: boolean) {
       status: accept ? i18n.t("accepted") : i18n.t("rejected")
     })
   });
+}
+
+export async function respondGameInvite(inviteId: number, accept: boolean) {
+	const token = sessionStorage.getItem("token");
+	if (!token) {
+		return;
+	}
+
+	await fetch(`${BACKEND_URL}/invite/respond`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      inviteId: inviteId,
+      status: accept ? i18n.t("accepted") : i18n.t("rejected")
+    })
+  });
+  
 }
 
 // 🔹 Charger la liste d'amis

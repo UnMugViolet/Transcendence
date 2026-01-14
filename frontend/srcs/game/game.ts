@@ -3,6 +3,7 @@ import { getWs, initChatSocket} from "../user/chat.js";
 import { handleRoute, UserManager } from "../index.js";
 import { i18n } from "../utils/i18n.js";
 import { AuthManager } from "../user/auth.js";
+import { loadNotifications } from "../user/notif.js";
 
 const pong = document.getElementById('pongCanvas') as HTMLCanvasElement | null;
 const pongMenu = document.getElementById('pongMenu') as HTMLDivElement | null;
@@ -719,6 +720,9 @@ export async function handleGameRemote(data: any) {
 		player2Score = value.score2;
 		
 		return true;
+	}
+	if (data.type === "notification") {
+		loadNotifications();
 	}
 	return false;
 };
