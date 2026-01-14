@@ -288,7 +288,6 @@ async function authRoutes(fastify) {
 		return { ...tokens, role };
 	});
 
-	fastify.post('/refresh', async (request, reply) => {
 	fastify.post('/refresh', {
 		schema: {
 			description: 'Refresh access token using a valid refresh token',
