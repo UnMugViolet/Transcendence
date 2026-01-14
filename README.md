@@ -102,6 +102,19 @@ make build
 
 Read the documentation just <a href="./grafana/README.md">here</a>
 
+# 📚 API Documentation
+
+The API is documented using Swagger/OpenAPI. Once the server is running, you can access the interactive documentation at:
+
+- **Development**: http://localhost:3000/docs
+- **Production**: http://localhost:3000/docs
+
+The documentation provides:
+- Complete list of all API endpoints
+- Request/response schemas
+- Authentication requirements
+- Try-it-out functionality for testing endpoints
+
 ## 📚 Wiki
 We got a wiki ongoing for ALL the subjects treated, database modelisation, modules choosen, tasks repartition, and so on... 
 Visit the link bellow <a href="https://github.com/UnMugViolet/Transcendence/wiki" target="_blank">visit wiki</a>
