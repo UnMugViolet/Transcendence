@@ -78,6 +78,11 @@ export function handleInput(msg, userId) {
 }
 let metricsInstance;
 
+const errorResponseSchema = {
+	type: 'object',
+	properties: { error: { type: 'string' } }
+};
+
 async function chat(fastify) {
 	await fastify.register(websocketPlugin);
 	
@@ -86,13 +91,69 @@ async function chat(fastify) {
 
 	//---------------------- INVITES -----------------------//
 
-	fastify.get('/invites', { preHandler: fastify.authenticate }, async (request) => {
+	fastify.get('/invites', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Get pending game invites for current user',
+			tags: ['Chat'],
+			security: [{ bearerAuth: [] }],
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						invites: {
+							type: 'array',
+							items: {
+								type: 'object',
+								properties: {
+									id: { type: 'integer' },
+									inviter_id: { type: 'integer' },
+									invitee_id: { type: 'integer' },
+									party_id: { type: 'integer' },
+									status: { type: 'string' },
+									created_at: { type: 'integer' }
+								}
+							}
+						}
+					}
+				},
+				401: errorResponseSchema
+			}
+		}
+	}, async (request) => {
 		const userId = request.user.id;
 		const invites = inviteQueries.findPendingByInvitee(userId);
 		return { invites };
 	});
 
-	fastify.post('/invite', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/invite', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Send a game invite to another user',
+			tags: ['Chat'],
+			security: [{ bearerAuth: [] }],
+			body: {
+				type: 'object',
+				required: ['inviteeId'],
+				properties: {
+					inviteeId: { type: 'integer', description: 'User ID to invite' }
+				}
+			},
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						success: { type: 'boolean' },
+						inviteId: { type: 'integer' }
+					}
+				},
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema,
+				409: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const inviterId = request.user.id;
 		const inviteeId = request.body.inviteeId;
 
@@ -121,7 +182,34 @@ async function chat(fastify) {
 		return result;
 	});
 
-	fastify.post('/invite/respond', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/invite/respond', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Respond to a game invite (accept or reject)',
+			tags: ['Chat'],
+			security: [{ bearerAuth: [] }],
+			body: {
+				type: 'object',
+				required: ['inviteId', 'status'],
+				properties: {
+					inviteId: { type: 'integer', description: 'Invite ID' },
+					status: { type: 'string', enum: ['accepted', 'rejected'], description: 'Response to the invite' }
+				}
+			},
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						success: { type: 'boolean' },
+						partyId: { type: 'integer' }
+					}
+				},
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const inviteeId = request.user.id;
 		const { inviteId, status } = request.body;
 
@@ -153,13 +241,60 @@ async function chat(fastify) {
 
 	//------------------ BLOCK / UNBLOCK ------------------//
 
-	fastify.get('/block', { preHandler: fastify.authenticate }, async (request) => {
+	fastify.get('/block', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Get list of users blocked by current user',
+			tags: ['Chat'],
+			security: [{ bearerAuth: [] }],
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						blocked: {
+							type: 'array',
+							items: {
+								type: 'object',
+								properties: {
+									id: { type: 'integer' },
+									name: { type: 'string' },
+									profile_picture: { type: 'string' }
+								}
+							}
+						}
+					}
+				},
+				401: errorResponseSchema
+			}
+		}
+	}, async (request) => {
 		const blockerId = request.user.id;
 		const blockedUsers = blockQueries.findBlockedByUser(blockerId);
 		return { blocked: blockedUsers };
 	});
 
-	fastify.post('/block', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/block', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Block a user',
+			tags: ['Chat'],
+			security: [{ bearerAuth: [] }],
+			body: {
+				type: 'object',
+				required: ['id'],
+				properties: {
+					id: { type: 'integer', description: 'User ID to block' }
+				}
+			},
+			response: {
+				200: { type: 'object', properties: { success: { type: 'boolean' } } },
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema,
+				409: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const blockerId = request.user.id;
 		const blockedId = request.body.id;
 
@@ -176,7 +311,26 @@ async function chat(fastify) {
 		return result;
 	});
 
-	fastify.post('/unblock', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/unblock', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Unblock a user',
+			tags: ['Chat'],
+			security: [{ bearerAuth: [] }],
+			body: {
+				type: 'object',
+				required: ['id'],
+				properties: {
+					id: { type: 'integer', description: 'User ID to unblock' }
+				}
+			},
+			response: {
+				200: { type: 'object', properties: { success: { type: 'boolean' } } },
+				401: errorResponseSchema,
+				404: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const blockerId = request.user.id;
 		const blockedId = request.body.id;
 
@@ -186,7 +340,43 @@ async function chat(fastify) {
 
 	//------------------- MESSAGES ---------------------//
 
-	fastify.get('/messages/:id', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.get('/messages/:id', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Get conversation messages with another user',
+			tags: ['Chat'],
+			security: [{ bearerAuth: [] }],
+			params: {
+				type: 'object',
+				properties: {
+					id: { type: 'integer', description: 'User ID to get conversation with' }
+				}
+			},
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						messages: {
+							type: 'array',
+							items: {
+								type: 'object',
+								properties: {
+									id: { type: 'integer' },
+									sender_id: { type: 'integer' },
+									receiver_id: { type: 'integer' },
+									message: { type: 'string' },
+									send_at: { type: 'integer' }
+								}
+							}
+						}
+					}
+				},
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const userId = request.user.id;
 		const otherUserId = parseInt(request.params.id, 10);
 
