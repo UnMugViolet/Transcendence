@@ -34,8 +34,6 @@ services:
       - ./frontend:/app
       - ./frontend/srcs/languages:/app/languages
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
     networks:
       - default
 

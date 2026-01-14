@@ -128,6 +128,13 @@ export function handleMovePlayer(data) {
 }
 
 // Route handlers
+const errorResponseSchema = {
+	type: 'object',
+	properties: { error: { type: 'string' } }
+};
+
+const gameModes = ['1v1Online', '1v1Offline', '2v2', 'IA', 'Tournament'];
+
 async function gameRoutes(fastify) {
 	const minPlayers = {
 		'1v1Online': 2,
@@ -138,11 +145,67 @@ async function gameRoutes(fastify) {
 	};
 
 	// DEBUG endpoint
-	fastify.get('/games', async () => {
+	fastify.get('/games', {
+		schema: {
+			description: 'Get all active games (debug endpoint)',
+			tags: ['Game'],
+			response: {
+				200: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							id: { type: 'integer' },
+							status: { type: 'string' },
+							type: { type: 'string' }
+						}
+					}
+				}
+			}
+		}
+	}, async () => {
 		return partyQueries.findByStatus('active');
 	});
 
-	fastify.post('/start', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/start', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Start a game that the current user has joined',
+			tags: ['Game'],
+			security: [{ bearerAuth: [] }],
+			body: {
+				type: 'object',
+				required: ['mode'],
+				properties: {
+					mode: { type: 'string', enum: gameModes, description: 'Game mode' }
+				}
+			},
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						message: { type: 'string' },
+						partyId: { type: 'integer' },
+						players: {
+							type: 'array',
+							items: {
+								type: 'object',
+								properties: {
+									user_id: { type: 'integer' },
+									name: { type: 'string' },
+									team: { type: 'integer' }
+								}
+							}
+						},
+						mode: { type: 'string' }
+					}
+				},
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const userId = request.user.id;
 		const mode = request.body.mode;
 
@@ -188,7 +251,34 @@ async function gameRoutes(fastify) {
 		return { message: 'Game started', partyId: party.id, players: playersWithNames, mode: mode };
 	});
 
-	fastify.post('/join', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/join', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Join or create a game party',
+			tags: ['Game'],
+			security: [{ bearerAuth: [] }],
+			body: {
+				type: 'object',
+				required: ['mode'],
+				properties: {
+					mode: { type: 'string', enum: gameModes, description: 'Game mode to join' }
+				}
+			},
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						message: { type: 'string' },
+						partyId: { type: 'integer' },
+						status: { type: 'string' }
+					}
+				},
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const userId = request.user.id;
 		const mode = request.body.mode;
 
@@ -231,7 +321,26 @@ async function gameRoutes(fastify) {
 		return { message: 'Joined party', partyId: party.id, status: 'waiting' };
 	});
 
-	fastify.post('/leave', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/leave', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Leave the current game party',
+			tags: ['Game'],
+			security: [{ bearerAuth: [] }],
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						message: { type: 'string' },
+						partyId: { type: 'integer' }
+					}
+				},
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const userId = request.user.id;
 
 		const user = userQueries.findById(userId);
@@ -289,7 +398,26 @@ async function gameRoutes(fastify) {
 		return { message: 'Left party', partyId: party.id };
 	});
 
-	fastify.post('/resume', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/resume', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Resume a paused game after disconnection',
+			tags: ['Game'],
+			security: [{ bearerAuth: [] }],
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						message: { type: 'string' },
+						partyId: { type: 'integer' }
+					}
+				},
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const userId = request.user.id;
 
 		const user = userQueries.findById(userId);

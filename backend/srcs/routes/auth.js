@@ -2,9 +2,54 @@ import bcrypt from 'bcrypt';
 import db from '../db.js';
 import { checkName, checkPassword } from '../utils.js';
 
+// Common schema definitions
+const errorResponseSchema = {
+	type: 'object',
+	properties: {
+		error: { type: 'string' }
+	}
+};
+
+const roleSchema = {
+	type: 'object',
+	properties: {
+		id: { type: 'integer' },
+		name: { type: 'string', enum: ['user', 'admin', 'demo'] }
+	}
+};
+
+const authResponseSchema = {
+	type: 'object',
+	properties: {
+		accessToken: { type: 'string', description: 'JWT access token (expires in 20min)' },
+		refreshToken: { type: 'string', description: 'JWT refresh token for obtaining new access tokens' },
+		role: roleSchema
+	}
+};
+
 async function authRoutes(fastify) {
-	// DEBUG
-	fastify.get('/token', async () => {
+	// DEBUG endpoint - should be removed or protected in production
+	fastify.get('/token', {
+		schema: {
+			description: 'Debug endpoint to list all refresh tokens (remove in production)',
+			tags: ['Auth'],
+			response: {
+				200: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							user_id: { type: 'integer' },
+							token: { type: 'string' },
+							user_agent: { type: 'string' },
+							timeout: { type: 'integer' },
+							last_used_at: { type: 'integer' }
+						}
+					}
+				}
+			}
+		}
+	}, async () => {
 		return db.prepare('SELECT * FROM refresh_tokens').all();
 	});
 
@@ -33,7 +78,28 @@ async function authRoutes(fastify) {
 	}
 
 
-	fastify.post('/register', async (request, reply) => {
+	fastify.post('/register', {
+		schema: {
+			description: 'Register a new user account',
+			tags: ['Auth'],
+			body: {
+				type: 'object',
+				required: ['name', 'password'],
+				properties: {
+					name: { type: 'string', minLength: 1, maxLength: 20, description: 'Username (unique, case-insensitive)' },
+					password: { type: 'string', minLength: 6, description: 'User password' },
+					stayConnect: { type: 'boolean', description: 'If true, refresh token lasts 7 days; otherwise 1 hour' },
+					roleType: { type: 'string', enum: ['user', 'admin', 'demo'], default: 'user', description: 'User role type' }
+				}
+			},
+			response: {
+				200: authResponseSchema,
+				400: errorResponseSchema,
+				409: errorResponseSchema,
+				500: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const name = request.body.name?.trim();
 		const password = request.body.password;
 		const stayConnect = request.body.stayConnect;
@@ -91,7 +157,27 @@ async function authRoutes(fastify) {
 	});
 
 
-	fastify.post('/login', async (request, reply) => {
+	fastify.post('/login', {
+		schema: {
+			description: 'Login with existing user credentials',
+			tags: ['Auth'],
+			body: {
+				type: 'object',
+				required: ['name', 'password'],
+				properties: {
+					name: { type: 'string', description: 'Username' },
+					password: { type: 'string', description: 'User password' },
+					stayConnect: { type: 'boolean', description: 'If true, refresh token lasts 7 days; otherwise 1 hour' }
+				}
+			},
+			response: {
+				200: authResponseSchema,
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const name = request.body.name?.trim();
 		const password = request.body.password;
 		const stayConnect = request.body.stayConnect;
@@ -126,7 +212,30 @@ async function authRoutes(fastify) {
 	});
 
 
-	fastify.post('/refresh', async (request, reply) => {
+	fastify.post('/refresh', {
+		schema: {
+			description: 'Refresh access token using a valid refresh token',
+			tags: ['Auth'],
+			body: {
+				type: 'object',
+				required: ['token'],
+				properties: {
+					token: { type: 'string', description: 'Refresh token' }
+				}
+			},
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						newAccessToken: { type: 'string', description: 'New JWT access token' }
+					}
+				},
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 
 		const { token } = request.body;
 
@@ -171,7 +280,31 @@ async function authRoutes(fastify) {
 
 
 	// Delete user account by refresh token
-	fastify.delete('/user', async (request, reply) => {
+	fastify.delete('/user', {
+		schema: {
+			description: 'Delete user account using refresh token',
+			tags: ['Auth'],
+			body: {
+				type: 'object',
+				required: ['token'],
+				properties: {
+					token: { type: 'string', description: 'Refresh token of the account to delete' }
+				}
+			},
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						message: { type: 'string' }
+					}
+				},
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema,
+				500: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const { token } = request.body;
 
 		if (!token) {

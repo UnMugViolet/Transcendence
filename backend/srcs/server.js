@@ -3,6 +3,8 @@ import fastifyCors from '@fastify/cors';
 import fastifyjwt from '@fastify/jwt';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
 import 'dotenv/config';
 
 import path from 'path';
@@ -21,6 +23,52 @@ import { clients } from './routes/chat.js';
 import { gameLoop, pauseLoop } from './routes/game.js';
 
 const fastify = Fastify({ logger: {level: 'warn'}});
+
+// Swagger configuration
+await fastify.register(fastifySwagger, {
+	openapi: {
+		openapi: '3.0.0',
+		info: {
+			title: 'Transcendence API',
+			description: 'API documentation for the Transcendence Pong game',
+			version: '1.0.0'
+		},
+		servers: [
+			{
+				url: 'http://localhost:3000',
+				description: 'Development server (HTTP)'
+			}
+		],
+		tags: [
+			{ name: 'Auth', description: 'Authentication endpoints' },
+			{ name: 'Users', description: 'User management endpoints' },
+			{ name: 'Friends', description: 'Friends management endpoints' },
+			{ name: 'Game', description: 'Game management endpoints' },
+			{ name: 'Stats', description: 'Statistics endpoints' },
+			{ name: 'Chat', description: 'Chat and WebSocket endpoints' }
+		],
+		components: {
+			securitySchemes: {
+				bearerAuth: {
+					type: 'http',
+					scheme: 'bearer',
+					bearerFormat: 'JWT',
+					description: 'Enter your JWT access token'
+				}
+			}
+		}
+	}
+});
+
+await fastify.register(fastifySwaggerUi, {
+	routePrefix: '/docs',
+	uiConfig: {
+		docExpansion: 'list',
+		deepLinking: true
+	},
+	staticCSP: true,
+	transformSpecificationClone: true
+});
 
 fastify.register(fastifyCors, {
 	origin: '*',
@@ -87,12 +135,36 @@ fastify.register(usersRoutes);
 fastify.register(gameRoutes);
 fastify.register(chat);
 
-fastify.get('/', async () => {
+fastify.get('/', {
+	schema: {
+		description: 'Health check endpoint',
+		tags: ['General'],
+		response: {
+			200: {
+				type: 'object',
+				properties: {
+					message: { type: 'string' }
+				}
+			}
+		}
+	}
+}, async () => {
 	return { message: 'Hello from Fastify & SQLite 🎉' };
 });
 
 // Prometheus metrics endpoint
-fastify.get('/metrics', async (request, reply) => {
+fastify.get('/metrics', {
+	schema: {
+		description: 'Prometheus metrics endpoint',
+		tags: ['General'],
+		response: {
+			200: {
+				type: 'string',
+				description: 'Prometheus metrics in text format'
+			}
+		}
+	}
+}, async (request, reply) => {
 	reply.header('Content-Type', metrics.getContentType());
 	return metrics.getMetrics();
 });
@@ -141,6 +213,7 @@ process.on('SIGTERM', async () => {
 fastify.listen({ port: 3000, host: '0.0.0.0' })
 	.then(() => {
 		console.log('✅ Server running on http://localhost:3000');
+		console.log('📚 API Documentation available at http://localhost:3000/docs');
 		// Update user metrics on startup
 		const totalUsersCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
 		const demoUsersCount = db.prepare(`

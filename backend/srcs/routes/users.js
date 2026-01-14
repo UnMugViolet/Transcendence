@@ -5,13 +5,54 @@ import bcrypt from 'bcrypt';
 import db from '../db.js';
 import { checkName, checkPassword } from '../utils.js';
 
+// Common schema definitions
+const errorResponseSchema = {
+	type: 'object',
+	properties: {
+		error: { type: 'string' }
+	}
+};
+
+const userProfileSchema = {
+	type: 'object',
+	properties: {
+		user: {
+			type: 'object',
+			properties: {
+				id: { type: 'integer' },
+				name: { type: 'string' },
+				profile_picture: { type: 'string' },
+				created_at: { type: 'integer' },
+				role: {
+					type: 'object',
+					properties: {
+						id: { type: 'integer' },
+						name: { type: 'string' }
+					}
+				}
+			}
+		}
+	}
+};
+
 async function usersRoutes(fastify) {
 
 	if (!fs.existsSync('./img')) {
 		fs.mkdirSync('./img');
 	}
 
-	fastify.get('/profile', { preHandler: fastify.authenticate }, async (request) => {
+	fastify.get('/profile', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Get current authenticated user profile',
+			tags: ['Users'],
+			security: [{ bearerAuth: [] }],
+			response: {
+				200: userProfileSchema,
+				401: errorResponseSchema
+			}
+		}
+	}, async (request) => {
 		console.log('User profile requested:', request.user.name);
 		const info = db.prepare(`
 			SELECT u.id, u.name, u.profile_picture, u.created_at, u.role_id, r.id as role_id, r.name as role_name
@@ -35,11 +76,66 @@ async function usersRoutes(fastify) {
 		return { user };
 	});
 
-	fastify.get('/users', async () => {
+	fastify.get('/users', {
+		schema: {
+			description: 'Get list of all users',
+			tags: ['Users'],
+			response: {
+				200: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							id: { type: 'integer' },
+							name: { type: 'string' },
+							profile_picture: { type: 'string' },
+							created_at: { type: 'integer' }
+						}
+					}
+				}
+			}
+		}
+	}, async () => {
 		return db.prepare('SELECT id, name, profile_picture, created_at FROM users').all();
 	});
 
-	fastify.get("/users/:id", async (request, reply) => {
+	fastify.get("/users/:id", {
+		schema: {
+			description: 'Get user by ID with match history',
+			tags: ['Users'],
+			params: {
+				type: 'object',
+				properties: {
+					id: { type: 'integer', description: 'User ID' }
+				}
+			},
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						name: { type: 'string' },
+						profile_picture: { type: 'string' },
+						matches: {
+							type: 'array',
+							items: {
+								type: 'object',
+								properties: {
+									match_id: { type: 'integer' },
+									p1_id: { type: 'integer' },
+									p2_id: { type: 'integer' },
+									p1_score: { type: 'integer' },
+									p2_score: { type: 'integer' },
+									winner_id: { type: 'integer' },
+									created_at: { type: 'integer' }
+								}
+							}
+						}
+					}
+				},
+				404: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const userId = request.params.id;
 
 		const info = db.prepare(`
@@ -79,7 +175,28 @@ async function usersRoutes(fastify) {
 		return { name, profile_picture, matches };
 	});
 
-	fastify.post('/update/name', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/update/name', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Update current user name',
+			tags: ['Users'],
+			security: [{ bearerAuth: [] }],
+			body: {
+				type: 'object',
+				required: ['name'],
+				properties: {
+					name: { type: 'string', minLength: 1, maxLength: 20, description: 'New username' }
+				}
+			},
+			response: {
+				200: { type: 'object', properties: { success: { type: 'boolean' } } },
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				409: errorResponseSchema,
+				500: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const userId = request.user.id;
 		const { name } = request.body;
 
@@ -95,7 +212,27 @@ async function usersRoutes(fastify) {
 		}
 	});
 
-	fastify.post('/update/password', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/update/password', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Update current user password',
+			tags: ['Users'],
+			security: [{ bearerAuth: [] }],
+			body: {
+				type: 'object',
+				required: ['password'],
+				properties: {
+					password: { type: 'string', minLength: 8, description: 'New password' }
+				}
+			},
+			response: {
+				200: { type: 'object', properties: { success: { type: 'boolean' } } },
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				500: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const userId = request.user.id;
 		const { password } = request.body;
 
@@ -111,7 +248,27 @@ async function usersRoutes(fastify) {
 		}
 	});
 
-	fastify.post('/update/profile_picture', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/update/profile_picture', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Update current user profile picture',
+			tags: ['Users'],
+			security: [{ bearerAuth: [] }],
+			consumes: ['multipart/form-data'],
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						message: { type: 'string' },
+						filename: { type: 'string' }
+					}
+				},
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				500: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const userId = request.user.id;
 		const file = await request.file();
 
