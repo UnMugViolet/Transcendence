@@ -27,6 +27,7 @@ import {
 } from '../services/chat-service.js';
 import { assignTeamNumber } from '../services/party-manager.js'
 import { handleMovePlayer, pauseGameFromWS, sendSysMessage } from './game.js';
+import { sendNotification } from '../services/message-service.js';
 
 const clients = new Map();
 
@@ -123,6 +124,7 @@ async function chat(fastify) {
 
 		// Create invite
 		const result = createInvite(inviteeId, inviterId, party.id);
+		sendNotification(inviteeId);
 		return result;
 	});
 

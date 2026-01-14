@@ -127,13 +127,24 @@ export async function loadNotifications() {
 			const li = document.createElement("li");
     		li.className = "flex justify-between items-center bg-gray-700 p-2 rounded";
 
+			// Notif type
+			const type = document.createElement("span");
+			type.textContent = "Game invite";
+			li.appendChild(type);
+			
 			// Profil + name
     		const left = document.createElement("div");
     		left.className = "flex items-center gap-2";
+			const img = document.createElement("img");
+    		img.src = `${BACKEND_URL}/img/${inv.inviter_profile_picture}` || `${BACKEND_URL}/img/default.png`;
+    		img.className = "w-8 h-8 rounded-full";
+    		img.style.objectFit = "cover";
+    		img.style.objectPosition = "center";
     		const span = document.createElement("span");
     		span.textContent = inv.inviter_name;
+    		left.appendChild(img);
     		left.appendChild(span);
-			
+
 			// Buttons
     		const actions = document.createElement("div");
     		actions.className = "flex gap-2";
@@ -165,8 +176,14 @@ export async function loadNotifications() {
 	}
 	if (data_request.requests.length > 0) {
     	data_request.requests.forEach((req: any) => {
+		  
     	  const li = document.createElement("li");
     	  li.className = "flex justify-between items-center bg-gray-700 p-2 rounded";
+
+		  // Notif type
+		  const type = document.createElement("span");
+		  type.textContent = "Friend request";
+		  li.appendChild(type);
 
     	  // Profil + name
     	  const left = document.createElement("div");
