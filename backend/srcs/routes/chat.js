@@ -421,7 +421,7 @@ async function chat(fastify) {
 			}
 
 			(connection.socket || connection).on('message', (msg) => {
-					handleInput(msg, payload.id);
+				handleInput(msg, payload.id);
 			});
 
 			(connection.socket || connection).on('close', (code, reason) => {
