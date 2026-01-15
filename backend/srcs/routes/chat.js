@@ -113,7 +113,9 @@ async function chat(fastify) {
 									invitee_id: { type: 'integer' },
 									party_id: { type: 'integer' },
 									status: { type: 'string' },
-									created_at: { type: 'integer' }
+									created_at: { type: 'integer' },
+									inviter_profile_picture: { type: 'string' },
+									inviter_name: { type: 'string' }
 								}
 							}
 						}
@@ -146,7 +148,7 @@ async function chat(fastify) {
 					type: 'object',
 					properties: {
 						success: { type: 'boolean' },
-						inviteId: { type: 'integer' }
+						inviteeName: { type: 'string' }
 					}
 				},
 				400: errorResponseSchema,
@@ -208,7 +210,9 @@ async function chat(fastify) {
 					type: 'object',
 					properties: {
 						success: { type: 'boolean' },
-						partyId: { type: 'integer' }
+						partyId: { type: 'integer' },
+						message: { type: 'string' },
+						gameMode: { type: 'string' }
 					}
 				},
 				400: errorResponseSchema,

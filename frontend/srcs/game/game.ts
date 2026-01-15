@@ -20,6 +20,7 @@ export function openLobby(joinData: any, gameMode: string) {
 	drawGameReadyMessage(gameMode);
 	configureLobbyUI(gameMode);
 	showGameControlButtons();
+	mode = gameMode;
 }
 
 export function initPongBtns() {
