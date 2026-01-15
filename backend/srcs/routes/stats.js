@@ -28,20 +28,24 @@ export default async function statsRoutes(fastify) {
                 losses: { type: 'integer', description: 'Number of games lost' },
                 winRate: { type: 'number', description: 'Win rate percentage' },
                 avgScore: { type: 'number', description: 'Average score per game' },
-                recentMatches: {
+                avgDuration: { type: 'number', description: 'Average duration of games in seconds' },
+                scoreHistory: { type: 'array', items: { type: 'integer' }, description: 'Historical scores over time' },
+                recentGames: {
                   type: 'array',
                   items: {
                     type: 'object',
                     properties: {
-                      match_id: { type: 'integer' },
+                      opponent_id: { type: 'integer' },
                       opponent_name: { type: 'string' },
-                      user_score: { type: 'integer' },
-                      opponent_score: { type: 'integer' },
-                      result: { type: 'string', enum: ['win', 'loss'] },
-                      created_at: { type: 'integer' }
+                      myScore: { type: 'integer' },
+                      oppScore: { type: 'integer' },
+                      isWin: { type: 'boolean' },
+                      created_at: { type: 'integer' },
+                      duration: { type: 'integer', description: 'Duration of the game in seconds'}
                     }
                   }
-                }
+                },
+                tournamentWins: { type: 'integer', description: 'Number of tournaments won'}
               }
             }
           }

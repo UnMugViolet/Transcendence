@@ -53,7 +53,10 @@ export function validateInviterParty(inviterId) {
 
 export function checkInviteConflicts(inviteeId, inviterId, partyId) {
 	const isInviteeInParty = partyPlayerQueries.findByPartyIdAndUserId(partyId, inviteeId);
-	if (isInviteeInParty) {
+	if (isInviteeInParty && isInviteeInParty.status == 'invited') {
+		return { error: 'You have already invited this user to this party', status: 409 };
+	}
+	if (isInviteeInParty && isInviteeInParty.status != 'left' && isInviteeInParty.status != 'disconnected') {
 		return { error: 'This user is already in the party', status: 409 };
 	}
 
@@ -115,27 +118,30 @@ export function validateInviteUsers(inviteeId, inviterId) {
 
 export function processInviteAcceptance(inviteeId, invite) {
 	// Check if user is already in a party
-	const existingParty = partyPlayerQueries.findByUserId(inviteeId);
-	if (existingParty) {
+	const existingParty = partyPlayerQueries.findByUserIdMultipleStatuses(inviteeId, ['lobby', 'active', 'waiting']);
+	const hasExistingParty = existingParty && (Array.isArray(existingParty) ? existingParty.length > 0 : true);
+	if (hasExistingParty) {
 		return { error: 'You are already in a party', status: 409 };
 	}
 
-	// Determine team assignment
-	const partyPlayers = partyPlayerQueries.findByPartyId(invite.party_id);
-	let userTeam = 1;
-	if (partyPlayers.length > 0) {
-		const teams = partyPlayers.map(p => p.team);
-		userTeam = teams.includes(1) ? 2 : 1;
+	const party = partyQueries.findById(invite.party_id);
+	if (!party) {
+		return { error: 'Party not found', status: 404 };
 	}
-
 	// Add user to party and update invite
-	partyPlayerQueries.upsert(invite.party_id, inviteeId, userTeam, 'active');
+	partyPlayerQueries.updateStatus(inviteeId, invite.party_id, 'lobby');
 	inviteQueries.updateStatus(invite.id, 'accepted');
 
-	return { success: true };
+	return { message: 'Joined party from invite', partyId: invite.party_id, status: 'waiting', gameMode: party.type};
 }
 
-export function processInviteRejection(inviteId) {
+export function processInviteRejection(inviteeId, inviteId) {
+	
+	const invite = inviteQueries.findById(inviteId, inviteeId);
+	console.log(`inviteId: ${inviteId}, inviteeId: ${inviteeId}, partyId: ${invite.party_id}`);
+	if (!invite)
+		return { error: 'Invite not found', status: 404};
+	partyPlayerQueries.deleteUser(invite.party_id, inviteeId);
 	inviteQueries.delete(inviteId);
 	return { success: true };
 }

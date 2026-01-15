@@ -25,7 +25,9 @@ import {
 	getPartyPlayers,
 	addSenderName
 } from '../services/chat-service.js';
+import { assignTeamNumber } from '../services/party-manager.js'
 import { handleMovePlayer, pauseGameFromWS, sendSysMessage } from './game.js';
+import { sendNotification } from '../services/message-service.js';
 
 const clients = new Map();
 
@@ -111,7 +113,9 @@ async function chat(fastify) {
 									invitee_id: { type: 'integer' },
 									party_id: { type: 'integer' },
 									status: { type: 'string' },
-									created_at: { type: 'integer' }
+									created_at: { type: 'integer' },
+									inviter_profile_picture: { type: 'string' },
+									inviter_name: { type: 'string' }
 								}
 							}
 						}
@@ -144,7 +148,7 @@ async function chat(fastify) {
 					type: 'object',
 					properties: {
 						success: { type: 'boolean' },
-						inviteId: { type: 'integer' }
+						inviteeName: { type: 'string' }
 					}
 				},
 				400: errorResponseSchema,
@@ -177,8 +181,13 @@ async function chat(fastify) {
 			return reply.status(conflicts.status).send({ error: conflicts.error });
 		}
 
+		// add invited user to party with 'invited' status
+		const userTeam = assignTeamNumber(party.id, inviteeId);
+		partyPlayerQueries.upsert(party.id, inviteeId, userTeam, 'invited');
+
 		// Create invite
 		const result = createInvite(inviteeId, inviterId, party.id);
+		sendNotification(inviteeId);
 		return result;
 	});
 
@@ -201,7 +210,9 @@ async function chat(fastify) {
 					type: 'object',
 					properties: {
 						success: { type: 'boolean' },
-						partyId: { type: 'integer' }
+						partyId: { type: 'integer' },
+						message: { type: 'string' },
+						gameMode: { type: 'string' }
 					}
 				},
 				400: errorResponseSchema,
@@ -213,6 +224,7 @@ async function chat(fastify) {
 		const inviteeId = request.user.id;
 		const { inviteId, status } = request.body;
 
+		console.log(`inviteeId: ${inviteeId}, inviteId: ${inviteId}`);
 		// Validate request
 		const responseValidation = validateInviteResponse(inviteId, inviteeId, status);
 		if (responseValidation.error) {
@@ -235,7 +247,7 @@ async function chat(fastify) {
 			}
 			return result;
 		} else {
-			return processInviteRejection(inviteId);
+			return processInviteRejection(inviteeId, inviteId);
 		}
 	});
 

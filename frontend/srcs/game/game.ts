@@ -3,6 +3,7 @@ import { getWs, initChatSocket} from "../user/chat.js";
 import { handleRoute, UserManager } from "../index.js";
 import { i18n } from "../utils/i18n.js";
 import { AuthManager } from "../user/auth.js";
+import { loadNotifications } from "../user/notif.js";
 
 const pong = document.getElementById('pongCanvas') as HTMLCanvasElement | null;
 const pongMenu = document.getElementById('pongMenu') as HTMLDivElement | null;
@@ -10,6 +11,17 @@ const backToMenu = document.getElementById('backToMenu') as HTMLButtonElement | 
 const btnLeaveGame = document.getElementById('btnLeaveGame') as HTMLButtonElement | null;
 
 let mode: string = '';
+
+export function openLobby(joinData: any, gameMode: string) {
+	// Set up game state
+	storeGameSessionData(joinData);
+
+	// Configure UI based on game mode
+	drawGameReadyMessage(gameMode);
+	configureLobbyUI(gameMode);
+	showGameControlButtons();
+	mode = gameMode;
+}
 
 export function initPongBtns() {
 	const btnOffline = document.getElementById('btnOffline') as HTMLButtonElement | null;
@@ -720,6 +732,9 @@ export async function handleGameRemote(data: any) {
 		
 		return true;
 	}
+	if (data.type === "notification") {
+		loadNotifications();
+	}
 	return false;
 };
 
@@ -916,13 +931,7 @@ async function joinGame(gameMode: string) {
 			return;
 		}
 
-		// Set up game state
-		storeGameSessionData(joinData);
-
-		// Configure UI based on game mode
-		drawGameReadyMessage(gameMode);
-		configureLobbyUI(gameMode);
-		showGameControlButtons();
+		openLobby(joinData, gameMode);
 	} catch (err) {
 		console.error("Error Join Game:", err);
 	}

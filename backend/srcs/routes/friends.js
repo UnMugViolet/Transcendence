@@ -1,4 +1,5 @@
 import db from '../db.js';
+import { sendNotification } from '../services/message-service.js';
 import { isBlocked } from '../utils.js';
 
 const errorResponseSchema = {
@@ -160,6 +161,7 @@ async function friendsRoutes (fastify, options) {
 
 		try {
 			db.prepare('INSERT INTO friends (id1, id2, requester, time) VALUES (?, ?, ?, ?)').run(id1, id2, tmpid1, Date.now());
+			sendNotification(user2.id);
 			return { success: true };
 		} catch (err) {
 			return reply.status(500).send({ error: 'Failed to add friend' });
