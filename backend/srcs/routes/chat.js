@@ -426,9 +426,12 @@ async function chat(fastify) {
 			const disconnected = partyPlayerQueries.findByUserIdAndStatus(payload.id, 'disconnected');
 			let party;
 			if (disconnected) {
+				console.log("trying to reconnect");
 				party = partyQueries.findById(disconnected.party_id);
-				if (party && party.type !== '1v1Offline') {
-					(connection.socket || connection).send(JSON.stringify({ type: 'reconnect' }));
+				if (party) {
+					if (party.status === 'waiting')
+						partyPlayerQueries.updateStatus(payload.id, party.id, 'lobby');
+					(connection.socket || connection).send(JSON.stringify({ type: 'reconnect', gameMode: party.type, status: party.status}));
 				}
 			}
 
@@ -448,7 +451,9 @@ async function chat(fastify) {
 					return;
 				}
 				
-				const party = partyPlayerQueries.findByUserIdMultipleStatuses(payload.id, ['active', 'waiting'])[0];
+				const party = partyPlayerQueries.findByUserIdMultipleStatuses(payload.id, ['active', 'waiting', 'lobby'])[0];
+				if (!party)
+					console.log("no party?");
 				if (party) {
 					partyPlayerQueries.updateStatus(payload.id, party.party_id, 'disconnected');
 					console.log(`User ${payload.name} set to disconnected in party ${party.party_id}`);

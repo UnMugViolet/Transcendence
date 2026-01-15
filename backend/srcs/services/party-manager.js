@@ -192,7 +192,7 @@ export function validateGameStart(userId, mode, minPlayers) {
 	// Handle single-player modes
 	const requiredPlayers = (mode === '1v1Offline' || mode === 'IA') ? 1 : minPlayers[mode];
 	if ((mode === '1v1Offline' || mode === 'IA') && playersCount < 1) {
-		const userRow = partyPlayerQueries.findByUserIdAndPartyId(userId, party.id);
+		const userRow = partyPlayerQueries.findByPartyIdAndUserId(party.id, userId);
 		if (userRow) {
 			partyPlayerQueries.updateTeamAndStatus(1, 'active', party.id, userId);
 			playersCount = 1;
@@ -243,7 +243,10 @@ export function findOrCreateParty(mode, userId, minPlayers) {
 		if (prevParty && prevParty.status !== 'finished') {
 			const presentCount = partyPlayerQueries.countByPartyIdNotStatuses(prevParty.id, ['left', 'disconnected']);
 			if (presentCount < maxPlayers) {
-				partyPlayerQueries.updateStatus(userId, prevParty.party_id, 'lobby');
+				partyPlayerQueries.updateStatus(userId, prevParty.id, 'lobby');
+				const test = partyPlayerQueries.findByUserId(userId);
+				if (test)
+					console.log("test:", test);
 				const userName = userQueries.getNameById(userId);
 				console.log(`User ${userName} rejoined previous party ${prevParty.id}`);
 				return { party: prevParty, rejoined: true };

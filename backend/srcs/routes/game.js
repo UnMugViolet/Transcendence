@@ -410,7 +410,8 @@ async function gameRoutes(fastify) {
 					type: 'object',
 					properties: {
 						message: { type: 'string' },
-						partyId: { type: 'integer' }
+						partyId: { type: 'integer' },
+						mode: { type: 'string' }
 					}
 				},
 				400: errorResponseSchema,
