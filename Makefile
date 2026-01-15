@@ -28,6 +28,7 @@ dev: ## Launch development environment with live reload
 	@./grafana/provision-users.sh
 	@echo "$(GREEN)Development server available at $(RESET) $(WHITE) http://$(IP):$(PORT_DEV) $(RESET)"
 	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) http://$(IP):$(BACK_PORT) $(RESET)"
+	@echo "$(GREEN)API Documentation available at $(RESET) $(WHITE) http://$(IP):$(BACK_PORT)/docs $(RESET)"
 
 dev-down: ## Stop development environment
 	@echo "$(CYAN) $(BOLD) Stopping development containers...$(RESET)"
@@ -46,6 +47,7 @@ prod: ## Launch the docker services (production)
 	@./grafana/provision-users.sh
 	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) https://$(IP):$(PORT_PROD) $(RESET)"
 	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) https://$(IP):$(BACK_PORT) $(RESET)"
+	@echo "$(GREEN)API Documentation available at $(RESET) $(WHITE) https://$(IP):$(BACK_PORT)/docs $(RESET)"
 
 down: ## Stop the docker services
 	@echo "$(CYAN) $(BOLD) Stopping containers...$(RESET)"
@@ -61,6 +63,11 @@ push: ## Push all docker images to the registry
 
 
 ## —— Utils ——————————————————————————————————————————————————————————————
+
+docs: ## Open API documentation in browser
+	@echo "$(GREEN)📚 Opening API documentation...$(RESET)"
+	@echo "$(WHITE)API Documentation: http://$(IP):$(BACK_PORT)/docs$(RESET)"
+	@firefox http://$(IP):$(BACK_PORT)/docs 2>/dev/null || open http://$(IP):$(BACK_PORT)/docs 2>/dev/null || echo "Please open http://$(IP):$(BACK_PORT)/docs in your browser"
 
 prod-logs: ## Show the logs of all containers
 	@$(DOCKER_COMPOSE) logs 
@@ -100,4 +107,4 @@ fclean-dev: ## Remove all dev containers, images and volumes
 re: fclean build all ## Rebuild the whole production environment
 re-dev: fclean-dev build-dev dev ## Rebuild the whole development environment
 
-.PHONY: all help up down dev dev-down dev-logs build push clean fclean re install logs 
+.PHONY: all help up down dev dev-down dev-logs build push clean fclean re install logs docs 

@@ -2,14 +2,67 @@ import db from '../db.js';
 import { sendNotification } from '../services/message-service.js';
 import { isBlocked } from '../utils.js';
 
+const errorResponseSchema = {
+	type: 'object',
+	properties: { error: { type: 'string' } }
+};
+
 async function friendsRoutes (fastify, options) {
 
 	// DEBUG
-	fastify.get('/friends/all', async () => {
+	fastify.get('/friends/all', {
+		schema: {
+			description: 'Get all friend relationships (debug endpoint)',
+			tags: ['Friends'],
+			response: {
+				200: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							id1: { type: 'integer' },
+							id2: { type: 'integer' },
+							requester: { type: 'integer' },
+							status: { type: 'string', enum: ['pending', 'accepted'] },
+							time: { type: 'integer' }
+						}
+					}
+				}
+			}
+		}
+	}, async () => {
 		return db.prepare('SELECT * FROM friends').all();
 	});
 
-	fastify.get('/friends', { preHandler: fastify.authenticate }, async (request) => {
+	fastify.get('/friends', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Get current user friends list',
+			tags: ['Friends'],
+			security: [{ bearerAuth: [] }],
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						friends: {
+							type: 'array',
+							items: {
+								type: 'object',
+								properties: {
+									friend_id: { type: 'integer' },
+									friend_name: { type: 'string' },
+									friend_pfp: { type: 'string' },
+									friendship_time: { type: 'integer' },
+									online: { type: 'string', enum: ['true', 'false'] }
+								}
+							}
+						}
+					}
+				},
+				401: errorResponseSchema
+			}
+		}
+	}, async (request) => {
 		const userId = request.user.id;
 		const timeout = 15 * 60 * 1000; // 15 minutes
 		const friends = db.prepare(`
@@ -26,7 +79,34 @@ async function friendsRoutes (fastify, options) {
 		return { friends };
 	});
 
-	fastify.get('/friends/requests', { preHandler: fastify.authenticate }, async (request) => {
+	fastify.get('/friends/requests', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Get pending friend requests for current user',
+			tags: ['Friends'],
+			security: [{ bearerAuth: [] }],
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						requests: {
+							type: 'array',
+							items: {
+								type: 'object',
+								properties: {
+									requester_id: { type: 'integer' },
+									requester_name: { type: 'string' },
+									requester_pfp: { type: 'string' },
+									request_time: { type: 'integer' }
+								}
+							}
+						}
+					}
+				},
+				401: errorResponseSchema
+			}
+		}
+	}, async (request) => {
 		const userId = request.user.id;
 		const requests = db.prepare(`
 			SELECT 
@@ -41,7 +121,29 @@ async function friendsRoutes (fastify, options) {
 		return { requests };
 	});
 
-	fastify.post('/friends/requests', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/friends/requests', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Send a friend request to another user',
+			tags: ['Friends'],
+			security: [{ bearerAuth: [] }],
+			body: {
+				type: 'object',
+				required: ['id'],
+				properties: {
+					id: { type: 'integer', description: 'User ID to send friend request to' }
+				}
+			},
+			response: {
+				200: { type: 'object', properties: { success: { type: 'boolean' } } },
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				403: errorResponseSchema,
+				404: errorResponseSchema,
+				500: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const tmpid1 = request.user.id;
 		const tmpid2 = request.body.id;
 
@@ -66,7 +168,36 @@ async function friendsRoutes (fastify, options) {
 		}
 	});
 
-	fastify.post('/friends/respond', { preHandler: fastify.authenticate }, async (request, reply) => {
+	fastify.post('/friends/respond', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Respond to a friend request (accept or reject)',
+			tags: ['Friends'],
+			security: [{ bearerAuth: [] }],
+			body: {
+				type: 'object',
+				required: ['id', 'status'],
+				properties: {
+					id: { type: 'integer', description: 'User ID of the requester' },
+					status: { type: 'string', enum: ['accepted', 'rejected'], description: 'Response to the friend request' }
+				}
+			},
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						success: { type: 'boolean' },
+						status: { type: 'string', enum: ['accepted', 'rejected'] }
+					}
+				},
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				403: errorResponseSchema,
+				404: errorResponseSchema,
+				500: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
 		const tmpid1 = request.user.id;
 		const tmpid2 = request.body.id;
 		const status = request.body.status;
