@@ -3,7 +3,7 @@ import pump from 'pump';
 import bcrypt from 'bcrypt';
 
 import db from '../db.js';
-import { checkName, checkPassword } from '../utils.js';
+import { checkName, checkPassword, isBlocked } from '../utils.js';
 
 // Common schema definitions
 const errorResponseSchema = {
@@ -77,6 +77,7 @@ async function usersRoutes(fastify) {
 	});
 
 	fastify.get('/users', {
+		preHandler: fastify.authenticate,
 		schema: {
 			description: 'Get list of all users',
 			tags: ['Users'],
@@ -89,14 +90,29 @@ async function usersRoutes(fastify) {
 							id: { type: 'integer' },
 							name: { type: 'string' },
 							profile_picture: { type: 'string' },
-							created_at: { type: 'integer' }
+							created_at: { type: 'integer' },
+							isBlocked: {
+								type: 'object',
+								properties: {
+									blocked_by_me: { type: 'boolean' },
+									blocked_by_user: { type: 'boolean' }
+								}
+							}
 						}
 					}
 				}
 			}
 		}
-	}, async () => {
-		return db.prepare('SELECT id, name, profile_picture, created_at FROM users').all();
+	}, async (request) => {
+		const currentUserId = request.user.id;
+		const users = db.prepare('SELECT id, name, profile_picture, created_at FROM users').all();
+		return users.map(u => {
+			const blockedStatus = isBlocked(currentUserId, u.id);
+			return { 
+			...u,
+			isBlocked: blockedStatus
+		 	};
+		});
 	});
 
 	fastify.get("/users/:id", {

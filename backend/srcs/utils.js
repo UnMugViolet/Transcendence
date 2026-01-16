@@ -55,5 +55,17 @@ export function checkPassword(password) {
 }
 
 export function isBlocked(userId1, userId2) {
-	return !!db.prepare('SELECT 1 FROM blocked WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)').get(userId1, userId2, userId2, userId1);
+  const meBlocks = !!db.prepare(`
+    SELECT 1 FROM blocked WHERE blocker_id = ? AND blocked_id = ?
+  `).get(userId1, userId2);
+
+  const userBlocksMe = !!db.prepare(`
+    SELECT 1 FROM blocked WHERE blocker_id = ? AND blocked_id = ?
+  `).get(userId2, userId1);
+
+  return {
+    blocked_by_me: meBlocks,
+    blocked_by_user: userBlocksMe
+  };
 }
+
