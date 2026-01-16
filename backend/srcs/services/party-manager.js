@@ -166,7 +166,7 @@ export async function broadcastStartMessage(partyId, resume = false, games, paus
 	});
 	
 	if (!pauses || !pauses.has(partyId)) {
-		setTimeout(() => game.started = true, 6000);
+		setTimeout(() => { game.started = true; }, 6000);
 	}
 }
 

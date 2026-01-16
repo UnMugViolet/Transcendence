@@ -1,6 +1,6 @@
 import { partyQueries, partyPlayerQueries, userQueries } from '../services/database-queries.js';
 import { handlePause, setTeam, handleEndGame,broadcastStartMessage, validateGameStart, cleanupUserGames, findOrCreateParty, assignTeamNumber } from '../services/party-manager.js';
-import { resetRound, movePlayer, updateBall, isGameFinished, getGameState, GAME_CONSTANTS } from '../services/game-logic.js';
+import { resetRound, movePlayer, updateBall, updatePaddle, isGameFinished, getGameState, GAME_CONSTANTS } from '../services/game-logic.js';
 import { initializeTournament, setupNextMatch, sendNextGameMessage } from '../services/tournament-manager.js';
 import { sendSysMessage, sendGameStateToPlayers } from '../services/message-service.js';
 import { clients } from './chat.js';
@@ -59,6 +59,8 @@ export const gameLoop = setInterval(() => {
 		}
 
 		if (game.started) {
+			updatePaddle(game, 'paddle1Y', game.team1up, game.team1down);
+			updatePaddle(game, 'paddle2Y', game.team2up, game.team2down);
 			updateBall(game);
 			// console.log(`DEBUG: Game ${party.id} - Ball at ${game.ballX.toFixed(3)}, ${game.ballY.toFixed(3)}`);
 		}

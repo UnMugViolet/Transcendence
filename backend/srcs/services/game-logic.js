@@ -35,7 +35,11 @@ export function createGame() {
 		send: false,
 		started: false,
 		ballYTarget: 0,
-		lastTargetTime: 0
+		lastTargetTime: 0,
+		team1up: false,
+		team1down: false,
+		team2up: false,
+		team2down:false
 	};
 }
 
@@ -57,26 +61,28 @@ export function resetRound(game) {
 }
 
 export function movePlayer(game, data) {
-	const { PADDLE_HEIGHT, PADDLE_SPEED } = GAME_CONSTANTS;
-	
 	if (data.team === game.team1) {
-		updatePaddle(game, 'paddle1Y', data.up, data.down, PADDLE_SPEED);
+		game.team1up = data.up;
+		game.team1down = data.down;
+		// updatePaddle(game, 'paddle1Y', data.up, data.down, PADDLE_SPEED);
 	} else if (data.team === game.team2) {
-		updatePaddle(game, 'paddle2Y', data.up, data.down, PADDLE_SPEED);
+		game.team2up = data.up;
+		game.team2down = data.down;
+		// updatePaddle(game, 'paddle2Y', data.up, data.down, PADDLE_SPEED);
 	}
 }
 
-function updatePaddle(game, paddleKey, up, down, speed) {
-	const { PADDLE_HEIGHT } = GAME_CONSTANTS;
+export function updatePaddle(game, paddleKey, up, down) {
+	const { PADDLE_HEIGHT, PADDLE_SPEED } = GAME_CONSTANTS;
 	
 	if (up) {
-		game[paddleKey] -= speed;
+		game[paddleKey] -= PADDLE_SPEED;
 		if (game[paddleKey] - PADDLE_HEIGHT / 2 < 0) {
 			game[paddleKey] = PADDLE_HEIGHT / 2;
 		}
 	}
 	if (down) {
-		game[paddleKey] += speed;
+		game[paddleKey] += PADDLE_SPEED;
 		if (game[paddleKey] + PADDLE_HEIGHT / 2 > 1) {
 			game[paddleKey] = 1 - PADDLE_HEIGHT / 2;
 		}
