@@ -736,7 +736,8 @@ export async function handleGameRemote(data: any) {
 		const value = data.data;
 		lastServerUpdateTs = performance.now();
 		warnedNoServerUpdates = false;
-				
+		
+		console.log("value: ", value);
 		posYPlayer1 = value.paddle1Y * height;
 		posYPlayer2 = value.paddle2Y * height;
 		ballX = value.ballX * width;

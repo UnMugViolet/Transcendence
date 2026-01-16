@@ -46,9 +46,12 @@ export function resetRound(game) {
 	game.ballY = 0.5;
 	
 	const side = Math.floor(Math.random() * 10) % 2 === 0 ? 1 : -1;
-	game.angle = side === 1 ? 0 : 180 * (Math.PI / 180);
-	if (Math.random() < 0.5) {
-		game.angle += Math.PI;
+	game.angle = side === 1 ? 0 : Math.PI;
+	game.angle = game.angle + (Math.random() * (Math.PI / 2)) - (Math.random() * (Math.PI / 2));
+	if (game.angle < 0)
+		game.angle += 2 * Math.PI;
+	if (game.angle === Math.PI / 2 || game.angle === 3 * Math.PI / 2) {
+		game.angle += Math.PI / 4;
 	}
 	game.ballSpeed = GAME_CONSTANTS.INITIAL_BALL_SPEED;
 }
