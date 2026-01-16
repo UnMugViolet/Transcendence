@@ -48,6 +48,10 @@
   "send": "Send",
 
   "addFriend": "Add friend",
+  "blockUser": "Block user",
+  "unblockUser": "Unblock user",
+  "userBlocked": "User has been blocked.",
+  "userUnblocked": "User has been unblocked.",
   "friendRequestSent": "Friend request sent to ",
   "errorFriends": "Error loading friends",
   "noFriends": "You have no friends yet.",

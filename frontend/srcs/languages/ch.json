@@ -48,6 +48,8 @@
   "send": "发送",
 
   "addFriend": "添加好友",
+  "blockUser": "屏蔽用户",
+  "unblockUser": "取消屏蔽用户",
   "friendRequestSent": "已发送好友请求给 ",
   "errorFriends": "加载好友时出错",
   "noFriends": "您还没有好友。",

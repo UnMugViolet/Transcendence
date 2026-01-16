@@ -726,6 +726,7 @@ export async function handleGameRemote(data: any) {
 			openLobby(null, data.gameMode);
 		else if (data.gameMode === "1v1Online" || data.gameMode === "Tournament") {
 			modalReconnect?.classList.remove("hidden");
+			modalReconnect?.classList.add("flex");
 			pongMenu?.classList.add("hidden");
 		} else {
 			leaveGame();
