@@ -3,6 +3,7 @@ import { getWs, initChatSocket} from "../user/chat.js";
 import { handleRoute, UserManager } from "../index.js";
 import { i18n } from "../utils/i18n.js";
 import { AuthManager } from "../user/auth.js";
+import { loadNotifications } from "../user/notif.js";
 
 const pong = document.getElementById('pongCanvas') as HTMLCanvasElement | null;
 const pongMenu = document.getElementById('pongMenu') as HTMLDivElement | null;
@@ -10,6 +11,18 @@ const backToMenu = document.getElementById('backToMenu') as HTMLButtonElement | 
 const btnLeaveGame = document.getElementById('btnLeaveGame') as HTMLButtonElement | null;
 
 let mode: string = '';
+
+export function openLobby(joinData: any, gameMode: string) {
+	// Set up game state
+	if (joinData)
+		storeGameSessionData(joinData);
+
+	// Configure UI based on game mode
+	drawGameReadyMessage(gameMode);
+	configureLobbyUI(gameMode);
+	showGameControlButtons();
+	mode = gameMode;
+}
 
 export function initPongBtns() {
 	const btnOffline = document.getElementById('btnOffline') as HTMLButtonElement | null;
@@ -345,11 +358,13 @@ globalThis.addEventListener('hashchange', () => {
 
 // A revoir ?
 globalThis.addEventListener("popstate", async (event) => {
+	console.log("miel");
 	if (isInternalNavigation) {
 		return;
 	}
 
-	if (started && (mode === '1v1Offline' || mode === 'IA' || mode === '1v1Online' || mode === 'Tournament')) {
+	console.log("pops: ", mode);
+	if (started && (mode === '1v1Online' || mode === 'Tournament')) {
 		event.preventDefault();
 		// Mark that we're handling a popstate leave
 		pendingPopstateLeave = true;
@@ -361,6 +376,9 @@ globalThis.addEventListener("popstate", async (event) => {
 		}
 		isInternalNavigation = true;
 		setTimeout(() => (isInternalNavigation = false), 100);
+	} else if (started && (mode === '1v1Offline' || mode === 'IA')) {
+		event.preventDefault();
+		leaveGame();
 	}
 });
 
@@ -656,7 +674,7 @@ function startTimer(sec: number) {
 }
 
 export async function handleGameRemote(data: any) {
-	
+	console.log("type: ", data.type);
 	if (data.type === "start") {
 		modalGamePause?.classList.add("hidden");
 		if (pauseInterval) {
@@ -703,10 +721,15 @@ export async function handleGameRemote(data: any) {
 		return true;
 	}
 	if (data.type === "reconnect" && !started) {
-		console.log("here unhidden");
-		modalReconnect?.classList.remove("hidden");
-		modalReconnect?.classList.add("flex");
-		pongMenu?.classList.add("hidden");
+		console.log(`status: ${data.status}, sessionStorage: ${sessionStorage.getItem("partyId")}`);
+		if (data.status === 'waiting' && sessionStorage.getItem("partyId"))
+			openLobby(null, data.gameMode);
+		else if (data.gameMode === "1v1Online" || data.gameMode === "Tournament") {
+			modalReconnect?.classList.remove("hidden");
+			pongMenu?.classList.add("hidden");
+		} else {
+			leaveGame();
+		}
 		return true;
 	}
 	if (data.type === "game" && started) {
@@ -722,6 +745,9 @@ export async function handleGameRemote(data: any) {
 		player2Score = value.score2;
 		
 		return true;
+	}
+	if (data.type === "notification") {
+		loadNotifications();
 	}
 	return false;
 };
@@ -913,19 +939,12 @@ async function joinGame(gameMode: string) {
 
 		// Handle rejoin case - don't proceed with UI setup
 		const isRejoin = joinData?.message?.includes('Rejoined');
-		if (isRejoin) {
+		if (isRejoin && joinData?.status === 'active') {
 			console.log("Rejoined active party, waiting for game state...");
 			await new Promise(resolve => setTimeout(resolve, 500));
 			return;
 		}
-
-		// Set up game state
-		storeGameSessionData(joinData);
-
-		// Configure UI based on game mode
-		drawGameReadyMessage(gameMode);
-		configureLobbyUI(gameMode);
-		showGameControlButtons();
+		openLobby(joinData, gameMode);
 	} catch (err) {
 		console.error("Error Join Game:", err);
 	}

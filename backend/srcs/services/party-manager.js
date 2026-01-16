@@ -112,7 +112,7 @@ function updatePlayerStatuses(partyId, teamLoser) {
 function getWinnerName(partyId, game, teamLoser) {
 	if (!game || !game.team1 || !game.team2) {
 		// If game is undefined, find the winning team by elimination
-		const allPlayers = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['left', 'disconnected']);
+		const allPlayers = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['left', 'disconnected', 'invited']);
 		const winnerId = allPlayers.find(p => p.team !== teamLoser)?.user_id;
 		return winnerId ? userQueries.getNameById(winnerId) : 'Joueur 2';
 	}
@@ -152,7 +152,7 @@ export async function broadcastStartMessage(partyId, resume = false, games, paus
 		pauses.delete(partyId);
 	}
 	
-	const partyPlayers = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['left', 'disconnected']);
+	const partyPlayers = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['left', 'disconnected', 'invited']);
 	
 	// Build players list with names and teams
 	const playersList = partyPlayers.map(p => {
@@ -187,12 +187,12 @@ export function validateGameStart(userId, mode, minPlayers) {
 	}
 	
 	// Count present players
-	let playersCount = partyPlayerQueries.countByPartyIdNotStatuses(party.id, ['left', 'disconnected']);
+	let playersCount = partyPlayerQueries.countByPartyIdNotStatuses(party.id, ['left', 'disconnected', 'invited']);
 	
 	// Handle single-player modes
 	const requiredPlayers = (mode === '1v1Offline' || mode === 'IA') ? 1 : minPlayers[mode];
 	if ((mode === '1v1Offline' || mode === 'IA') && playersCount < 1) {
-		const userRow = partyPlayerQueries.findByUserIdAndPartyId(userId, party.id);
+		const userRow = partyPlayerQueries.findByPartyIdAndUserId(party.id, userId);
 		if (userRow) {
 			partyPlayerQueries.updateTeamAndStatus(1, 'active', party.id, userId);
 			playersCount = 1;
@@ -224,7 +224,7 @@ export function cleanupUserGames(userId) {
 	}
 	
 	// Disconnect from other waiting/lobby/disconnected games
-	const existingParties = partyPlayerQueries.findByUserIdMultipleStatuses(userId, ['lobby', 'waiting', 'disconnected']);
+	const existingParties = partyPlayerQueries.findByUserIdMultipleStatuses(userId, ['lobby', 'waiting', 'disconnected', 'invited']);
 	existingParties.forEach(partyPlayer => {
 		partyPlayerQueries.updateStatus(userId, partyPlayer.party_id, 'left');
 		const userName = userQueries.getNameById(userId);
@@ -243,7 +243,10 @@ export function findOrCreateParty(mode, userId, minPlayers) {
 		if (prevParty && prevParty.status !== 'finished') {
 			const presentCount = partyPlayerQueries.countByPartyIdNotStatuses(prevParty.id, ['left', 'disconnected']);
 			if (presentCount < maxPlayers) {
-				partyPlayerQueries.updateStatus(userId, prevParty.party_id, 'lobby');
+				partyPlayerQueries.updateStatus(userId, prevParty.id, 'lobby');
+				const test = partyPlayerQueries.findByUserId(userId);
+				if (test)
+					console.log("test:", test);
 				const userName = userQueries.getNameById(userId);
 				console.log(`User ${userName} rejoined previous party ${prevParty.id}`);
 				return { party: prevParty, rejoined: true };

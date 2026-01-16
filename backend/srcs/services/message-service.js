@@ -26,7 +26,7 @@ export function sendSysMessage(partyId, message) {
 
 export function sendGameStateToPlayers(partyId, gameState) {
 	// Only send to players who are not 'disconnected' or 'left'
-	const players = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['disconnected', 'left']);
+	const players = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['disconnected', 'left', 'invited']);
 	// console.log(`DEBUG: sendGameStateToPlayers for party ${partyId}, found ${players.length} active players`);
 	players.forEach(player => {
 		const playerSocket = clients.get(player.user_id);
@@ -66,7 +66,7 @@ export function sendStopMessage(partyId, winnerName, round, mode) {
 }
 
 export function sendPauseMessage(partyId, excludeUserId) {
-	const partyPlayers = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['disconnected', 'left']);
+	const partyPlayers = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['disconnected', 'left', 'invited']);
 	partyPlayers.forEach(player => {
 		if (player.user_id !== excludeUserId) {
 			const playerSocket = clients.get(player.user_id);
@@ -97,5 +97,16 @@ export function sendStartMessage(partyId, playersList, playerTeam, userId, resum
 		playerSocket.send(JSON.stringify(startMsg));
 	} else {
 		console.log(`ERROR: No socket found for user ${userId}`);
+	}
+}
+
+export function sendNotification(userId) {
+	const playerSocket = clients.get(userId);
+	console.log(`DEBUG: sendNotification for user ${userId}, socket exists: ${!!playerSocket}`);
+	if (playerSocket) {
+		const notification = {
+			type: 'notification',
+		}
+		playerSocket.send(JSON.stringify(notification));
 	}
 }
