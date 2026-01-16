@@ -8,7 +8,8 @@ import { sendSysMessage } from './message-service.js';
 export function createTournament() {
 	return {
 		1: 0, 2: 0, 3: 0, 4: 0, 
-		5: 0, 6: 0, 7: 0, 8: 0
+		5: 0, 6: 0, 7: 0, 8: 0,
+		"p1": 0, "p2": 0
 	};
 }
 
@@ -35,7 +36,9 @@ export function setupNextMatch(partyId, tournamentData) {
 	if (!players || !tournamentData) return { round: 0 };
 
 	const { round, p1, p2 } = findNextMatchPlayers(tournamentData);
-	
+	tournamentData["p1"] = p1;
+	tournamentData["p2"] = p2;
+
 	if (round === 0) return { round: 0 };
 
 	const p1Info = partyPlayerQueries.findByPartyIdAndTeam(partyId, p1);

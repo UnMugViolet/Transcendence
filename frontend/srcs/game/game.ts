@@ -449,6 +449,8 @@ yes?.addEventListener("click", async () => {
 		let data = await res.json();
 		console.log(`resume response:`, data);
 		mode = data.mode;
+		if (mode === 'Tournament')
+			tournamentTeam = data.team;
 	} catch (err) {
 		console.error("Error Resume Game:", err);
 		showGoodbyeAndLeave();

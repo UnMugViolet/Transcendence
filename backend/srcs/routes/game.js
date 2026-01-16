@@ -411,7 +411,8 @@ async function gameRoutes(fastify) {
 					properties: {
 						message: { type: 'string' },
 						partyId: { type: 'integer' },
-						mode: { type: 'string' }
+						mode: { type: 'string' },
+						team: { type: 'integer' }
 					}
 				},
 				400: errorResponseSchema,
@@ -442,19 +443,29 @@ async function gameRoutes(fastify) {
 		partyPlayerQueries.updateStatus(userId, party.id, newStatus);
 		sendSysMessage(party.id, `${user.name} reconnected !`);
 
+		const player = partyPlayerQueries.findByPartyIdAndUserId(party.id, userId);
+		let p1 = 1;
+		let p2 = 2;
+		if (party.type === 'Tournament')
+		{
+			const tournamentData = tournament[party.id];
+			p1 = tournamentData["p1"];
+			p2 = tournamentData["p2"];
+		}
 		if (pauses.has(party.id)) {
 			partyQueries.updateStatus(party.id, 'active');
 			if (pauses.has(party.id)) {
 				pauses.delete(party.id);
 			}
 			parties = partyQueries.findByStatus('active');
-			await broadcastStartMessage(party.id, true, games, pauses);
+			await broadcastStartMessage(party.id, true, games, pauses, p1, p2);
 		} else {
-			clients.get(userId).send(JSON.stringify({ type: 'start', game: party.id, team: 0, timer: false }));
+			clients.get(userId).send(JSON.stringify({ type: 'start', game: party.id, team: player.team, timer: false }));
 		}
 
+		
 		console.log(`User ${user.name} resumed party ${party.id}`);
-		return { message: 'Resumed party', partyId: party.id, mode: party.type };
+		return { message: 'Resumed party', partyId: party.id, mode: party.type, team: player.team };
 	});
 }
 
