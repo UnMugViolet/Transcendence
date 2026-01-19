@@ -109,6 +109,21 @@
   "justNow": "Just now",
   "minutesAgo": "minutes ago",
   "hoursAgo": "hours ago",
-  "matchHistory": "Match History"
+  "matchHistory": "Match History",
+
+  "setup2FA": "Setup Two-Factor Authentication",
+  "scanQR": "Scan this QR code with Google Authenticator or any TOTP app:",
+  "manualEntry": "Or enter this code manually:",
+  "saveBackupCodes": "Save these backup codes:",
+  "backupCodesWarning": "You can use these if you lose access to your authenticator app.",
+  "copyBackupCodes": "Copy All Backup Codes",
+  "enterCode": "Enter the 6-digit code from your app:",
+  "verifyComplete": "Verify and Complete Setup",
+  "skipSetup": "Skip for now (not recommended)",
+  "twoFALogin": "Two-Factor Authentication",
+  "enterCodeLogin": "Enter the 6-digit code from your authenticator app:",
+  "verify": "Verify",
+  "cancel": "Cancel",
+  "backupCodeHint": "You can also use a backup code if you've lost access to your authenticator app."
 
 }

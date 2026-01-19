@@ -2,7 +2,7 @@ import { partyQueries, partyPlayerQueries, userQueries } from '../services/datab
 import { handlePause, setTeam, handleEndGame,broadcastStartMessage, validateGameStart, cleanupUserGames, findOrCreateParty, assignTeamNumber } from '../services/party-manager.js';
 import { resetRound, movePlayer, updateBall, updatePaddle, isGameFinished, getGameState, GAME_CONSTANTS } from '../services/game-logic.js';
 import { initializeTournament, setupNextMatch, sendNextGameMessage } from '../services/tournament-manager.js';
-import { sendSysMessage, sendGameStateToPlayers } from '../services/message-service.js';
+import { sendSysMessage, sendGameStateToPlayers, sendJoinNotificationToParty } from '../services/message-service.js';
 import { clients } from './chat.js';
 import { updateAI } from '../services/ai.js';
 import metrics from '../metrics.js';
@@ -170,6 +170,65 @@ async function gameRoutes(fastify) {
 		return partyQueries.findByStatus('active');
 	});
 
+	fastify.get('/party', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Get all the current and invited player of a game',
+			tags: ['Game'],
+			security: [{ bearerAuth: [] }],
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						players: {
+							type: 'array',
+							items: {
+								type: 'object',
+								properties: {
+									user_id: { type: 'integer' },
+									status: { type: 'string' },
+									profile_picture: { type: 'string' },
+									name: { type: 'string' }
+								}
+							}
+						}
+					}
+				},
+				400: errorResponseSchema,
+				404: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
+		const userId = request.user.id;
+		
+		const user = userQueries.findById(userId);
+		if (!user) {
+			return reply.status(404).send({ error: 'User not found' });
+		}
+
+		const partyPlayer = partyPlayerQueries.findByUserIdNotStatus(userId, 'left');
+		if (!partyPlayer) {
+			return reply.status(400).send({ error: 'User is not in a game' });
+		}
+
+		const party = partyQueries.findById(partyPlayer.party_id);
+		if (!party) {
+			return reply.status(404).send({ error: 'party not found'});
+		}
+
+		const party_members = db.prepare(`
+			SELECT
+				p.user_id,
+				p.status,
+				u.profile_picture,
+				u.name
+			FROM party_players p
+			JOIN users u ON u.id = p.user_id
+			WHERE p.party_id = ?`).all(partyPlayer.party_id);
+		console.log("party_members: ", party_members);
+		return { players: party_members };
+	});
+
 	fastify.post('/start', {
 		preHandler: fastify.authenticate,
 		schema: {
@@ -313,6 +372,7 @@ async function gameRoutes(fastify) {
 		const { party, rejoined } = findOrCreateParty(mode, userId, minPlayers);
 
 		if (rejoined) {
+			sendJoinNotificationToParty(party.id);
 			return { message: 'Rejoined previous party', partyId: party.id, status: 'waiting' };
 		}
 
@@ -322,6 +382,7 @@ async function gameRoutes(fastify) {
 		// Upsert player record
 		partyPlayerQueries.upsert(party.id, userId, userTeam, 'lobby');
 
+		sendJoinNotificationToParty(party.id);
 		return { message: 'Joined party', partyId: party.id, status: 'waiting' };
 	});
 
@@ -398,6 +459,7 @@ async function gameRoutes(fastify) {
 			handleEndGame(party.id, games.get(party.id), party.type, games, tournament);
 		}
 
+		sendJoinNotificationToParty(party.id);
 		console.log(`User ${user.name} left party ${party.id}`);
 		return { message: 'Left party', partyId: party.id };
 	});

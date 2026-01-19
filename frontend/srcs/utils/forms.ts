@@ -7,11 +7,30 @@ import { AuthResponse, LoginResponse } from "../types/types.js";
 import { i18n } from "./i18n.js";
 import { initPongBtns } from "../game/game.js";
 import { TwoFactorAuthManager } from "./twofa.js";
+import { closeHeaderMenu } from "../user/header-menu.js";
 
 /**
  * Form handling for authentication
  */
 export class FormManager {
+  private static extractAuthTokens(data: any): { accessToken: string; refreshToken: string } {
+    const accessToken: unknown =
+      data?.accessToken ??
+      data?.newAccessToken ??
+      data?.token ??
+      data?.access_token;
+    const refreshToken: unknown = data?.refreshToken ?? data?.refresh_token;
+
+    if (typeof accessToken !== "string" || !accessToken) {
+      throw new Error(`Missing access token in authentication response`);
+    }
+    if (typeof refreshToken !== "string" || !refreshToken) {
+      throw new Error(`Missing refresh token in authentication response`);
+    }
+
+    return { accessToken, refreshToken };
+  }
+
   /**
    * Sets up all form event listenersF
    */
@@ -57,25 +76,27 @@ export class FormManager {
           throw new Error(data.error || i18n.t("failedRegister"));
         }
 
+        const tokens = this.extractAuthTokens(data);
+
         // If 2FA is requested at signup, require successful verification before continuing
         if (enable2FA) {
-          const verified = await TwoFactorAuthManager.showSetupModal(data.accessToken, stayConnected, () => {
+          const verified = await TwoFactorAuthManager.showSetupModal(tokens.accessToken, stayConnected, () => {
             console.log("2FA setup completed");
           }, { enforced: true });
-
+          // If the user skips, proceed with normal login (2FA stays disabled because verify-enable wasn't called).
           if (!verified) {
-            throw new Error('2FA setup is required');
+            console.log("2FA setup skipped");
           }
         }
 
         // Store authentication data only after signup (+ optional 2FA setup) succeeds
         AuthManager.storeTokens({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken
         }, stayConnected);
 
         // Store user info for authentication
-        const tokenParts = data.accessToken.split('.');
+        const tokenParts = tokens.accessToken.split('.');
         if (tokenParts.length === 3) {
           const decoded = JSON.parse(atob(tokenParts[1]));
           AuthManager.storeUserInfo(username, decoded.id.toString(), stayConnected);
@@ -86,7 +107,7 @@ export class FormManager {
         // Fetch complete user profile (including profile picture) from backend
         await UserManager.fetchUserProfile();
 
-        initChatSocket(data.accessToken, () => {
+        initChatSocket(tokens.accessToken, () => {
           console.log("Chat WebSocket ready after signup");
         });
 
@@ -111,7 +132,7 @@ export class FormManager {
       }
 
       const { username, password, stayConnected } = formData;
-      const messageEl = document.getElementById("messageSignIn") as HTMLElement;
+      let messageEl = document.getElementById("messageSignIn") as HTMLElement;
 
       try {
         const response = await fetch(`${BACKEND_URL}/login`, {
@@ -150,25 +171,33 @@ export class FormManager {
               const verify2FAData = await verify2FAResponse.json();
               if (!verify2FAResponse.ok) {
                 const msg2FAEl = document.getElementById("message2FALogin");
-                if (msg2FAEl) msg2FAEl.textContent = `❌ ${verify2FAData.error || 'Invalid code'}`;
+                if (msg2FAEl) {
+                  msg2FAEl.textContent = `❌ ${verify2FAData.error || 'Invalid code'}`;
+                }
                 return;
               }
 
               // Complete login
               await this.completeLogin(verify2FAData as AuthResponse, username, stayConnected);
+              
               TwoFactorAuthManager.closeLoginModal();
+              closeHeaderMenu();
               
             } catch (err: any) {
               const msg2FAEl = document.getElementById("message2FALogin");
-              if (msg2FAEl) msg2FAEl.textContent = `❌ ${err.message}`;
+              if (msg2FAEl) {
+                msg2FAEl.textContent = `❌ ${err.message}`;
+              }
             }
           });
+
           return;
         }
 
         // Normal login without 2FA
         await this.completeLogin(data as AuthResponse, username, stayConnected);
         ModalManager.closeModal("modalSignIn");
+        closeHeaderMenu();
 
       } catch (err: any) {
         messageEl.textContent = "❌ " + err.message;
@@ -180,14 +209,15 @@ export class FormManager {
    * Complete login process after authentication
    */
   private static async completeLogin(data: AuthResponse, username: string, stayConnected: boolean): Promise<void> {
+    const tokens = this.extractAuthTokens(data);
     // Store authentication data
     AuthManager.storeTokens({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken
     }, stayConnected);
     
     // Store user info for authentication
-    const tokenParts = data.accessToken.split('.');
+    const tokenParts = tokens.accessToken.split('.');
     if (tokenParts.length === 3) {
       const decoded = JSON.parse(atob(tokenParts[1]));
       AuthManager.storeUserInfo(username, decoded.id.toString(), stayConnected);
@@ -196,7 +226,7 @@ export class FormManager {
     // Fetch complete user profile (including profile picture) from backend
     await UserManager.fetchUserProfile();
     
-    initChatSocket(data.accessToken, () => {
+    initChatSocket(tokens.accessToken, () => {
       console.log("Chat WebSocket ready after login");
     });
   }

@@ -4,6 +4,7 @@ import { handleRoute, UserManager } from "../index.js";
 import { i18n } from "../utils/i18n.js";
 import { AuthManager } from "../user/auth.js";
 import { loadNotifications } from "../user/notif.js";
+import { ApiClient } from "../utils/api.js";
 
 const pong = document.getElementById('pongCanvas') as HTMLCanvasElement | null;
 const pongMenu = document.getElementById('pongMenu') as HTMLDivElement | null;
@@ -12,16 +13,16 @@ const btnLeaveGame = document.getElementById('btnLeaveGame') as HTMLButtonElemen
 
 let mode: string = '';
 
-export function openLobby(joinData: any, gameMode: string) {
+export async function openLobby(joinData: any, gameMode: string) {
 	// Set up game state
 	if (joinData)
 		storeGameSessionData(joinData);
-
 	// Configure UI based on game mode
 	drawGameReadyMessage(gameMode);
-	configureLobbyUI(gameMode);
+	await configureLobbyUI(gameMode);
 	showGameControlButtons();
 	mode = gameMode;
+	updateControlsVisibility();
 }
 
 export function initPongBtns() {
@@ -33,8 +34,6 @@ export function initPongBtns() {
 
 	let userLoggedIn = UserManager.isUserLoggedIn();
 	let isDemoUser = UserManager.isUserDemo();
-
-	console.log("User logged in:", userLoggedIn, "Is demo user:", isDemoUser);
 
 	// Show offline and IA buttons for everyone
 	btnOffline?.classList.add('flex');
@@ -185,7 +184,7 @@ export async function leaveGame(options: { navigate?: boolean; closeSocket?: boo
     }
 
     if (opts.navigate) {
-        navigateTo('pongMenu', true);
+        navigateTo('pongMenu', true, false);
         handleRoute();
     }
 }
@@ -264,7 +263,7 @@ let pendingPopstateLeave = false;
  * Shows the goodbye message and leaves the game
  * @param options Options to pass to leaveGame
  */
-async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: boolean; resetState?: boolean } = {}) {
+export async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: boolean; resetState?: boolean } = {}) {
     // Hide the game view first
     const viewGame = document.getElementById('viewGame');
     if (viewGame) {
@@ -285,19 +284,52 @@ async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: 
 
 // Ensure canvas matches its visible size and recompute layout-dependent values
 function resizeCanvas(recenter: boolean = false) {
-	if (!pong) return;
+	if (!pong) {
+		return;
+	}
 
 	const prevWidth = width;
 	const prevHeight = height;
 
-	// Update canvas pixel size to match CSS size (when visible)
-	const newClientWidth = pong.clientWidth || prevWidth || 800;
-	const newClientHeight = pong.clientHeight || prevHeight || 600;
-	pong.width = newClientWidth;
-	pong.height = newClientHeight;
+	// Get viewport dimensions
+	const viewportWidth = window.innerWidth;
+	const viewportHeight = window.innerHeight;
+	const isPortrait = viewportHeight > viewportWidth;
 
-	width = pong.width;
-	height = pong.height;
+	// Update canvas pixel size to match CSS size (when visible)
+	let newClientWidth = pong.clientWidth || prevWidth || 800;
+	let newClientHeight = pong.clientHeight || prevHeight || 600;
+	
+	// Ensure canvas maintains a good aspect ratio
+	if (isPortrait) {
+		// Portrait mode: prioritize width, adjust height
+		const maxWidth = Math.min(viewportWidth * 0.95, 800);
+		const aspectRatio = 3/4; // Portrait aspect ratio
+		newClientWidth = maxWidth;
+		newClientHeight = maxWidth / aspectRatio;
+	} else {
+		// Landscape mode: use more available width for better experience
+		const maxWidth = Math.min(viewportWidth * 1, 1600);
+		const aspectRatio = 16/10;
+		newClientWidth = maxWidth;
+		newClientHeight = maxWidth / aspectRatio;
+	}
+	
+	// Use devicePixelRatio for sharp rendering (fixes pixelation)
+	const dpr = window.devicePixelRatio || 1;
+	pong.width = newClientWidth * dpr;
+	pong.height = newClientHeight * dpr;
+	
+	// Set CSS size
+	pong.style.width = `${newClientWidth}px`;
+	pong.style.height = `${newClientHeight}px`;
+	
+	// Scale context to match device pixel ratio
+	ctx.scale(dpr, dpr);
+
+	// Use logical pixels for game calculations (not physical pixels)
+	width = newClientWidth;
+	height = newClientHeight;
 
 	// Recompute sizes based on new dimensions
 	paddleWidth = 0.01 * width;
@@ -331,20 +363,61 @@ function resizeCanvas(recenter: boolean = false) {
 
 resizeCanvas(true);
 
-// Keep canvas in sync on window resize
-globalThis.addEventListener('resize', () => resizeCanvas(false));
+// Debounced resize handler to avoid excessive redraws
+let resizeTimeout: ReturnType<typeof setTimeout> | undefined;
+globalThis.addEventListener('resize', () => {
+	// Only resize if game canvas is visible
+	const viewGame = document.getElementById('viewGame');
+	if (!viewGame || viewGame.classList.contains('hidden')) {
+		return;
+	}
+	
+	// Debounce resize events to prevent excessive calls
+	if (resizeTimeout) {
+		clearTimeout(resizeTimeout);
+	}
+	resizeTimeout = setTimeout(() => {
+		resizeCanvas(false);
+		// Redraw if game is active
+		if (started) {
+			draw();
+		}
+	}, 150);
+});
 
 // Popstate trigger only when user navigates with back/forward buttons
 export let isInternalNavigation = false;
 
-export function navigateTo(viewId: string, replace = false) {
+/**
+ * Navigate to the specified view by updating the URL hash.
+ * @param viewId The ID of the view to navigate to.
+ * @param replace Whether to replace the current history entry (true) or add a new one (false).
+ * @returns 
+ */
+export function navigateTo(viewId: string, replace = false, leave: boolean = true) {
 	try {
 		isInternalNavigation = true;
+		const currentView = location.hash.slice(1) || 'pongMenu';
+
+		// If we are leaving the game view, clean up the current game without overriding navigation.
+		if (currentView === 'viewGame' && viewId !== 'viewGame' && leave) {
+			leaveGame({ navigate: false }).catch((err) =>
+				console.error('Failed to leave game on navigation:', err)
+			);
+		}
+
+		// Don't navigate if already on the same view
+		if (currentView === viewId) {
+			isInternalNavigation = false;
+			return;
+		}
+
 		if (replace) {
 			history.replaceState({ page: viewId }, "", '#' + viewId);
 		} else {
 			globalThis.location.hash = '#' + viewId;
 		}
+
 		setTimeout(() => {
 			isInternalNavigation = false;
 		}, 100);
@@ -404,7 +477,7 @@ btnLeaveGame?.addEventListener('click', async () => {
 
 backToMenu?.addEventListener("click", async () => {
     console.log("Leaving game...");
-    await showGoodbyeAndLeave();
+    await leaveGame();
 });
 
 
@@ -579,9 +652,8 @@ function sleep(ms: number): Promise<void> {
 
 // Start game for all players after countdown
 async function startingGame(resume = false, timer = true) {
-	console.log("startingGame called, resume:", resume, "timer:", timer); // DEBUG
-	console.log("Game is starting!");
 	navigateTo('viewGame');
+	updateControlsVisibility();
 	// Ensure canvas has non-zero size now that the view should be visible
 	resizeCanvas(true);
 	// One more pass on next frame to catch freshly-laid-out size
@@ -597,7 +669,8 @@ async function startingGame(resume = false, timer = true) {
 	if (timer) {
 		// Display the starting message
 		const startMessage = resume ? i18n.t("gameResumes") : i18n.t("gameStarts");
-		ctx.fillText(startMessage, width / 2, height / 2 - 40);
+		const messageSpacing = Math.floor(height * 0.1); // 15% spacing
+		ctx.fillText(startMessage, width / 2, height / 2 - messageSpacing);
 		
 		let countdown = 5;
 		countdownInterval = setInterval(() => {
@@ -609,12 +682,12 @@ async function startingGame(resume = false, timer = true) {
 			ctx.font = `${messageFont}px Arial`;
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
-			ctx.fillText(startMessage, width / 2, height / 2 - 40);
+			ctx.fillText(startMessage, width / 2, height / 2 - messageSpacing);
 			
-			// Draw the countdown number
+			// Draw the countdown number with better spacing
 			ctx.fillStyle = "rgb(239, 68, 68)";
-			ctx.font = `${countdownFont}px Arial`;
-			ctx.fillText(countdown.toString(), width / 2, height / 2 + 40);
+			ctx.font = `bold ${countdownFont}px Arial`;
+			ctx.fillText(countdown.toString(), width / 2, height / 2 + messageSpacing);
 			
 			countdown--;
 			if (countdown < 0) {
@@ -627,9 +700,7 @@ async function startingGame(resume = false, timer = true) {
 	// Wait for countdown to finish before starting the game loop
 	await sleep(6000);
 	
-	// Backend is authoritative; no local simulation
-
-	// No local physics initialization; relying on backend updates
+	// Backend call for starting the game loop0
 	remoteGameLoop();
 }
 
@@ -736,7 +807,7 @@ export async function handleGameRemote(data: any) {
 	}
 	if (data.type === "reconnect" && !started) {
 		if (data.status === 'waiting' && sessionStorage.getItem("partyId"))
-			openLobby(null, data.gameMode);
+			await openLobby(null, data.gameMode);
 		else if (data.gameMode === "1v1Online" || data.gameMode === "Tournament") {
 			modalReconnect?.classList.remove("hidden");
 			modalReconnect?.classList.add("flex");
@@ -762,6 +833,10 @@ export async function handleGameRemote(data: any) {
 	}
 	if (data.type === "notification") {
 		loadNotifications();
+	}
+	if (data.type === "join") {
+		const lobbyOnlineGroup = document.getElementById('lobbyOnlineGroup');
+		displayLobbyGroup(lobbyOnlineGroup);
 	}
 	return false;
 };
@@ -844,12 +919,50 @@ function drawGameReadyMessage(gameMode: string): void {
 	}
 }
 
+export async function displayLobbyGroup(lobbyOnlineGroup: HTMLElement | null): Promise<void> {
+	const res = await ApiClient.get(`${BACKEND_URL}/party`);
+
+	const data = await res.json();
+	if (!res.ok) {
+		throw new Error(data.error);
+	}
+
+	if (lobbyOnlineGroup === null)
+		return ;
+	lobbyOnlineGroup.innerHTML = "";
+
+	console.log("party data:", data)
+	data.players.forEach((player: any) => {
+		if (player.status !== 'lobby' && player.status !== 'invited')
+			return ;
+		const disp = document.createElement("div");
+		disp.className = "flex flex-col items-center";
+		
+		const img = document.createElement("img");
+		img.src = `${BACKEND_URL}/img/${player.profile_picture}`;
+		if (player.status === 'invited') {
+			img.className = "w-32 h-32 rounded-full object-cover border-4 border-amber-400";
+		}
+		if (player.status === 'lobby') {
+			img.className = "w-32 h-32 rounded-full object-cover border-4 border-lime-400";
+		}
+		const name = document.createElement("span");
+		name.textContent = player.name;
+		name.className = "text-center mt-2 text-lg font-bold text-amber-100";
+		
+		disp.appendChild(img);
+		disp.appendChild(name);
+		lobbyOnlineGroup.appendChild(disp);
+	});
+}
+
 /**
  * Configures lobby UI visibility based on game mode
  */
-function configureLobbyUI(gameMode: string): void {
+async function configureLobbyUI(gameMode: string): Promise<void> {
 	const lobby = document.getElementById("lobby");
 	const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
+	const lobbyOnlineGroup = document.getElementById('lobbyOnlineGroup');
 	const player2Input = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
 
 	// Handle lobby visibility
@@ -883,6 +996,12 @@ function configureLobbyUI(gameMode: string): void {
 		}
 	} else if (lobbyLocalOptions) {
 		lobbyLocalOptions.classList.add('hidden');
+	}
+	if ((gameMode === '1v1Online' || gameMode === 'Tournament') && lobbyOnlineGroup) {
+		await displayLobbyGroup(lobbyOnlineGroup);
+		lobbyOnlineGroup.classList.remove('hidden');
+	} else if (lobbyOnlineGroup) {
+		lobbyOnlineGroup.classList.add('hidden');
 	}
 }
 
@@ -958,7 +1077,7 @@ async function joinGame(gameMode: string) {
 			await new Promise(resolve => setTimeout(resolve, 500));
 			return;
 		}
-		openLobby(joinData, gameMode);
+		await openLobby(joinData, gameMode);
 	} catch (err) {
 		console.error("Error Join Game:", err);
 	}
@@ -1009,7 +1128,9 @@ globalThis.addEventListener("keydown", (event) => {
 });
 
 globalThis.addEventListener("keyup", (event) => {
-	if (isTyping()) return;
+	if (isTyping()) {
+		return;
+	}
 	
 	// Player 1 controls (WASD)
 	if (event.key === "w" || event.key === "W") {
@@ -1028,6 +1149,118 @@ globalThis.addEventListener("keyup", (event) => {
 	}
 });
 
+// On-screen control buttons (for touch devices)
+const btnUpPlayer1 = document.getElementById('btnUpPlayer1') as HTMLButtonElement | null;
+const btnDownPlayer1 = document.getElementById('btnDownPlayer1') as HTMLButtonElement | null;
+const btnUpPlayer2 = document.getElementById('btnUpPlayer2') as HTMLButtonElement | null;
+const btnDownPlayer2 = document.getElementById('btnDownPlayer2') as HTMLButtonElement | null;
+const player2Controls = document.getElementById('player2Controls') as HTMLDivElement | null;
+
+// Player 1 Up button
+if (btnUpPlayer1) {
+	btnUpPlayer1.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		upPlayer1 = true;
+	});
+	btnUpPlayer1.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		upPlayer1 = false;
+	});
+	btnUpPlayer1.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		upPlayer1 = true;
+	});
+	btnUpPlayer1.addEventListener('mouseup', (e) => {
+		e.preventDefault();
+		upPlayer1 = false;
+	});
+	btnUpPlayer1.addEventListener('mouseleave', () => {
+		upPlayer1 = false;
+	});
+}
+
+// Player 1 Down button
+if (btnDownPlayer1) {
+	btnDownPlayer1.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		downPlayer1 = true;
+	});
+	btnDownPlayer1.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		downPlayer1 = false;
+	});
+	btnDownPlayer1.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		downPlayer1 = true;
+	});
+	btnDownPlayer1.addEventListener('mouseup', (e) => {
+		e.preventDefault();
+		downPlayer1 = false;
+	});
+	btnDownPlayer1.addEventListener('mouseleave', () => {
+		downPlayer1 = false;
+	});
+}
+
+// Player 2 Up button
+if (btnUpPlayer2) {
+	btnUpPlayer2.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		upPlayer2 = true;
+	});
+	btnUpPlayer2.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		upPlayer2 = false;
+	});
+	btnUpPlayer2.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		upPlayer2 = true;
+	});
+	btnUpPlayer2.addEventListener('mouseup', (e) => {
+		e.preventDefault();
+		upPlayer2 = false;
+	});
+	btnUpPlayer2.addEventListener('mouseleave', () => {
+		upPlayer2 = false;
+	});
+}
+
+// Player 2 Down button
+if (btnDownPlayer2) {
+	btnDownPlayer2.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		downPlayer2 = true;
+	});
+	btnDownPlayer2.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		downPlayer2 = false;
+	});
+	btnDownPlayer2.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		downPlayer2 = true;
+	});
+	btnDownPlayer2.addEventListener('mouseup', (e) => {
+		e.preventDefault();
+		downPlayer2 = false;
+	});
+	btnDownPlayer2.addEventListener('mouseleave', () => {
+		downPlayer2 = false;
+	});
+}
+
+// Show/hide player 2 controls based on game mode
+export function updateControlsVisibility() {
+	if (player2Controls) {
+		if (mode === '1v1Offline') {
+			player2Controls.classList.remove('hidden');
+			player2Controls.classList.add('flex');
+		} else {
+			player2Controls.classList.add('hidden');
+			player2Controls.classList.remove('flex');
+		}
+	}
+}
+
 function draw() {
 	ctx.clearRect(0, 0, width, height);
 	ctx.fillStyle = "rgb(254, 243, 199)";
@@ -1043,19 +1276,26 @@ function draw() {
 	const player1Name = sessionStorage.getItem("player1Name") || i18n.t("player1");
 	const player2Name = sessionStorage.getItem("player2Name") || i18n.t("playerTwo");
 
-	ctx.font = "20px Arial";
+	// Responsive font sizes based on canvas dimensions
+	const nameFontSize = Math.max(16, Math.min(32, Math.floor(height * 0.04)));
+	const scoreFontSize = Math.max(24, Math.min(72, Math.floor(height * 0.08)));
+	// Improved spacing - scores at top, names below with proper gap
+	const scoreYPosition = Math.max(50, Math.floor(height * 0.1));
+	const nameYPosition = scoreYPosition + Math.max(35, Math.floor(height * 0.06));
+
+	// Draw player names
+	ctx.font = `${nameFontSize}px Arial`;
 	ctx.fillStyle = "rgb(254, 243, 199)";
 	ctx.textAlign = "center";
+	ctx.fillText(player1Name, width * 0.25, nameYPosition);
+	ctx.fillText(player2Name, width * 0.75, nameYPosition);
 
-	ctx.fillText(player1Name, width * 0.25, 80);
-	ctx.fillText(player2Name, width * 0.75, 80);
-
-	ctx.font = "40px Arial";
+	// Draw scores
+	ctx.font = `bold ${scoreFontSize}px Arial`;
 	ctx.fillStyle = "rgb(254, 243, 199)";
 	ctx.textAlign = "center";
-
-	ctx.fillText(player1Score.toString(), width * 0.25, 50);
-	ctx.fillText(player2Score.toString(), width * 0.75, 50);
+	ctx.fillText(player1Score.toString(), width * 0.25, scoreYPosition);
+	ctx.fillText(player2Score.toString(), width * 0.75, scoreYPosition);
 
 }
 

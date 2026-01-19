@@ -28,12 +28,16 @@ import {
 import { assignTeamNumber } from '../services/party-manager.js'
 import { handleMovePlayer, pauseGameFromWS, sendSysMessage } from './game.js';
 import { sendNotification } from '../services/message-service.js';
+import db from '../db.js';
 
 const clients = new Map();
 
 export function handleInput(msg, userId) {
 	try {
 		const data = JSON.parse(msg);
+		
+		//update last_seen when receiving an input
+		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), userId);
 		
 		// Handle game input
 		if (data.type === 'input') {

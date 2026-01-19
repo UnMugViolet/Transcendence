@@ -1,5 +1,5 @@
 import { BACKEND_URL } from "../utils/config.js";
-import { handleGameRemote } from "../game/game.js";
+import { handleGameRemote, displayLobbyGroup } from "../game/game.js";
 import { openFriendProfile } from "../user/profile.js";
 import { i18n } from "../utils/i18n.js";
 
@@ -104,7 +104,6 @@ function createNewWebSocket(token: string, onReady?: () => void) {
 
   ws.onopen = () => {
     clearTimeout(connectionTimeout);
-    console.log("WebSocket connected");
     if (onReady) onReady();
   };
 
@@ -129,7 +128,7 @@ function createNewWebSocket(token: string, onReady?: () => void) {
 
   ws.onclose = (event) => {
     clearTimeout(connectionTimeout);
-    console.log("WebSocket disconnected", event.code, event.reason);
+    // console.log("WebSocket disconnected", event.code, event.reason);
     ws = null;
   };
 
@@ -266,6 +265,8 @@ async function invitePlayer(friendId: number) {
     const data = await res.json();
 
     if (res.ok && data.success) {
+	  const lobbyOnlineGroup = document.getElementById('lobbyOnlineGroup');
+	  displayLobbyGroup(lobbyOnlineGroup);
       alert(`${i18n.t("invitationSent")} ${data.inviteeName}`);
     } else {
       alert(`${i18n.t("error")} ${data.error}`);
