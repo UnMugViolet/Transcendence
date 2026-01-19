@@ -104,6 +104,21 @@
   "justNow": "刚刚",
   "minutesAgo": "分钟前",
   "hoursAgo": "小时前",
-  "matchHistory": "比赛历史"
-  
+  "matchHistory": "比赛历史",
+
+  "setup2FA": "设置双因素认证",
+  "scanQR": "使用Google Authenticator或任何TOTP应用扫描此二维码：",
+  "manualEntry": "或手动输入此代码：",
+  "saveBackupCodes": "保存这些备用代码：",
+  "backupCodesWarning": "如果您无法访问身份验证器应用，可以使用这些代码。",
+  "copyBackupCodes": "复制所有备用代码",
+  "enterCode": "输入应用中的6位数字代码：",
+  "verifyComplete": "验证并完成设置",
+  "skipSetup": "暂时跳过（不推荐）",
+  "twoFALogin": "双因素认证",
+  "enterCodeLogin": "输入身份验证器应用中的6位数字代码：",
+  "verify": "验证",
+  "cancel": "取消",
+  "backupCodeHint": "如果您无法访问身份验证器应用，也可以使用备用代码。"
+
 }
