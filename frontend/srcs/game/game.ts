@@ -315,7 +315,7 @@ resizeCanvas(true);
 // Keep canvas in sync on window resize
 globalThis.addEventListener('resize', () => resizeCanvas(false));
 
-// Pour que le popstate soit trigger seulement quand l'utilisateur clique sur le bouton retour du navigateur
+// Popstate trigger only when user navigates with back/forward buttons
 export let isInternalNavigation = false;
 
 export function navigateTo(viewId: string, replace = false) {
@@ -356,7 +356,6 @@ globalThis.addEventListener('hashchange', () => {
 	}
 });
 
-// A revoir ?
 globalThis.addEventListener("popstate", async (event) => {
 	console.log("miel");
 	if (isInternalNavigation) {
@@ -563,7 +562,7 @@ function sleep(ms: number): Promise<void> {
 
 // Local round reset logic removed. Backend handles all physics, scoring and round resets.
 
-//demarrer la partie pour tous les joueurs 
+// Start game for all players after countdown
 async function startingGame(resume = false, timer = true) {
 	console.log("startingGame called, resume:", resume, "timer:", timer); // DEBUG
 	console.log("Game is starting!");

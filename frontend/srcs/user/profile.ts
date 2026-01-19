@@ -264,8 +264,6 @@ export async function openFriendProfile(friendId: number) {
 		if (friendProfileAvatar) friendProfileAvatar.src = data.profile_picture ? `${BACKEND_URL}/img/${data.profile_picture}` : "/default_avatar.png";
 		if (friendProfileName) friendProfileName.textContent = data.name || i18n.t("unknownUser");
 		if (friendProfileStatus) friendProfileStatus.textContent = data.is_online ? i18n.t("online1") : i18n.t("offline");
-
-		//TODO : ajouter le bouton pour bloquer/débloquer l'ami
 		
 		friendProfileModal?.classList.remove("hidden");
 	} catch (err) {

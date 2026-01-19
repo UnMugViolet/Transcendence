@@ -122,7 +122,6 @@ function getWinnerName(partyId, game, teamLoser) {
 }
 
 async function cleanupFinishedGame(partyId, games) {
-	// TODO: put game in match history db
 	if (games.has(partyId)) games.delete(partyId);
 	partyPlayerQueries.delete(partyId);
 	partyQueries.delete(partyId);

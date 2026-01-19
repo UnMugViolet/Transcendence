@@ -2,7 +2,7 @@ import { BACKEND_URL } from "../utils/config.js";
 import { openChatWindow } from "./chat.js";
 import { i18n } from "../utils/i18n.js";
 
-// 🔹 Sidebar amis
+// Friends sidebar
 const sidebarHandle = document.getElementById("sidebarHandle");
 const sidebar = document.getElementById("sidebar");
 const overlay = document.getElementById("overlay");
@@ -43,14 +43,14 @@ export function setSidebarEnabled(enabled: boolean) {
   }
 }
 
-// Par défaut, sidebar désactivée
+// Set sidebar disabled by default
 setSidebarEnabled(false);
 
 // Input search
 const searchInput = document.getElementById("friendSearch") as HTMLInputElement | null;
 const searchResults = document.getElementById("searchResults") as HTMLElement | null;
 
-// Recherche utilisateurs + ajout d'amis
+// Search users + add friend / block user buttons
 async function searchUsers(query: string) {
   if (!query.trim() || !searchResults) {
     if (searchResults) searchResults.innerHTML = "";
@@ -199,7 +199,7 @@ async function unblockUserRequest(u:any) {
   }
 }
 
-// repondre aux demandes d'amis depuis les notifications
+// Answer friend request from notification
 export async function respondFriendRequest(userId: number, accept: boolean) {
 	const token = sessionStorage.getItem("token");
 	if (!token) {
@@ -242,7 +242,6 @@ export async function respondGameInvite(inviteId: number, accept: boolean) {
 	return res.json();
 }
 
-// 🔹 Charger la liste d'amis
 export async function loadFriends() {
   const token = sessionStorage.getItem("token");
   if (!token) {
@@ -305,7 +304,7 @@ export async function loadFriends() {
       });
     });
     } catch (err) {
-      console.error("Erreur loading friends:", err);
+      console.error("Error loading friends:", err);
     }
   }
 

@@ -178,30 +178,30 @@ fastify.get('/metrics', {
 
 
 fastify.addHook('onClose', async () => {
-	console.log('🛑 Le serveur Fastify est en train de s’arrêter…');
+	console.log('🛑 Fastify server is stopping…');
 	db.prepare('DELETE FROM party_players').run();
 	db.prepare('DELETE FROM parties').run();
 	if (db) {
 		db.close();
-		console.log('✅ Connexion à la base de données fermée.'); // DEBUG
+		console.log('✅ Database connection closed.'); // DEBUG
 	}
 
 	clients.forEach((socket) => {
 		socket.close(1001, 'Server is shutting down'); 
 	});
 	clients.clear();
-	console.log('✅ Toutes les connexions WebSocket ont été fermées.'); // DEBUG
+	console.log('✅ All WebSocket connections have been closed.'); // DEBUG
 
 	if (gameLoop) {
 		clearInterval(gameLoop);
-		console.log('✅ La boucle de jeu a été arrêtée.'); // DEBUG
+		console.log('✅ Game loop has been stopped.'); // DEBUG
 	}
 
 	if (pauseLoop) {
 		clearInterval(pauseLoop);
-		console.log('✅ La boucle de pause a été arrêtée.'); // DEBUG
+		console.log('✅ Pause loop has been stopped.'); // DEBUG
 	}
-	console.log('🛑 Le serveur Fastify s’est arrêté proprement.');
+	console.log('🛑 Fastify server has stopped cleanly.');
 });
 
 process.on('SIGINT', async () => {

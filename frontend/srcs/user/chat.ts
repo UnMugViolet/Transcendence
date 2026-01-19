@@ -275,19 +275,19 @@ async function invitePlayer(friendId: number) {
   }
 }
 
-// Fonction pour ouvrir une fenêtre de chat en bas de l'écran
+// Open the chat window with a specific friend at the bottom right of the screen
 export function openChatWindow(
   friendId: number,
   friendName: string,
   friendPfp: string
 ) {
-  // Vérifie si une fenêtre de chat existe déjà pour cet ami
+  // Check if a chat 
   let chatWindow = document.getElementById(`chat-window-${friendId}`);
   if (chatWindow) {
     chatWindow.classList.remove("hidden");
     return chatWindow.querySelector("div.flex-1") as HTMLElement;
   }
-  // Crée la fenêtre de chat
+  // Create chat window
   chatWindow = document.createElement("div");
   chatWindow.id = `chat-window-${friendId}`;
   chatWindow.className =
@@ -379,12 +379,12 @@ export function openChatWindow(
   chatWindow.appendChild(messages);
   chatWindow.appendChild(inputContainer);
 
-  // Ajoute la fenêtre de chat au body
+  // Append the chat window to the document body
   document.body.appendChild(chatWindow);
   i18n.updateDOM();
   loadHistory(friendId, messages);
 
-  // Positionne toutes les fenêtres de chat ouvertes côte à côte sans chevauchement
+  // Position all open chat windows side by side without overlapping
   const chatWindows = Array.from(
     document.querySelectorAll("[id^='chat-window-']:not(.hidden)")
   ) as HTMLElement[];
