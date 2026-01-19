@@ -26,7 +26,9 @@ export function validateInviteRequest(inviterId, inviteeId) {
 		return { error: 'User not found', status: 404 };
 	}
 
-	if (isBlocked(inviterId, inviteeId)) {
+	const blockedStatus = isBlocked(inviterId, inviteeId);
+
+	if (blockedStatus.blocked_by_me || blockedStatus.blocked_by_user) {
 		return { error: 'You cannot invite this user', status: 403 };
 	}
 	return { inviter, invitee };
@@ -109,7 +111,9 @@ export function validateInviteUsers(inviteeId, inviterId) {
 		return { error: 'User not found', status: 404 };
 	}
 
-	if (isBlocked(inviteeId, inviterId)) {
+	const blockedStatus = isBlocked(inviteeId, inviterId);
+
+	if (blockedStatus.blocked_by_me || blockedStatus.blocked_by_user) {
 		return { error: 'You cannot respond to this invite', status: 403 };
 	}
 
@@ -183,7 +187,9 @@ export function validateMessageRequest(userId, otherUserId) {
 		return { error: 'Invalid user ID', status: 400 };
 	}
 
-	if (isBlocked(userId, otherUserId)) {
+	const blockedStatus = isBlocked(userId, otherUserId);
+
+	if (blockedStatus.blocked_by_me || blockedStatus.blocked_by_user) {
 		return { error: 'You cannot view messages with this user', status: 403 };
 	}
 
@@ -208,8 +214,11 @@ export function validateWebSocketMessage(data, senderId) {
 		throw new Error('Cannot send message to yourself');
 	}
 
-	if (data.type === 'private' && isBlocked(senderId, data.to)) {
-		throw new Error('You cannot send messages to this user');
+	if (data.type === 'private') {
+		const blockedStatus = isBlocked(senderId, data.to);
+		if (blockedStatus.blocked_by_me || blockedStatus.blocked_by_user) {
+			throw new Error('You cannot send messages to this user');
+		}
 	}
 }
 

@@ -146,11 +146,11 @@ async function friendsRoutes (fastify, options) {
 	}, async (request, reply) => {
 		const tmpid1 = request.user.id;
 		const tmpid2 = request.body.id;
+		const blockedStatus = isBlocked(tmpid1, tmpid2);
 
 		if (tmpid1 == tmpid2) return reply.status(400).send({ error: 'You cannot add yourself as a friend' });
 
-		if (isBlocked(tmpid1, tmpid2)) return reply.status(403).send({ error: 'You cannot add this user as a friend' });
-
+		if (blockedStatus.blocked_by_me || blockedStatus.blocked_by_user) return reply.status(403).send({ error: 'You cannot add this user as a friend' });
 		const user1 = db.prepare('SELECT * FROM users WHERE id = ?').get(tmpid1);
 		const user2 = db.prepare('SELECT * FROM users WHERE id = ?').get(tmpid2);
 
@@ -201,10 +201,11 @@ async function friendsRoutes (fastify, options) {
 		const tmpid1 = request.user.id;
 		const tmpid2 = request.body.id;
 		const status = request.body.status;
+		const blockedStatus = isBlocked(tmpid1, tmpid2);
+
+		if (blockedStatus.blocked_by_me || blockedStatus.blocked_by_user) return reply.status(403).send({ error: 'You cannot respond to this friend request' });
 
 		if (tmpid1 == tmpid2) return reply.status(400).send({ error: 'You cannot respond to yourself as a friend' });
-
-		if (isBlocked(tmpid1, tmpid2)) return reply.status(403).send({ error: 'You cannot respond to this friend request' });
 
 		if (status != 'accepted' && status != 'rejected') return reply.status(400).send({ error: 'Invalid status' });
 

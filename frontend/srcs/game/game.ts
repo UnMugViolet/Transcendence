@@ -370,6 +370,7 @@ globalThis.addEventListener("popstate", async (event) => {
 		pendingPopstateLeave = true;
 		started = false;
 		modalReconnect?.classList.remove("hidden");
+		modalReconnect?.classList.add("flex");
 		if (mode === '1v1Online' || mode === 'Tournament') {
 			getWs()?.close();
 		}
@@ -716,6 +717,7 @@ export async function handleGameRemote(data: any) {
 	}
 	if (data.type === "pause") {
 		modalGamePause?.classList.remove("hidden");
+		modalGamePause?.classList.add("flex");
 		startTimer(90);
 		started = false;
 		return true;
@@ -726,6 +728,7 @@ export async function handleGameRemote(data: any) {
 			openLobby(null, data.gameMode);
 		else if (data.gameMode === "1v1Online" || data.gameMode === "Tournament") {
 			modalReconnect?.classList.remove("hidden");
+			modalReconnect?.classList.add("flex");
 			pongMenu?.classList.add("hidden");
 		} else {
 			leaveGame();

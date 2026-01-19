@@ -232,16 +232,16 @@
 	
 			<!-- 💬 Global chat -->
 			<div id="gameChat"
-				class="w-full lg:w-80 bg-black bg-opacity-70 text-amber-100 flex flex-col border border-rose-950 rounded-2xl shadow-lg overflow-hidden">
+				class="w-full lg:w-80 h-[600px] bg-black bg-opacity-70 text-amber-100 flex flex-col border border-rose-950 rounded-2xl shadow-lg overflow-hidden">
 				<div data-i18n="globalChat"
 					class="p-3 text-lg font-bold border-b border-rose-950 bg-rose-950 rounded-t-2xl flex justify-between items-center">
 				</div>
 	
 				<!-- Messages added dynamically-->
-				<div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-2 text-sm"></div>
+				<div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-2 text-sm scroll-smooth"></div>
 	
 				<!-- Input -->
-				<form id="chatForm" class="p-3 border-t border-rose-950 flex bg-rose-950 rounded-b-2xl">
+				<form id="chatForm" class="p-3 border-tgis border-rose-950 flex bg-rose-950 rounded-b-2xl">
 					<input id="chatInput" type="text" autocomplete="off" data-i18n-placeholder="messagePlaceholder"
 						class="flex-1 bg-amber-100 text-black p-2 rounded-l outline-none" />
 					<button type="submit" class="bg-red-500 px-4 rounded-r hover:bg-red-400">

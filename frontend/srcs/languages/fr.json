@@ -48,6 +48,8 @@
   "send": "Envoyer",
 
   "addFriend": "Ajouter un ami",
+  "blockUser": "Bloquer l'utilisateur",
+  "unblockUser": "Débloquer l'utilisateur",
   "friendRequestSent": "Demande d'ami envoyée à ",
   "errorFriends": "Erreur lors du chargement des amis",
   "noFriends": "Vous n'avez pas encore d'amis.",
