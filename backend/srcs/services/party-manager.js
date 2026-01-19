@@ -1,4 +1,4 @@
-import { partyQueries, partyPlayerQueries, userQueries } from './database-queries.js';
+import { partyQueries, partyPlayerQueries, userQueries, localTournamentPlayerQueries } from './database-queries.js';
 import { sendSysMessage, sendPauseMessage, sendStartMessage } from './message-service.js';
 import { clients } from '../routes/chat.js';
 import { GAME_CONSTANTS } from './game-logic.js';
@@ -45,24 +45,28 @@ export async function setTeam(partyId, games, team1 = null, team2 = null) {
 }
 
 export async function handleEndGame(partyId, game, mode, games, tournament) {
-	const teamLoser = determineLosingTeam(partyId, game);
+	const isOfflineTournament = mode === 'OfflineTournament';
+	const teamLoser = determineLosingTeam(partyId, game, isOfflineTournament);
 	
-	if (mode === 'Tournament' && tournament[partyId]) {
+	if ((mode === 'Tournament' || mode === 'OfflineTournament') && tournament[partyId]) {
 		tournament[partyId][teamLoser] = 0;
 	}
 	
-	updatePlayerStatuses(partyId, teamLoser);
-	const winnerName = getWinnerName(partyId, game, teamLoser);
+	updatePlayerStatuses(partyId, teamLoser, isOfflineTournament);
+	const winnerName = getWinnerName(partyId, game, teamLoser, isOfflineTournament);
 
 	try {
-		saveMatchToHistory(partyId, {
-			mode: mode,
-			team1: game.team1,
-			team2: game.team2,
-			score1: game.score1,
-			score2: game.score2,
-			created: game.created
-		});
+		// Only save match history for registered users (not offline tournament)
+		if (!isOfflineTournament) {
+			saveMatchToHistory(partyId, {
+				mode: mode,
+				team1: game.team1,
+				team2: game.team2,
+				score1: game.score1,
+				score2: game.score2,
+				created: game.created
+			});
+		}
 	}
 	catch (err) {
 		console.error('Error saving match to history:', err);
@@ -70,7 +74,7 @@ export async function handleEndGame(partyId, game, mode, games, tournament) {
 	
 	let info = { round: 0, p1: 1, p2: 2, afk: -1, left: -1 };
 	
-	if (mode === 'Tournament') {
+	if (mode === 'Tournament' || mode === 'OfflineTournament') {
 		const { setupNextMatch } = await import('./tournament-manager.js');
 		info = setupNextMatch(partyId, tournament[partyId]);
 		game.score1 = 0;
@@ -84,16 +88,20 @@ export async function handleEndGame(partyId, game, mode, games, tournament) {
 	sendStopMessage(partyId, winnerName, info.round, mode);
 	
 	if (!info.round) {
-		await cleanupFinishedGame(partyId, games);
+		await cleanupFinishedGame(partyId, games, isOfflineTournament);
 	} else {
 		await handleNextRound(partyId, info, games);
 	}
 }
 
-function determineLosingTeam(partyId, game) {
+function determineLosingTeam(partyId, game, isOfflineTournament = false) {
 	if (game && (game.score1 === GAME_CONSTANTS.WIN_SCORE || game.score2 === GAME_CONSTANTS.WIN_SCORE)) {
 		return game.score1 === GAME_CONSTANTS.WIN_SCORE ? game.team2 : game.team1;
 	} else {
+		// For offline tournaments, just return the team2 as loser if no score (shouldn't happen normally)
+		if (isOfflineTournament) {
+			return game?.team2 || 2;
+		}
 		// If game is undefined or not properly initialized, find any disconnected player
 		if (!game || !game.team1 || !game.team2) {
 			const disconnectedPlayer = partyPlayerQueries.findByPartyIdAndStatus(partyId, 'disconnected')[0];
@@ -104,25 +112,43 @@ function determineLosingTeam(partyId, game) {
 	}
 }
 
-function updatePlayerStatuses(partyId, teamLoser) {
-	partyPlayerQueries.updateStatusByPartyAndCurrentStatus('waiting', partyId, 'active');
-	partyPlayerQueries.updateStatusByPartyTeamAndCurrentStatus('eliminated', partyId, teamLoser, 'active');
+function updatePlayerStatuses(partyId, teamLoser, isOfflineTournament = false) {
+	if (isOfflineTournament) {
+		// For offline tournaments, update local tournament player statuses
+		localTournamentPlayerQueries.updateStatusByPartyAndCurrentStatus('waiting', partyId, 'active');
+		localTournamentPlayerQueries.updateStatusByPartyTeamAndCurrentStatus('eliminated', partyId, teamLoser, 'active');
+	} else {
+		partyPlayerQueries.updateStatusByPartyAndCurrentStatus('waiting', partyId, 'active');
+		partyPlayerQueries.updateStatusByPartyTeamAndCurrentStatus('eliminated', partyId, teamLoser, 'active');
+	}
 }
 
-function getWinnerName(partyId, game, teamLoser) {
+function getWinnerName(partyId, game, teamLoser, isOfflineTournament = false) {
+	const winnerTeam = (game?.team1 === teamLoser) ? game?.team2 : game?.team1;
+	
+	if (isOfflineTournament) {
+		// For offline tournaments, get alias from local tournament players
+		return localTournamentPlayerQueries.getAliasByPartyAndTeam(partyId, winnerTeam) || 'Player 2';
+	}
+	
 	if (!game || !game.team1 || !game.team2) {
 		// If game is undefined, find the winning team by elimination
 		const allPlayers = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['left', 'disconnected', 'invited']);
 		const winnerId = allPlayers.find(p => p.team !== teamLoser)?.user_id;
 		return winnerId ? userQueries.getNameById(winnerId) : 'Joueur 2';
 	}
-	const winnerTeam = teamLoser === game.team1 ? game.team2 : game.team1;
 	const winnerId = partyPlayerQueries.getUserIdByPartyAndTeam(partyId, winnerTeam);
 	return winnerId ? userQueries.getNameById(winnerId) : 'Joueur 2';
 }
 
-async function cleanupFinishedGame(partyId, games) {
+async function cleanupFinishedGame(partyId, games, isOfflineTournament = false) {
 	if (games.has(partyId)) games.delete(partyId);
+	
+	// Clean up local tournament players if offline tournament
+	if (isOfflineTournament) {
+		localTournamentPlayerQueries.delete(partyId);
+	}
+	
 	partyPlayerQueries.delete(partyId);
 	partyQueries.delete(partyId);
 	console.log(`Game for party ${partyId} ended`);
@@ -145,27 +171,46 @@ async function handleNextRound(partyId, info, games) {
 
 export async function broadcastStartMessage(partyId, resume = false, games, pauses, p1 = 1, p2 = 2) {
 	const game = games.get(partyId);
+	const party = partyQueries.findById(partyId);
+	const isOfflineTournament = party && party.type === 'OfflineTournament';
+	
+	console.log(`DEBUG broadcastStartMessage: partyId=${partyId}, isOfflineTournament=${isOfflineTournament}, p1=${p1}, p2=${p2}`);
 	
 	// Clear any lingering pause
 	if (pauses && pauses.has(partyId)) {
 		pauses.delete(partyId);
 	}
 	
+	// Get host players (registered users in party)
 	const partyPlayers = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['left', 'disconnected', 'invited']);
+	console.log(`DEBUG broadcastStartMessage: Found ${partyPlayers.length} party players:`, partyPlayers.map(p => ({ user_id: p.user_id, status: p.status, team: p.team })));
 	
 	// Build players list with names and teams
-	const playersList = partyPlayers.map(p => {
-		const name = userQueries.getNameById(p.user_id);
-		return { name: name || 'Unknown', team: p.team };
-	});
+	let playersList;
+	if (isOfflineTournament) {
+		// For offline tournaments, get player names from local tournament players
+		const localPlayers = localTournamentPlayerQueries.findByPartyId(partyId);
+		playersList = localPlayers.map(p => ({
+			name: p.alias,
+			team: p.team
+		}));
+		console.log(`DEBUG broadcastStartMessage: Built playersList from ${localPlayers.length} local tournament players`);
+	} else {
+		playersList = partyPlayers.map(p => {
+			const name = userQueries.getNameById(p.user_id);
+			return { name: name || 'Unknown', team: p.team };
+		});
+	}
+	console.log(`DEBUG broadcastStartMessage: playersList =`, playersList);
 	
+	// Send start message to all connected host players
 	partyPlayers.forEach(player => {
 		console.log(`Starting game for user ${player.user_id}`);
 		sendStartMessage(partyId, playersList, player.team, player.user_id, resume, p1, p2);
 	});
 	
 	if (!pauses || !pauses.has(partyId)) {
-		setTimeout(() => { game.started = true; }, 6000);
+		setTimeout(() => { if (game) game.started = true; }, 6000);
 	}
 }
 

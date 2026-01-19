@@ -1,7 +1,7 @@
-import { partyQueries, partyPlayerQueries, userQueries } from '../services/database-queries.js';
+import { partyQueries, partyPlayerQueries, userQueries, localTournamentPlayerQueries } from '../services/database-queries.js';
 import { handlePause, setTeam, handleEndGame,broadcastStartMessage, validateGameStart, cleanupUserGames, findOrCreateParty, assignTeamNumber } from '../services/party-manager.js';
 import { resetRound, movePlayer, updateBall, updatePaddle, isGameFinished, getGameState, GAME_CONSTANTS } from '../services/game-logic.js';
-import { initializeTournament, setupNextMatch, sendNextGameMessage } from '../services/tournament-manager.js';
+import { initializeTournament, setupNextMatch, sendNextGameMessage, initializeOfflineTournament, getPlayerNameByTeam } from '../services/tournament-manager.js';
 import { sendSysMessage, sendGameStateToPlayers, sendJoinNotificationToParty } from '../services/message-service.js';
 import { clients } from './chat.js';
 import { updateAI } from '../services/ai.js';
@@ -40,6 +40,8 @@ export const gameLoop = setInterval(() => {
 	parties?.forEach(party => {
 		const players = partyPlayerQueries.findByPartyId(party.id);
 		if (players.length === 0) {
+			// Delete local tournament players first (for offline tournaments) due to FK constraint
+			localTournamentPlayerQueries.delete(party.id);
 			partyPlayerQueries.delete(party.id);
 			partyQueries.delete(party.id);
 			return;
@@ -314,6 +316,140 @@ async function gameRoutes(fastify) {
 		return { message: 'Game started', partyId: party.id, players: playersWithNames, mode: mode };
 	});
 
+	// Offline tournament start endpoint - allows tournament with aliases (no user registration required)
+	fastify.post('/start-offline-tournament', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Start an offline tournament with local player aliases (no registration required for participants)',
+			tags: ['Game'],
+			security: [{ bearerAuth: [] }],
+			body: {
+				type: 'object',
+				required: ['aliases'],
+				properties: {
+					aliases: { 
+						type: 'array', 
+						items: { type: 'string' },
+						minItems: 4,
+						maxItems: 8,
+						description: 'Array of player aliases (4-8 players)' 
+					}
+				}
+			},
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						message: { type: 'string' },
+						partyId: { type: 'integer' },
+						players: {
+							type: 'array',
+							items: {
+								type: 'object',
+								properties: {
+									alias: { type: 'string' },
+									team: { type: 'integer' }
+								}
+							}
+						},
+						mode: { type: 'string' },
+						nextMatch: {
+							type: 'object',
+							properties: {
+								p1: { type: 'integer' },
+								p2: { type: 'integer' },
+								p1Name: { type: 'string' },
+								p2Name: { type: 'string' }
+							}
+						}
+					}
+				},
+				400: errorResponseSchema,
+				401: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
+		const userId = request.user.id;
+		const aliases = request.body.aliases;
+
+		// Validate aliases
+		if (!aliases || aliases.length < 4 || aliases.length > 8) {
+			return reply.status(400).send({ error: 'Offline tournament requires 4-8 player aliases' });
+		}
+
+		// Check for duplicate aliases
+		const uniqueAliases = new Set(aliases.map(a => a.trim().toLowerCase()));
+		if (uniqueAliases.size !== aliases.length) {
+			return reply.status(400).send({ error: 'All player aliases must be unique' });
+		}
+
+		// Check for empty aliases
+		if (aliases.some(a => !a.trim())) {
+			return reply.status(400).send({ error: 'Player aliases cannot be empty' });
+		}
+
+		const user = userQueries.findById(userId);
+		if (!user) {
+			return reply.status(404).send({ error: 'User not found' });
+		}
+
+		// Clean up any existing games for this user
+		cleanupUserGames(userId);
+
+		// Find or create party for offline tournament
+		const { party } = findOrCreateParty('OfflineTournament', userId, minPlayers);
+		
+		// Add the host user to the party with active status
+		partyPlayerQueries.upsert(party.id, userId, 1, 'active');
+		console.log(`DEBUG: Host user ${userId} added to party ${party.id} with status 'active'`);
+
+		// Initialize offline tournament with aliases
+		tournament[party.id] = initializeOfflineTournament(party.id, aliases);
+		
+		// Setup first match
+		const info = setupNextMatch(party.id, tournament[party.id]);
+		await setTeam(party.id, games, info.p1, info.p2);
+
+		// Clear any pause state
+		if (pauses.has(party.id)) {
+			pauses.delete(party.id);
+		}
+
+		// Update party status
+		partyQueries.updateStatus(party.id, 'active');
+		parties = partyQueries.findByStatus('active');
+
+		// Verify host user is in party before broadcasting
+		const hostPlayer = partyPlayerQueries.findByPartyIdAndUserId(party.id, userId);
+		console.log(`DEBUG: Host player in party: ${JSON.stringify(hostPlayer)}`);
+
+		// Broadcast start message to the host player
+		console.log(`DEBUG: Broadcasting start message for party ${party.id} with teams ${info.p1} vs ${info.p2}`);
+		await broadcastStartMessage(party.id, false, games, pauses, info.p1, info.p2);
+
+		// Get players with their assigned teams
+		const localPlayers = localTournamentPlayerQueries.findByPartyId(party.id);
+		const playersWithTeams = localPlayers.map(p => ({
+			alias: p.alias,
+			team: p.team
+		}));
+
+		console.log(`Offline tournament started for party ${party.id} with players: ${aliases.join(', ')}`);
+
+		return { 
+			message: 'Offline tournament started', 
+			partyId: party.id, 
+			players: playersWithTeams, 
+			mode: 'OfflineTournament',
+			nextMatch: {
+				p1: info.p1,
+				p2: info.p2,
+				p1Name: info.p1Name || getPlayerNameByTeam(party.id, info.p1, true),
+				p2Name: info.p2Name || getPlayerNameByTeam(party.id, info.p2, true)
+			}
+		};
+	});
+
 	fastify.post('/join', {
 		preHandler: fastify.authenticate,
 		schema: {
@@ -432,11 +568,15 @@ async function gameRoutes(fastify) {
 			pauses.delete(party.id);
 		}
 
-		// For single-player modes (1v1Offline, IA), end the game immediately
-		if (party.type === '1v1Offline' || party.type === 'IA') {
+		// For single-player modes (1v1Offline, IA, OfflineTournament), end the game immediately
+		if (party.type === '1v1Offline' || party.type === 'IA' || party.type === 'OfflineTournament') {
 			// Clean up the game entirely
 			if (games.has(party.id)) {
 				games.delete(party.id);
+			}
+			// Delete local tournament players first (for offline tournaments) due to FK constraint
+			if (party.type === 'OfflineTournament') {
+				localTournamentPlayerQueries.delete(party.id);
 			}
 			// Delete party_players FIRST (due to foreign key constraint), then party
 			partyPlayerQueries.delete(party.id);

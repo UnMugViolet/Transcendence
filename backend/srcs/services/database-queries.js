@@ -134,3 +134,25 @@ export const blockQueries = {
 export const friendQueries = {
 	delete: (userId1, userId2) => db.prepare('DELETE FROM friends WHERE (id1 = ? AND id2 = ?)').run(Math.min(userId1, userId2), Math.max(userId1, userId2))
 };
+
+// Local tournament player queries - for offline tournaments without user registration
+export const localTournamentPlayerQueries = {
+	findByPartyId: (partyId) => db.prepare('SELECT * FROM local_tournament_players WHERE party_id = ? ORDER BY team ASC').all(partyId),
+	findByPartyIdAndTeam: (partyId, team) => db.prepare('SELECT * FROM local_tournament_players WHERE party_id = ? AND team = ?').get(partyId, team),
+	findByPartyIdNotStatuses: (partyId, excludeStatuses) => {
+		const placeholders = excludeStatuses.map(() => '?').join(' AND status != ');
+		return db.prepare(`SELECT * FROM local_tournament_players WHERE party_id = ? AND status != ${placeholders}`).all(partyId, ...excludeStatuses);
+	},
+	countByPartyId: (partyId) => db.prepare('SELECT COUNT(*) as count FROM local_tournament_players WHERE party_id = ?').get(partyId).count,
+	create: (partyId, alias, team) => {
+		const result = db.prepare('INSERT INTO local_tournament_players (party_id, alias, team, status, created_at) VALUES (?, ?, ?, ?, ?)').run(partyId, alias, team, 'waiting', Date.now());
+		return result.lastInsertRowid;
+	},
+	updateStatus: (partyId, team, status) => db.prepare('UPDATE local_tournament_players SET status = ? WHERE party_id = ? AND team = ?').run(status, partyId, team),
+	updateStatusByPartyAndCurrentStatus: (newStatus, partyId, currentStatus) => db.prepare('UPDATE local_tournament_players SET status = ? WHERE party_id = ? AND status = ?').run(newStatus, partyId, currentStatus),
+	updateStatusByPartyTeamAndCurrentStatus: (newStatus, partyId, team, currentStatus) => db.prepare('UPDATE local_tournament_players SET status = ? WHERE party_id = ? AND team = ? AND status = ?').run(newStatus, partyId, team, currentStatus),
+	getAliasById: (playerId) => db.prepare('SELECT alias FROM local_tournament_players WHERE id = ?').get(playerId)?.alias,
+	getAliasByPartyAndTeam: (partyId, team) => db.prepare('SELECT alias FROM local_tournament_players WHERE party_id = ? AND team = ?').get(partyId, team)?.alias,
+	delete: (partyId) => db.prepare('DELETE FROM local_tournament_players WHERE party_id = ?').run(partyId),
+	deleteByTeam: (partyId, team) => db.prepare('DELETE FROM local_tournament_players WHERE party_id = ? AND team = ?').run(partyId, team)
+};

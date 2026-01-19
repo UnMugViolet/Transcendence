@@ -124,6 +124,17 @@
   "enterCodeLogin": "Enter the 6-digit code from your authenticator app:",
   "verify": "Verify",
   "cancel": "Cancel",
-  "backupCodeHint": "You can also use a backup code if you've lost access to your authenticator app."
+  "backupCodeHint": "You can also use a backup code if you've lost access to your authenticator app.",
+
+  "tournamentPlayers": "Tournament Players",
+  "tournamentPlayersHint": "Enter aliases for 4-8 players (no registration required)",
+  "addPlayer": "+ Add Player",
+  "removePlayer": "- Remove",
+  "player": "Player",
+  "players": "players",
+  "enterAlias": "Enter alias",
+  "allPlayersRequired": "All players must have an alias",
+  "duplicateAlias": "All player aliases must be unique",
+  "offlineTournamentReady": "Local Tournament Ready - Enter player aliases and click Start!"
 
 }

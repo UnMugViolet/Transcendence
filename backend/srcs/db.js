@@ -142,6 +142,17 @@ db.prepare(`CREATE TABLE IF NOT EXISTS messages (
 	FOREIGN KEY (receiver_id) REFERENCES users(id)
 )`).run();
 
+// Local tournament players table - stores aliases for offline tournaments without requiring user registration
+db.prepare(`CREATE TABLE IF NOT EXISTS local_tournament_players (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	party_id INTEGER NOT NULL,
+	alias TEXT NOT NULL,
+	team INTEGER NOT NULL,
+	status TEXT NOT NULL DEFAULT 'waiting',
+	created_at INTEGER NOT NULL,
+	FOREIGN KEY (party_id) REFERENCES parties(id)
+)`).run();
+
 // Seed initial roles (only insert if they don't exist already)
 const insertRole = db.prepare(`INSERT OR IGNORE INTO roles (name) VALUES (?)`);
 insertRole.run('user');
