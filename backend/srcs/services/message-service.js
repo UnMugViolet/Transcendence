@@ -110,3 +110,24 @@ export function sendNotification(userId) {
 		playerSocket.send(JSON.stringify(notification));
 	}
 }
+
+function sendJoinNotification(userId) {
+	const playerSocket = clients.get(userId);
+	console.log(`DEBUG: sendJoinNotification for user ${userId}, socket exists: ${!!playerSocket}`);
+	if (playerSocket) {
+		const join = {
+			type: 'join',
+		}
+		playerSocket.send(JSON.stringify(join));
+	}
+}
+
+export function sendJoinNotificationToParty(partyId) {
+	const party_players = partyPlayerQueries.findByPartyId(partyId);
+	if (!party_players)
+		return;
+	party_players.forEach((player) => {
+		if (player.status === 'lobby')
+			sendJoinNotification(player.user_id);
+	});
+}

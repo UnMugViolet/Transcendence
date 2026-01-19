@@ -8,6 +8,7 @@ import {
 	userQueries 
 } from './database-queries.js';
 import { isBlocked } from '../utils.js';
+import { sendJoinNotificationToParty } from './message-service.js';
 
 /**
  * Chat service for handling invites, messages, and blocking functionality
@@ -63,11 +64,6 @@ export function checkInviteConflicts(inviteeId, inviterId, partyId) {
 	const pendingInvite = inviteQueries.findExisting(inviteeId, inviterId, partyId, 'pending');
 	if (pendingInvite) {
 		return { error: 'You have already invited this user to this party', status: 409 };
-	}
-
-	const acceptedInvite = inviteQueries.findExisting(inviteeId, inviterId, partyId, 'accepted');
-	if (acceptedInvite) {
-		return { error: 'This user is already in the party', status: 409 };
 	}
 
 	return null; // No conflicts
@@ -132,6 +128,7 @@ export function processInviteAcceptance(inviteeId, invite) {
 	partyPlayerQueries.updateStatus(inviteeId, invite.party_id, 'lobby');
 	inviteQueries.updateStatus(invite.id, 'accepted');
 
+	sendJoinNotificationToParty(invite.party_id);
 	return { message: 'Joined party from invite', partyId: invite.party_id, status: 'waiting', gameMode: party.type};
 }
 
@@ -143,6 +140,7 @@ export function processInviteRejection(inviteeId, inviteId) {
 		return { error: 'Invite not found', status: 404};
 	partyPlayerQueries.deleteUser(invite.party_id, inviteeId);
 	inviteQueries.delete(inviteId);
+	sendJoinNotificationToParty(invite.party_id);
 	return { success: true };
 }
 
