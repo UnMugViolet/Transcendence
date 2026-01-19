@@ -13,6 +13,19 @@ export class ModalManager {
     if (modal) {
       modal.classList.remove("hidden");
       modal.classList.add("flex");
+      
+      // Clear error messages when opening auth modals
+      if (id === "modalSignUp") {
+        const messageEl = document.getElementById("messageSignUp");
+        if (messageEl) {
+           messageEl.textContent = "";
+        }
+      } else if (id === "modalSignIn") {
+        const messageEl = document.getElementById("messageSignIn");
+        if (messageEl) {
+          messageEl.textContent = "";
+        }
+      }
     } else {
       console.error(`Modal ${id} not found`);
     }
@@ -56,13 +69,11 @@ export class ModalManager {
 
     document.getElementById("btnSignIn")?.addEventListener("click", () => {
       ModalManager.openModal("modalSignIn");
-      closeHeaderMenu();
     });
 
     // Close modal listeners
     document.getElementById("closeSignUp")?.addEventListener("click", () => {
       ModalManager.closeModal("modalSignUp");
-      closeHeaderMenu();
     });
     
     document.getElementById("closeSignIn")?.addEventListener("click", () => {

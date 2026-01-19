@@ -329,6 +329,13 @@ export function navigateTo(viewId: string, replace = false) {
 		isInternalNavigation = true;
 		const currentView = location.hash.slice(1) || 'pongMenu';
 
+		// If we are leaving the game view, clean up the current game without overriding navigation.
+		if (currentView === 'viewGame' && viewId !== 'viewGame') {
+			leaveGame({ navigate: false }).catch((err) =>
+				console.error('Failed to leave game on navigation:', err)
+			);
+		}
+
 		// Don't navigate if already on the same view
 		if (currentView === viewId) {
 			isInternalNavigation = false;
@@ -341,13 +348,9 @@ export function navigateTo(viewId: string, replace = false) {
 			globalThis.location.hash = '#' + viewId;
 		}
 
-		if (viewId === "viewGame") {
-			leaveGame();
-		}
-
 		setTimeout(() => {
 			isInternalNavigation = false;
-		}, 100);
+		}, 10);
 	} catch (error) {
 		console.error("ERROR in navigateTo:", error);
 		throw error;

@@ -171,7 +171,6 @@ async function authRoutes(fastify) {
 				}
 			},
 			response: {
-				200: authResponseSchema,
 				400: errorResponseSchema,
 				401: errorResponseSchema,
 				404: errorResponseSchema
@@ -201,8 +200,8 @@ async function authRoutes(fastify) {
 		}
 
 		// Check if 2FA is enabled
-		if (user.two_fa_enabled) { 
-			return {
+		if (user.two_fa_enabled) {
+			return reply.code(200).send({
 				requiresTwoFA: true,
 				userId: user.id,
 				tempToken: fastify.jwt.sign({ 
@@ -210,7 +209,7 @@ async function authRoutes(fastify) {
 					name: user.name, 
 					type: '2fa'
 				}, { expiresIn: '5min' })
-			};
+			});
 		}
 
 		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), user.id);
@@ -219,7 +218,7 @@ async function authRoutes(fastify) {
 
 		console.log("User ", name, " logged in successfully with role:", role.name);
 		const tokens = await genKey(user.id, user.name, stayConnect, request.headers['user-agent']);
-		return { ...tokens, role };
+		return reply.code(200).send({ ...tokens, role });
 	});
 
 
