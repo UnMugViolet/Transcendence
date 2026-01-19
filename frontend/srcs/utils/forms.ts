@@ -62,9 +62,9 @@ export class FormManager {
           const verified = await TwoFactorAuthManager.showSetupModal(data.accessToken, stayConnected, () => {
             console.log("2FA setup completed");
           }, { enforced: true });
-
+          // If the user skips, proceed with normal login (2FA stays disabled because verify-enable wasn't called).
           if (!verified) {
-            throw new Error('2FA setup is required');
+            console.log("2FA setup skipped");
           }
         }
 

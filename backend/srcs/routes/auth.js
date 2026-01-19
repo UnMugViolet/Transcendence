@@ -107,7 +107,6 @@ async function authRoutes(fastify) {
 		const stayConnect = request.body.stayConnect;
 		const roleType = request.body.roleType || 'user'; // Default to 'user' role
 
-		console.log('Received request to add user:', name, 'with roleType:', roleType);
 
 		if (!name) {
 			return reply.status(400).send({ error: 'Name is required' });
@@ -147,7 +146,6 @@ async function authRoutes(fastify) {
 
 			const role = db.prepare('SELECT id, name FROM roles WHERE id = ?').get(roleRecord.id);
 
-			console.log("User ", name, " added with ID:", info.lastInsertRowid, "and role:", role.name);
 			const tokens = await genKey(info.lastInsertRowid, name, stayConnect, request.headers['user-agent']);
 			return { ...tokens, role };
 		} catch (err) {
@@ -184,7 +182,6 @@ async function authRoutes(fastify) {
 		const password = request.body.password;
 		const stayConnect = request.body.stayConnect;
 
-		console.log('Received request to login user:', name);
 
 		if (!name) {
 			return reply.status(400).send({ error: 'Name is required' });

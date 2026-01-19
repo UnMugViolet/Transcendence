@@ -8,6 +8,7 @@ import { initPongBtns, navigateTo, leaveGame } from "../game/game.js";
 import { initNotifications } from "./notif.js";
 import { handleRoute } from "../route/router.js";
 import { FormManager } from "../utils/forms.js";
+import { closeHeaderMenu } from "../user/header-menu.js"
 
 /**
  * User management and authentication state
@@ -113,7 +114,7 @@ export class UserManager implements User {
 
     // Show logout button
     btnLogout?.classList.remove("hidden");
-    btnLogout?.classList.add("flex");
+    btnLogout?.classList.add("block");
     btnStats?.classList.remove("hidden");
     btnStats?.classList.add("flex");
 
@@ -121,6 +122,7 @@ export class UserManager implements User {
     if (userInfo) {
       userInfo.classList.remove("hidden");
       userInfo.classList.add("flex");
+
       
       const userName = document.getElementById("userName");
       if (userName) {
@@ -180,6 +182,7 @@ export class UserManager implements User {
         if (profileModal) {
           profileModal.classList.remove("hidden");
           profileModal.classList.add("flex");
+          closeHeaderMenu();
         }
       });
     }
@@ -260,6 +263,7 @@ export class UserManager implements User {
     // Navigate to pongMenu and handle routing
     navigateTo("pongMenu", true);
     handleRoute();
+    closeHeaderMenu();
     
     // Now reinitialize pong buttons AFTER routing
     initPongBtns();

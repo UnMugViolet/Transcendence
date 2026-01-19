@@ -18,74 +18,90 @@
 
 
 	<header class="flex items-center justify-between h-16 p-4 bg-rose-950 bg-opacity-90 shadow z-50">
-		<!-- Partie gauche : avatar + username -->
+
+		<!-- Left part title -->
 		<div class="flex items-center gap-4">
-			<h1 class="uppercase text-4xl text-amber-100 font-bold" style="font-family: 'Syne Mono', cursive;">
+			<h1 class="uppercase text-2xl md:text-4xl text-amber-100 font-bold" style="font-family: 'Syne Mono', cursive;">
 				Transcendence</h1>
-			<div id="userInfo" class="hidden items-center gap-2 hover:cursor-pointer">
-				<img id="userAvatar" class="w-12 h-12 rounded-full object-cover" src="" />
-				<span id="userName" class="text-amber-100 font-semibold"></span>
-			</div>
+			<!-- Desktop slot for profile (moved here via JS) -->
+			<div id="headerUserSlot" class="hidden md:flex items-center"></div>
 		</div>
 
-		<!-- Partie droite : boutons -->
+		<!-- Desktop: normal menu inline | Mobile: burger opens slide-out from right -->
 		<div class="flex items-center gap-2">
-			<div id="authButtons" class="hidden justify-end p-4 gap-2">
-				<button id="btnSignIn" data-i18n="signIn"
-					class="bg-purple-600 text-amber-100 px-4 py-2 rounded hover:bg-purple-500">
-				</button>
-				<button id="btnSignUp" data-i18n="signUp"
-					class="bg-orange-700 text-amber-100 px-4 py-2 rounded hover:bg-orange-600">
-				</button>
-			</div>
+			<div id="headerMenu"
+				class="fixed top-16 right-0 w-80 max-w-[85vw] h-[calc(100vh-4rem)] bg-rose-950 bg-opacity-95 text-amber-100 translate-x-full transition-transform duration-300 z-50 p-4 flex justify-center flex-col gap-6 overflow-y-auto
+					md:static md:top-auto md:right-auto md:w-auto md:max-w-none md:h-auto md:p-0 md:bg-transparent md:translate-x-0 md:flex-row md:items-center md:gap-3 md:overflow-visible">
 
-			<!-- Stats button -->
-			<button id="btnStats" class="hidden items-center bg-transparent text-amber-100 hover:text-white">
-				<img src="img/btn/stats1.png" alt="Stats" class="w-10 h-10" />
-				<span class="text-amber-100 font-semibold ml-2">Stats</span>
-			</button>
-
-			<div id="notifications" class="hidden relative cursor-pointer mx-10">
-				<button class="flex items-center justify-center w-15 h-15 relative">
-					<img id="notifLogo" src="img/notif/walkie-talkie2.png" alt="Notifications" class="w-10 h-10">
-					<!-- Badge rouge -->
-					<span id="notifBadge"
-						class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 items-center justify-center rounded-full pointer-events-none">
-						0
-					</span>
-				</button>
-
-				<!-- Popup pour toutes les notifications -->
-				<div id="notifPopup"
-					class="hidden absolute right-0 mt-2 w-96 bg-gray-800 text-white rounded shadow-lg z-50">
-					<ul id="notifList" class="flex flex-col p-2 gap-2 max-h-60 overflow-y-auto">
-						<!-- Notifications listées ici -->
-					</ul>
+				<div id="userInfo" class="hidden items-center md:flex-row flex-col gap-3 hover:cursor-pointer">
+					<img id="userAvatar" class="w-32 h-32 md:w-12 md:h-12 rounded-full object-cover" src="" />
+					<span id="userName" class="text-amber-100 font-semibold"></span>
 				</div>
-			</div>
-			<!-- Language selector -->
-			<div id="languageMenu" class="relative">
-				<button id="langButton" class="flex items-center gap-2 bg-transparent text-amber-100 hover:text-white">
-					<img id="currentFlag" src="img/flags/en.png" alt="EN"
-						class="w-6 h-6 rounded-full border border-amber-100" />
-					<span class="uppercase text-sm">EN</span>
-					<svg class="w-4 h-4 text-amber-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-					</svg>
+
+				<div id="authButtons" class="hidden flex-col gap-2 md:flex-row md:items-center">
+					<button id="btnSignIn" data-i18n="signIn"
+						class="bg-purple-600 text-amber-100 px-4 py-2 rounded hover:bg-purple-500">
+					</button>
+					<button id="btnSignUp" data-i18n="signUp"
+						class="bg-orange-700 text-amber-100 px-4 py-2 rounded hover:bg-orange-600">
+					</button>
+				</div>
+
+				<button id="btnStats" class="hidden items-center bg-transparent text-amber-100 hover:text-white">
+					<img src="img/btn/stats1.png" alt="Stats" class="w-10 h-10" />
+					<span class="text-amber-100 font-semibold ml-2">Stats</span>
 				</button>
 
-				<!-- Dropdown -->
-				<div id="langDropdown"
-					class="hidden absolute right-0 mt-2 w-28 bg-rose-900 text-amber-100 rounded shadow-lg z-50">
-					<!-- Dynamically generated language buttons in lang.ts-->
+				<div id="notifications" class="hidden relative cursor-pointer md:mx-4">
+					<button class="flex items-center justify-center w-15 h-15 relative">
+						<img id="notifLogo" src="img/notif/walkie-talkie2.png" alt="Notifications" class="w-11 h-auto md:w-10 md:h-10">
+						<span id="notifBadge"
+							class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 items-center justify-center rounded-full pointer-events-none">
+							0
+						</span>
+						<p class="md:hidden text-amber-100 font-semibold">Notifications</p>
+					</button>
+
+					<div id="notifPopup" class="hidden absolute right-0 mt-2 w-72 bg-gray-800 text-white rounded shadow-lg z-50">
+						<ul id="notifList" class="flex flex-col p-2 gap-2 max-h-60 overflow-y-auto">
+							<!-- Notifications listées ici -->
+						</ul>
+					</div>
 				</div>
+
+				<div id="languageMenu" class="relative">
+					<button id="langButton" class="flex justify-center items-center w-full md:w-auto gap-2 bg-transparent text-amber-100 hover:text-white">
+						<img id="currentFlag" src="img/flags/en.png" alt="EN"
+							class="w-6 h-6 rounded-full border border-amber-100" />
+						<span class="uppercase text-sm">EN</span>
+						<svg class="w-4 h-4 text-amber-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+						</svg>
+					</button>
+
+					<div id="langDropdown"
+						class="hidden absolute left-0 right-0 md:left-auto md:right-0 mt-2 w-full md:w-28 bg-rose-900 text-amber-100 rounded shadow-lg z-50">
+						<!-- Dynamically generated language buttons in lang.ts-->
+					</div>
+				</div>
+
+				<button id="btnLogout" data-i18n="logout"
+					class="hidden bg-rose-600 text-amber-100 px-4 py-2 rounded hover:bg-rose-500">
+				</button>
 			</div>
 
-			<button id="btnLogout" data-i18n="logout"
-				class="hidden bg-rose-600 text-amber-100 px-4 py-2 rounded hover:bg-rose-500">
+			<button id="headerMenuHandle"
+				class="md:hidden flex items-center justify-center w-12 h-12 rounded bg-transparent text-amber-100 hover:text-white"
+				aria-label="Menu" aria-controls="headerMenu" aria-expanded="false">
+				<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+				</svg>
 			</button>
 		</div>
 	</header>
+
+	<!-- Header burger menu overlay (mobile only) -->
+	<div id="headerMenuOverlay" class="md:hidden fixed inset-0 bg-black bg-opacity-50 hidden z-40"></div>
 
 
 	<!-- MODALE Sign Up -->
@@ -145,11 +161,11 @@
 
 	<!-- MODALE 2FA Setup -->
 	<div id="modal2FASetup" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
-		<div class="bg-white p-6 rounded shadow-md w-full max-w-md">
-			<h2 class="text-xl font-bold mb-4">🔐 Setup Two-Factor Authentication</h2>
+		<div class="bg-white p-4 sm:p-6 rounded shadow-md w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
+			<h2 class="text-xl font-bold md:mb-4 mb-2">🔐 Setup Two-Factor Authentication</h2>
 			
 			<!-- QR Code Section -->
-			<div id="qrCodeSection" class="flex flex-col items-center gap-4 mb-6">
+			<div id="qrCodeSection" class="flex flex-col items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
 				<p class="text-sm text-gray-600 text-center">Scan this QR code with Google Authenticator or any TOTP app:</p>
 				<div id="qrCodeContainer" class="bg-white p-4 border-2 border-gray-300 rounded">
 					<!-- QR code will be inserted here -->
@@ -163,7 +179,7 @@
 			</div>
 
 			<!-- Backup Codes Section -->
-			<div id="backupCodesSection" class="mb-6">
+			<div id="backupCodesSection" class="mb-4 sm:mb-6">
 				<p class="text-sm font-semibold text-gray-700 mb-2">⚠️ Save these backup codes:</p>
 				<p class="text-xs text-gray-500 mb-2">You can use these if you lose access to your authenticator app.</p>
 				<div class="bg-yellow-50 border border-yellow-300 rounded p-3 max-h-32 overflow-y-auto">
@@ -260,7 +276,7 @@
 	</section>
 
 	<!-- Menu Pong -->
-	<div id="pongMenu" class="flex fixed inset-0 flex-col items-center justify-center gap-4 z-20 px-4"
+	<div id="pongMenu" class="flex fixed inset-0 h-svh flex-col items-center justify-center gap-4 z-20 px-4"
 		style="pointer-events: auto;">
 		<h2 id="menuTitle" class="text-5xl sm:text-6xl md:text-7xl text-amber-100 font-bold text-center leading-tight"
 			style="font-family: 'Syne Mono', cursive;">

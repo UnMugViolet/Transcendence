@@ -71,7 +71,6 @@ export class ModalManager {
     );
 
     document.getElementById("btnLogout")?.addEventListener("click", () => {
-      // Use a simple callback approach to avoid circular dependency
       if (ModalManager.logoutCallback) {
         ModalManager.logoutCallback();
       }

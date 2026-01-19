@@ -10,6 +10,8 @@ import { i18n } from "./utils/i18n.js";
 import { initNotifications } from "./user/notif.js";
 import { initPongBtns } from "./game/game.js";
 import { TwoFactorAuthManager } from "./utils/twofa.js";
+import { initHeaderMenu } from "./user/header-menu.js";
+import { closeHeaderMenu } from "./user/header-menu.js";
 
 /**
  * Language dropdown setup
@@ -102,12 +104,14 @@ class Application {
         FormManager.setupFormListeners();
         TwoFactorAuthManager.setupEventListeners();
         LanguageManager.init();
+        initHeaderMenu();
         Router.init();
 
         // Attach stats button behavior: navigate to dashboard
         const statsBtn = document.getElementById('btnStats');
         statsBtn?.addEventListener('click', () => {
           window.location.hash = '#userDashboard';
+          closeHeaderMenu();
         });
 
         const dashboardBack = document.getElementById('dashboardBack');
