@@ -101,7 +101,7 @@ function handlePlayerStates(partyId, playerStates, p1Info, p2Info) {
 
 export function sendNextGameMessage(party, game, tournamentData) {
 	const mode = party.type;
-	if (mode !== 'Tournament') return;
+	if (mode !== 'Tournament' && mode !== 'OfflineTournament') return;
 	
 	const shouldSend = (game.score1 === 8 || game.score2 === 8 || Date.now() - game.created >= 60000) && !game.send;
 	if (!shouldSend) return;

@@ -28,6 +28,7 @@ export function initPongBtns() {
 	const btnOffline = document.getElementById('btnOffline') as HTMLButtonElement | null;
 	const btnOnline = document.getElementById('btnOnline') as HTMLButtonElement | null;
 	const btnTournament = document.getElementById('btnTournament') as HTMLButtonElement | null;
+	const btnLocalTournament = document.getElementById('btnLocalTournament') as HTMLButtonElement | null;
 	const btnIA = document.getElementById('btnIA') as HTMLButtonElement | null;
 
 	let userLoggedIn = UserManager.isUserLoggedIn();
@@ -40,6 +41,8 @@ export function initPongBtns() {
 	btnOffline?.classList.remove('hidden');
 	btnIA?.classList.add('flex');
 	btnIA?.classList.remove('hidden');
+	btnLocalTournament?.classList.add('flex');
+	btnLocalTournament?.classList.remove('hidden');
 
 	// Show online and tournament buttons only for authenticated users (not demo users)
 	if (userLoggedIn && !isDemoUser) {
@@ -72,6 +75,22 @@ export function initPongBtns() {
 				console.error("Failed to prepare user for offline play");
 			}
 		};
+	}
+	if (btnLocalTournament) {
+		btnLocalTournament.onclick = async () => {
+			mode = 'OfflineTournament';
+			const userReady = await AuthManager.ensureUserReady();
+			if (userReady) {
+				// Close old socket if it exists, to force reconnection with new token
+				const socket = getWs();
+				if (socket && socket.readyState === WebSocket.OPEN) {
+					socket.close();
+				}
+				joinGame(mode);
+			} else {
+				console.error("Failed to prepare user for offline play");
+			}
+		}
 	}
 	if (btnOnline && userLoggedIn && !isDemoUser) {
 		btnOnline.onclick = () => {
