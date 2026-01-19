@@ -153,7 +153,7 @@ export async function loadNotifications() {
     		acceptBtn.textContent = i18n.t("accept");
     		acceptBtn.addEventListener("click", async () => {
     		const res = await respondGameInvite(inv.id, true);
-			openLobby(res, res.gameMode);
+			await openLobby(res, res.gameMode);
     		await loadNotifications(); // recharge après action
     		});
 

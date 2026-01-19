@@ -1,7 +1,7 @@
 import { ViewId } from "../types/types.js";
 import { AuthManager } from "../user/auth.js";
 import { loadUserDashboard } from "../user/dashboard.js";
-
+import { UserManager } from "../user/user.js";
 /**
  * Application routing and view management
  */
@@ -11,6 +11,8 @@ export class Router {
    */
   static showView(viewId: ViewId): void {
     const token = AuthManager.getToken();
+	let userLoggedIn = UserManager.isUserLoggedIn();
+	let isDemoUser = UserManager.isUserDemo();
     
     // Allow pongMenu to be shown without a token (for anonymous/logged-out users)
     if (!token && viewId !== "pongMenu") {
@@ -38,6 +40,12 @@ export class Router {
     } else {
       console.warn("NO - targetView was falsy!");
     }
+	const btnStats = document.getElementById("btnStats");
+	if (btnStats && viewId !== "pongMenu") {
+		btnStats.classList.add("hidden");
+	} else if (userLoggedIn && !isDemoUser && btnStats) {
+		btnStats.classList.remove("hidden");
+	}
   }
 
   /**

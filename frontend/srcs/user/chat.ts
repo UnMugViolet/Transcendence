@@ -1,5 +1,5 @@
 import { BACKEND_URL } from "../utils/config.js";
-import { handleGameRemote } from "../game/game.js";
+import { handleGameRemote, displayLobbyGroup } from "../game/game.js";
 import { openFriendProfile } from "../user/profile.js";
 import { i18n } from "../utils/i18n.js";
 
@@ -266,6 +266,8 @@ async function invitePlayer(friendId: number) {
     const data = await res.json();
 
     if (res.ok && data.success) {
+	  const lobbyOnlineGroup = document.getElementById('lobbyOnlineGroup');
+	  displayLobbyGroup(lobbyOnlineGroup);
       alert(`${i18n.t("invitationSent")} ${data.inviteeName}`);
     } else {
       alert(`${i18n.t("error")} ${data.error}`);

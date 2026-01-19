@@ -4,6 +4,7 @@ import { handleRoute, UserManager } from "../index.js";
 import { i18n } from "../utils/i18n.js";
 import { AuthManager } from "../user/auth.js";
 import { loadNotifications } from "../user/notif.js";
+import { ApiClient } from "../utils/api.js";
 
 const pong = document.getElementById('pongCanvas') as HTMLCanvasElement | null;
 const pongMenu = document.getElementById('pongMenu') as HTMLDivElement | null;
@@ -12,14 +13,13 @@ const btnLeaveGame = document.getElementById('btnLeaveGame') as HTMLButtonElemen
 
 let mode: string = '';
 
-export function openLobby(joinData: any, gameMode: string) {
+export async function openLobby(joinData: any, gameMode: string) {
 	// Set up game state
 	if (joinData)
 		storeGameSessionData(joinData);
-
 	// Configure UI based on game mode
 	drawGameReadyMessage(gameMode);
-	configureLobbyUI(gameMode);
+	await configureLobbyUI(gameMode);
 	showGameControlButtons();
 	mode = gameMode;
 }
@@ -166,7 +166,7 @@ export async function leaveGame(options: { navigate?: boolean; closeSocket?: boo
     }
 
     if (opts.navigate) {
-        navigateTo('pongMenu', true);
+        navigateTo('pongMenu', true, false);
         handleRoute();
     }
 }
@@ -318,9 +318,30 @@ globalThis.addEventListener('resize', () => resizeCanvas(false));
 // Popstate trigger only when user navigates with back/forward buttons
 export let isInternalNavigation = false;
 
-export function navigateTo(viewId: string, replace = false) {
+/**
+ * Navigate to the specified view by updating the URL hash.
+ * @param viewId The ID of the view to navigate to.
+ * @param replace Whether to replace the current history entry (true) or add a new one (false).
+ * @returns 
+ */
+export function navigateTo(viewId: string, replace = false, leave: boolean = true) {
 	try {
 		isInternalNavigation = true;
+		const currentView = location.hash.slice(1) || 'pongMenu';
+
+		// If we are leaving the game view, clean up the current game without overriding navigation.
+		if (currentView === 'viewGame' && viewId !== 'viewGame' && leave) {
+			leaveGame({ navigate: false }).catch((err) =>
+				console.error('Failed to leave game on navigation:', err)
+			);
+		}
+
+		// Don't navigate if already on the same view
+		if (currentView === viewId) {
+			isInternalNavigation = false;
+			return;
+		}
+
 		if (replace) {
 			history.replaceState({ page: viewId }, "", '#' + viewId);
 		} else {
@@ -385,7 +406,7 @@ btnLeaveGame?.addEventListener('click', async () => {
 
 backToMenu?.addEventListener("click", async () => {
     console.log("Leaving game...");
-    await showGoodbyeAndLeave();
+    await leaveGame();
 });
 
 
@@ -717,7 +738,7 @@ export async function handleGameRemote(data: any) {
 	}
 	if (data.type === "reconnect" && !started) {
 		if (data.status === 'waiting' && sessionStorage.getItem("partyId"))
-			openLobby(null, data.gameMode);
+			await openLobby(null, data.gameMode);
 		else if (data.gameMode === "1v1Online" || data.gameMode === "Tournament") {
 			modalReconnect?.classList.remove("hidden");
 			modalReconnect?.classList.add("flex");
@@ -743,6 +764,10 @@ export async function handleGameRemote(data: any) {
 	}
 	if (data.type === "notification") {
 		loadNotifications();
+	}
+	if (data.type === "join") {
+		const lobbyOnlineGroup = document.getElementById('lobbyOnlineGroup');
+		displayLobbyGroup(lobbyOnlineGroup);
 	}
 	return false;
 };
@@ -825,12 +850,50 @@ function drawGameReadyMessage(gameMode: string): void {
 	}
 }
 
+export async function displayLobbyGroup(lobbyOnlineGroup: HTMLElement | null): Promise<void> {
+	const res = await ApiClient.get(`${BACKEND_URL}/party`);
+
+	const data = await res.json();
+	if (!res.ok) {
+		throw new Error(data.error);
+	}
+
+	if (lobbyOnlineGroup === null)
+		return ;
+	lobbyOnlineGroup.innerHTML = "";
+
+	console.log("party data:", data)
+	data.players.forEach((player: any) => {
+		if (player.status !== 'lobby' && player.status !== 'invited')
+			return ;
+		const disp = document.createElement("div");
+		disp.className = "flex flex-col items-center";
+		
+		const img = document.createElement("img");
+		img.src = `${BACKEND_URL}/img/${player.profile_picture}`;
+		if (player.status === 'invited') {
+			img.className = "w-32 h-32 rounded-full object-cover border-4 border-amber-400";
+		}
+		if (player.status === 'lobby') {
+			img.className = "w-32 h-32 rounded-full object-cover border-4 border-lime-400";
+		}
+		const name = document.createElement("span");
+		name.textContent = player.name;
+		name.className = "text-center mt-2 text-lg font-bold text-amber-100";
+		
+		disp.appendChild(img);
+		disp.appendChild(name);
+		lobbyOnlineGroup.appendChild(disp);
+	});
+}
+
 /**
  * Configures lobby UI visibility based on game mode
  */
-function configureLobbyUI(gameMode: string): void {
+async function configureLobbyUI(gameMode: string): Promise<void> {
 	const lobby = document.getElementById("lobby");
 	const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
+	const lobbyOnlineGroup = document.getElementById('lobbyOnlineGroup');
 	const player2Input = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
 
 	// Handle lobby visibility
@@ -864,6 +927,12 @@ function configureLobbyUI(gameMode: string): void {
 		}
 	} else if (lobbyLocalOptions) {
 		lobbyLocalOptions.classList.add('hidden');
+	}
+	if ((gameMode === '1v1Online' || gameMode === 'Tournament') && lobbyOnlineGroup) {
+		await displayLobbyGroup(lobbyOnlineGroup);
+		lobbyOnlineGroup.classList.remove('hidden');
+	} else if (lobbyOnlineGroup) {
+		lobbyOnlineGroup.classList.add('hidden');
 	}
 }
 
@@ -939,7 +1008,7 @@ async function joinGame(gameMode: string) {
 			await new Promise(resolve => setTimeout(resolve, 500));
 			return;
 		}
-		openLobby(joinData, gameMode);
+		await openLobby(joinData, gameMode);
 	} catch (err) {
 		console.error("Error Join Game:", err);
 	}
