@@ -22,6 +22,7 @@ export function openLobby(joinData: any, gameMode: string) {
 	configureLobbyUI(gameMode);
 	showGameControlButtons();
 	mode = gameMode;
+	updateControlsVisibility();
 }
 
 export function initPongBtns() {
@@ -32,8 +33,6 @@ export function initPongBtns() {
 
 	let userLoggedIn = UserManager.isUserLoggedIn();
 	let isDemoUser = UserManager.isUserDemo();
-
-	console.log("User logged in:", userLoggedIn, "Is demo user:", isDemoUser);
 
 	// Show offline and IA buttons for everyone
 	btnOffline?.classList.add('flex');
@@ -245,7 +244,7 @@ let pendingPopstateLeave = false;
  * Shows the goodbye message and leaves the game
  * @param options Options to pass to leaveGame
  */
-async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: boolean; resetState?: boolean } = {}) {
+export async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: boolean; resetState?: boolean } = {}) {
     // Hide the game view first
     const viewGame = document.getElementById('viewGame');
     if (viewGame) {
@@ -266,19 +265,52 @@ async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: 
 
 // Ensure canvas matches its visible size and recompute layout-dependent values
 function resizeCanvas(recenter: boolean = false) {
-	if (!pong) return;
+	if (!pong) {
+		return;
+	}
 
 	const prevWidth = width;
 	const prevHeight = height;
 
-	// Update canvas pixel size to match CSS size (when visible)
-	const newClientWidth = pong.clientWidth || prevWidth || 800;
-	const newClientHeight = pong.clientHeight || prevHeight || 600;
-	pong.width = newClientWidth;
-	pong.height = newClientHeight;
+	// Get viewport dimensions
+	const viewportWidth = window.innerWidth;
+	const viewportHeight = window.innerHeight;
+	const isPortrait = viewportHeight > viewportWidth;
 
-	width = pong.width;
-	height = pong.height;
+	// Update canvas pixel size to match CSS size (when visible)
+	let newClientWidth = pong.clientWidth || prevWidth || 800;
+	let newClientHeight = pong.clientHeight || prevHeight || 600;
+	
+	// Ensure canvas maintains a good aspect ratio
+	if (isPortrait) {
+		// Portrait mode: prioritize width, adjust height
+		const maxWidth = Math.min(viewportWidth * 0.95, 800);
+		const aspectRatio = 3/4; // Portrait aspect ratio
+		newClientWidth = maxWidth;
+		newClientHeight = maxWidth / aspectRatio;
+	} else {
+		// Landscape mode: use more available width for better experience
+		const maxWidth = Math.min(viewportWidth * 1, 1600);
+		const aspectRatio = 16/10;
+		newClientWidth = maxWidth;
+		newClientHeight = maxWidth / aspectRatio;
+	}
+	
+	// Use devicePixelRatio for sharp rendering (fixes pixelation)
+	const dpr = window.devicePixelRatio || 1;
+	pong.width = newClientWidth * dpr;
+	pong.height = newClientHeight * dpr;
+	
+	// Set CSS size
+	pong.style.width = `${newClientWidth}px`;
+	pong.style.height = `${newClientHeight}px`;
+	
+	// Scale context to match device pixel ratio
+	ctx.scale(dpr, dpr);
+
+	// Use logical pixels for game calculations (not physical pixels)
+	width = newClientWidth;
+	height = newClientHeight;
 
 	// Recompute sizes based on new dimensions
 	paddleWidth = 0.01 * width;
@@ -312,8 +344,27 @@ function resizeCanvas(recenter: boolean = false) {
 
 resizeCanvas(true);
 
-// Keep canvas in sync on window resize
-globalThis.addEventListener('resize', () => resizeCanvas(false));
+// Debounced resize handler to avoid excessive redraws
+let resizeTimeout: ReturnType<typeof setTimeout> | undefined;
+globalThis.addEventListener('resize', () => {
+	// Only resize if game canvas is visible
+	const viewGame = document.getElementById('viewGame');
+	if (!viewGame || viewGame.classList.contains('hidden')) {
+		return;
+	}
+	
+	// Debounce resize events to prevent excessive calls
+	if (resizeTimeout) {
+		clearTimeout(resizeTimeout);
+	}
+	resizeTimeout = setTimeout(() => {
+		resizeCanvas(false);
+		// Redraw if game is active
+		if (started) {
+			draw();
+		}
+	}, 150);
+});
 
 // Pour que le popstate soit trigger seulement quand l'utilisateur clique sur le bouton retour du navigateur
 export let isInternalNavigation = false;
@@ -350,7 +401,7 @@ export function navigateTo(viewId: string, replace = false) {
 
 		setTimeout(() => {
 			isInternalNavigation = false;
-		}, 10);
+		}, 100);
 	} catch (error) {
 		console.error("ERROR in navigateTo:", error);
 		throw error;
@@ -384,7 +435,6 @@ globalThis.addEventListener("popstate", async (event) => {
 		return;
 	}
 
-	console.log("pops: ", mode);
 	if (started && (mode === '1v1Online' || mode === 'Tournament')) {
 		event.preventDefault();
 		// Mark that we're handling a popstate leave
@@ -583,9 +633,8 @@ function sleep(ms: number): Promise<void> {
 
 //demarrer la partie pour tous les joueurs 
 async function startingGame(resume = false, timer = true) {
-	console.log("startingGame called, resume:", resume, "timer:", timer); // DEBUG
-	console.log("Game is starting!");
 	navigateTo('viewGame');
+	updateControlsVisibility();
 	// Ensure canvas has non-zero size now that the view should be visible
 	resizeCanvas(true);
 	// One more pass on next frame to catch freshly-laid-out size
@@ -601,7 +650,8 @@ async function startingGame(resume = false, timer = true) {
 	if (timer) {
 		// Display the starting message
 		const startMessage = resume ? i18n.t("gameResumes") : i18n.t("gameStarts");
-		ctx.fillText(startMessage, width / 2, height / 2 - 40);
+		const messageSpacing = Math.floor(height * 0.1); // 15% spacing
+		ctx.fillText(startMessage, width / 2, height / 2 - messageSpacing);
 		
 		let countdown = 5;
 		countdownInterval = setInterval(() => {
@@ -613,12 +663,12 @@ async function startingGame(resume = false, timer = true) {
 			ctx.font = `${messageFont}px Arial`;
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
-			ctx.fillText(startMessage, width / 2, height / 2 - 40);
+			ctx.fillText(startMessage, width / 2, height / 2 - messageSpacing);
 			
-			// Draw the countdown number
+			// Draw the countdown number with better spacing
 			ctx.fillStyle = "rgb(239, 68, 68)";
-			ctx.font = `${countdownFont}px Arial`;
-			ctx.fillText(countdown.toString(), width / 2, height / 2 + 40);
+			ctx.font = `bold ${countdownFont}px Arial`;
+			ctx.fillText(countdown.toString(), width / 2, height / 2 + messageSpacing);
 			
 			countdown--;
 			if (countdown < 0) {
@@ -631,9 +681,7 @@ async function startingGame(resume = false, timer = true) {
 	// Wait for countdown to finish before starting the game loop
 	await sleep(6000);
 	
-	// Backend is authoritative; no local simulation
-
-	// No local physics initialization; relying on backend updates
+	// Backend call for starting the game loop0
 	remoteGameLoop();
 }
 
@@ -1014,7 +1062,9 @@ globalThis.addEventListener("keydown", (event) => {
 });
 
 globalThis.addEventListener("keyup", (event) => {
-	if (isTyping()) return;
+	if (isTyping()) {
+		return;
+	}
 	
 	// Player 1 controls (WASD)
 	if (event.key === "w" || event.key === "W") {
@@ -1033,6 +1083,118 @@ globalThis.addEventListener("keyup", (event) => {
 	}
 });
 
+// On-screen control buttons (for touch devices)
+const btnUpPlayer1 = document.getElementById('btnUpPlayer1') as HTMLButtonElement | null;
+const btnDownPlayer1 = document.getElementById('btnDownPlayer1') as HTMLButtonElement | null;
+const btnUpPlayer2 = document.getElementById('btnUpPlayer2') as HTMLButtonElement | null;
+const btnDownPlayer2 = document.getElementById('btnDownPlayer2') as HTMLButtonElement | null;
+const player2Controls = document.getElementById('player2Controls') as HTMLDivElement | null;
+
+// Player 1 Up button
+if (btnUpPlayer1) {
+	btnUpPlayer1.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		upPlayer1 = true;
+	});
+	btnUpPlayer1.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		upPlayer1 = false;
+	});
+	btnUpPlayer1.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		upPlayer1 = true;
+	});
+	btnUpPlayer1.addEventListener('mouseup', (e) => {
+		e.preventDefault();
+		upPlayer1 = false;
+	});
+	btnUpPlayer1.addEventListener('mouseleave', () => {
+		upPlayer1 = false;
+	});
+}
+
+// Player 1 Down button
+if (btnDownPlayer1) {
+	btnDownPlayer1.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		downPlayer1 = true;
+	});
+	btnDownPlayer1.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		downPlayer1 = false;
+	});
+	btnDownPlayer1.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		downPlayer1 = true;
+	});
+	btnDownPlayer1.addEventListener('mouseup', (e) => {
+		e.preventDefault();
+		downPlayer1 = false;
+	});
+	btnDownPlayer1.addEventListener('mouseleave', () => {
+		downPlayer1 = false;
+	});
+}
+
+// Player 2 Up button
+if (btnUpPlayer2) {
+	btnUpPlayer2.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		upPlayer2 = true;
+	});
+	btnUpPlayer2.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		upPlayer2 = false;
+	});
+	btnUpPlayer2.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		upPlayer2 = true;
+	});
+	btnUpPlayer2.addEventListener('mouseup', (e) => {
+		e.preventDefault();
+		upPlayer2 = false;
+	});
+	btnUpPlayer2.addEventListener('mouseleave', () => {
+		upPlayer2 = false;
+	});
+}
+
+// Player 2 Down button
+if (btnDownPlayer2) {
+	btnDownPlayer2.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		downPlayer2 = true;
+	});
+	btnDownPlayer2.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		downPlayer2 = false;
+	});
+	btnDownPlayer2.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		downPlayer2 = true;
+	});
+	btnDownPlayer2.addEventListener('mouseup', (e) => {
+		e.preventDefault();
+		downPlayer2 = false;
+	});
+	btnDownPlayer2.addEventListener('mouseleave', () => {
+		downPlayer2 = false;
+	});
+}
+
+// Show/hide player 2 controls based on game mode
+export function updateControlsVisibility() {
+	if (player2Controls) {
+		if (mode === '1v1Offline') {
+			player2Controls.classList.remove('hidden');
+			player2Controls.classList.add('flex');
+		} else {
+			player2Controls.classList.add('hidden');
+			player2Controls.classList.remove('flex');
+		}
+	}
+}
+
 function draw() {
 	ctx.clearRect(0, 0, width, height);
 	ctx.fillStyle = "rgb(254, 243, 199)";
@@ -1048,19 +1210,26 @@ function draw() {
 	const player1Name = sessionStorage.getItem("player1Name") || i18n.t("player1");
 	const player2Name = sessionStorage.getItem("player2Name") || i18n.t("playerTwo");
 
-	ctx.font = "20px Arial";
+	// Responsive font sizes based on canvas dimensions
+	const nameFontSize = Math.max(16, Math.min(32, Math.floor(height * 0.04)));
+	const scoreFontSize = Math.max(24, Math.min(72, Math.floor(height * 0.08)));
+	// Improved spacing - scores at top, names below with proper gap
+	const scoreYPosition = Math.max(50, Math.floor(height * 0.1));
+	const nameYPosition = scoreYPosition + Math.max(35, Math.floor(height * 0.06));
+
+	// Draw player names
+	ctx.font = `${nameFontSize}px Arial`;
 	ctx.fillStyle = "rgb(254, 243, 199)";
 	ctx.textAlign = "center";
+	ctx.fillText(player1Name, width * 0.25, nameYPosition);
+	ctx.fillText(player2Name, width * 0.75, nameYPosition);
 
-	ctx.fillText(player1Name, width * 0.25, 80);
-	ctx.fillText(player2Name, width * 0.75, 80);
-
-	ctx.font = "40px Arial";
+	// Draw scores
+	ctx.font = `bold ${scoreFontSize}px Arial`;
 	ctx.fillStyle = "rgb(254, 243, 199)";
 	ctx.textAlign = "center";
-
-	ctx.fillText(player1Score.toString(), width * 0.25, 50);
-	ctx.fillText(player2Score.toString(), width * 0.75, 50);
+	ctx.fillText(player1Score.toString(), width * 0.25, scoreYPosition);
+	ctx.fillText(player2Score.toString(), width * 0.75, scoreYPosition);
 
 }
 

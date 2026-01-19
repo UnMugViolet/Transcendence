@@ -144,9 +144,7 @@ class Application {
     if (token && AuthManager.isAuthenticated()) {
       // User is authenticated
       await UserManager.fetchUserProfile();
-      initChatSocket(token, () => {
-        console.log("Chat WebSocket ready on page load");
-      });
+      initChatSocket(token, () => {});
     } else {
       // User is not authenticated
       setSidebarEnabled(false);

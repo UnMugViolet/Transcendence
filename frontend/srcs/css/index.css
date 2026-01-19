@@ -1,3 +1,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Game controls - prevent text selection and ensure proper touch handling */
+#gameControls button {
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	touch-action: none;
+}
+
+/* Ensure canvas maintains aspect ratio */
+#pongCanvas {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+
+/* Responsive chat height adjustments */
+@media (max-width: 1023px) {
+	#gameChat {
+		min-height: 300px;
+		max-height: 40vh;
+	}
+}
+
+@media (min-width: 1024px) {
+	#gameChat {
+		min-height: 400px;
+		max-height: 70vh;
+	}
+}

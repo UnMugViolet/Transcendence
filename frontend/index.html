@@ -234,38 +234,69 @@
 	</div>
 
 
-	<section id="viewGame" class="hidden flex-col view items-center justify-center p-4 gap-6">
-		<div class="relative flex flex-row justify-center mt-20 flex-wrap lg:flex-nowrap gap-4">
+	<section id="viewGame" class="hidden flex-col view items-center justify-center p-2 sm:p-4 gap-4">
+		<div class="relative flex flex-col lg:flex-row justify-center w-full max-w-7xl gap-4">
 			<!-- Zone Pong -->
-			<div id="pongContainer" class="w-full lg:w-3/4 max-w-4xl p-4 bg-rose-950 bg-opacity-80 rounded-lg shadow-lg">
-				<canvas id="pongCanvas" class="bg-black bg-opacity-50 rounded w-full h-[600px]"></canvas>
+			<div id="pongContainer" class="flex-1 w-full p-2 sm:p-4 bg-rose-950 bg-opacity-80 rounded-lg shadow-lg">
+				<canvas id="pongCanvas" class="bg-black bg-opacity-50 rounded w-full h-auto max-h-[60vh] lg:max-h-[70vh]"></canvas>
+				
+				<!-- On-screen controls (visible on touch devices) -->
+				<div id="gameControls" class="flex justify-between items-center mt-4 gap-4 lg:hidden">
+					<!-- Player 1 Controls (Left Side) -->
+					<div class="flex flex-col gap-2">
+						<button id="btnUpPlayer1" class="bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-rose-950 font-bold p-4 rounded-lg shadow-lg transition-all touch-none select-none">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7" />
+							</svg>
+						</button>
+						<button id="btnDownPlayer1" class="bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-rose-950 font-bold p-4 rounded-lg shadow-lg transition-all touch-none select-none">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
+							</svg>
+						</button>
+					</div>
+					
+					<!-- Player 2 Controls (Right Side) - Only for offline mode -->
+					<div id="player2Controls" class="flex flex-col gap-2">
+						<button id="btnUpPlayer2" class="bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-rose-950 font-bold p-4 rounded-lg shadow-lg transition-all touch-none select-none">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7" />
+							</svg>
+						</button>
+						<button id="btnDownPlayer2" class="bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-rose-950 font-bold p-4 rounded-lg shadow-lg transition-all touch-none select-none">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
+							</svg>
+						</button>
+					</div>
+				</div>
 			</div>
 	
-			<!-- 💬 Global chat -->
+			<!-- 💬 Global chat (responsive layout) -->
 			<div id="gameChat"
-				class="w-full lg:w-80 bg-black bg-opacity-70 text-amber-100 flex flex-col border border-rose-950 rounded-2xl shadow-lg overflow-hidden">
+				class="w-full lg:w-80 lg:min-w-[320px] h-[40vh] lg:h-auto bg-black bg-opacity-70 text-amber-100 flex flex-col border border-rose-950 rounded-2xl shadow-lg overflow-hidden">
 				<div data-i18n="globalChat"
-					class="p-3 text-lg font-bold border-b border-rose-950 bg-rose-950 rounded-t-2xl flex justify-between items-center">
+					class="p-2 sm:p-3 text-base sm:text-lg font-bold border-b border-rose-950 bg-rose-950 rounded-t-2xl flex justify-between items-center">
 				</div>
 	
 				<!-- Messages added dynamically-->
-				<div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-2 text-sm"></div>
+				<div id="chatMessages" class="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 text-xs sm:text-sm"></div>
 	
 				<!-- Input -->
-				<form id="chatForm" class="p-3 border-t border-rose-950 flex bg-rose-950 rounded-b-2xl">
+				<form id="chatForm" class="p-2 sm:p-3 border-t border-rose-950 flex bg-rose-950 rounded-b-2xl">
 					<input id="chatInput" type="text" autocomplete="off" data-i18n-placeholder="messagePlaceholder"
-						class="flex-1 bg-amber-100 text-black p-2 rounded-l outline-none" />
-					<button type="submit" class="bg-red-500 px-4 rounded-r hover:bg-red-400">
+						class="flex-1 bg-amber-100 text-black p-2 text-sm rounded-l outline-none" />
+					<button type="submit" class="bg-red-500 px-3 sm:px-4 rounded-r hover:bg-red-400">
 						➤
 					</button>
 				</form>
 			</div>
 		</div>
-		<div class="w-full flex justify-center items-center">
+		<div class="w-full flex justify-center items-center mt-2">
 			<button
 				id="btnLeaveGame"
 				data-i18n="leaveGame" 
-				class="text-white px-6 py-3 text-2xl font-bold bg-red-500 rounded hover:bg-red-600 shadow-lg transition-transform duration-200 hover:scale-105">
+				class="text-white px-4 sm:px-6 py-2 sm:py-3 text-lg sm:text-2xl font-bold bg-red-500 rounded hover:bg-red-600 shadow-lg transition-transform duration-200 hover:scale-105">
 			</button>
 		</div>
 	</section>

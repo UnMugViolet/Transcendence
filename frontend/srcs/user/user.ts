@@ -196,7 +196,7 @@ export class UserManager implements User {
       const response = await ApiClient.get(`${BACKEND_URL}/profile`);
       const data = await response.json();
       
-      console.log("Profile API response:", data);
+      // console.log("Profile API response:", data);
       
       if (response.ok && data.user) {
         // Check if role exists in the response

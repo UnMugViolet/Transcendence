@@ -104,7 +104,6 @@ function createNewWebSocket(token: string, onReady?: () => void) {
 
   ws.onopen = () => {
     clearTimeout(connectionTimeout);
-    console.log("WebSocket connected");
     if (onReady) onReady();
   };
 
@@ -129,7 +128,7 @@ function createNewWebSocket(token: string, onReady?: () => void) {
 
   ws.onclose = (event) => {
     clearTimeout(connectionTimeout);
-    console.log("WebSocket disconnected", event.code, event.reason);
+    // console.log("WebSocket disconnected", event.code, event.reason);
     ws = null;
   };
 

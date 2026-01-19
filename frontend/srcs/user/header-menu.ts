@@ -1,4 +1,5 @@
-import { leaveGame, navigateTo } from "../game/game.js";
+import { leaveGame, navigateTo, gameId } from "../game/game.js";
+import { handleRoute } from "../index.js";
 
 
 const headerMenuHandle = document.getElementById("headerMenuHandle");
@@ -101,15 +102,43 @@ export function initNavigateToMenu(): void {
   if (!headerTitle)
     return ;
 
-  headerTitle.addEventListener("click", () => {
+  headerTitle.addEventListener("click", async () => {
+    // Get the current view dynamically
+    const currentView = location.hash.slice(1) || 'pongMenu';
+``
+    // If in viewGame or lobby with active game, properly leave it
+    if (currentView === 'viewGame' || currentView === 'lobby') {
+      console.log("Leaving game/lobby and returning to menu...");
+      // Always call leaveGame to properly cleanup - it handles all states
+      // including countdown, waiting, and active game
+      await leaveGame({ navigate: true, resetState: true, closeSocket: true });
+      
+      // Loop over all views and hide them
+      elements.forEach(element => {
+        checkVisibilityAndHide(element);
+      });
+
+      // Show pong menu
+      if (pongMenu && pongMenu.classList.contains("hidden")) {
+        pongMenu.classList.remove("hidden");
+      }
+      
+      handleRoute();
+      return;
+    }
+
+    // Just navigate to menu for other views
+    navigateTo('pongMenu', true);
+    handleRoute();
 
     // Loop over all views and hide them
     elements.forEach(element => {
       checkVisibilityAndHide(element);
     });
 
-    navigateTo('pongMenu', true);
-    if (pongMenu.classList.contains("hidden"))
-        pongMenu.classList.remove("hidden");
+    // Show pong menu
+    if (pongMenu && pongMenu.classList.contains("hidden")) {
+      pongMenu.classList.remove("hidden");
+    }
   });
 }
