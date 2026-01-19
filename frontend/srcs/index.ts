@@ -12,6 +12,7 @@ import { initPongBtns } from "./game/game.js";
 import { TwoFactorAuthManager } from "./utils/twofa.js";
 import { initHeaderMenu } from "./user/header-menu.js";
 import { closeHeaderMenu } from "./user/header-menu.js";
+import { initNavigateToMenu } from "./user/header-menu.js"
 
 /**
  * Language dropdown setup
@@ -106,6 +107,9 @@ class Application {
         LanguageManager.init();
         initHeaderMenu();
         Router.init();
+
+        // Handle the title for going to the pong menu
+        initNavigateToMenu();
 
         // Attach stats button behavior: navigate to dashboard
         const statsBtn = document.getElementById('btnStats');

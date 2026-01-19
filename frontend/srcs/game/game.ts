@@ -318,14 +318,33 @@ globalThis.addEventListener('resize', () => resizeCanvas(false));
 // Pour que le popstate soit trigger seulement quand l'utilisateur clique sur le bouton retour du navigateur
 export let isInternalNavigation = false;
 
+/**
+ * Navigate to the specified view by updating the URL hash.
+ * @param viewId The ID of the view to navigate to.
+ * @param replace Whether to replace the current history entry (true) or add a new one (false).
+ * @returns 
+ */
 export function navigateTo(viewId: string, replace = false) {
 	try {
 		isInternalNavigation = true;
+		const currentView = location.hash.slice(1) || 'pongMenu';
+
+		// Don't navigate if already on the same view
+		if (currentView === viewId) {
+			isInternalNavigation = false;
+			return;
+		}
+
 		if (replace) {
 			history.replaceState({ page: viewId }, "", '#' + viewId);
 		} else {
 			globalThis.location.hash = '#' + viewId;
 		}
+
+		if (viewId === "viewGame") {
+			leaveGame();
+		}
+
 		setTimeout(() => {
 			isInternalNavigation = false;
 		}, 100);
@@ -358,7 +377,6 @@ globalThis.addEventListener('hashchange', () => {
 
 // A revoir ?
 globalThis.addEventListener("popstate", async (event) => {
-	console.log("miel");
 	if (isInternalNavigation) {
 		return;
 	}

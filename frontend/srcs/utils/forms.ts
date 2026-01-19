@@ -150,7 +150,9 @@ export class FormManager {
               const verify2FAData = await verify2FAResponse.json();
               if (!verify2FAResponse.ok) {
                 const msg2FAEl = document.getElementById("message2FALogin");
-                if (msg2FAEl) msg2FAEl.textContent = `❌ ${verify2FAData.error || 'Invalid code'}`;
+                if (msg2FAEl) {
+                  msg2FAEl.textContent = `❌ ${verify2FAData.error || 'Invalid code'}`;
+                }
                 return;
               }
 
@@ -160,9 +162,12 @@ export class FormManager {
               
             } catch (err: any) {
               const msg2FAEl = document.getElementById("message2FALogin");
-              if (msg2FAEl) msg2FAEl.textContent = `❌ ${err.message}`;
+              if (msg2FAEl) {
+                msg2FAEl.textContent = `❌ ${err.message}`;
+              }
             }
           });
+
           return;
         }
 

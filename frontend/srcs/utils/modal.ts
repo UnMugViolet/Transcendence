@@ -1,4 +1,5 @@
 import { ModalId } from "../types/types.js";
+import { closeHeaderMenu } from "../user/header-menu.js";
 
 /**
  * Modal management utilities
@@ -55,20 +56,22 @@ export class ModalManager {
 
     document.getElementById("btnSignIn")?.addEventListener("click", () => {
       ModalManager.openModal("modalSignIn");
+      closeHeaderMenu();
     });
 
     // Close modal listeners
-    document.getElementById("closeSignUp")?.addEventListener("click", () => 
-      ModalManager.closeModal("modalSignUp")
-    );
+    document.getElementById("closeSignUp")?.addEventListener("click", () => {
+      ModalManager.closeModal("modalSignUp");
+      closeHeaderMenu();
+    });
     
-    document.getElementById("closeSignIn")?.addEventListener("click", () => 
-      ModalManager.closeModal("modalSignIn")
-    );
+    document.getElementById("closeSignIn")?.addEventListener("click", () => {
+      ModalManager.closeModal("modalSignIn");
+    });
 
-    document.getElementById("closeFriendProfile")?.addEventListener("click", () => 
-      ModalManager.closeModal("modalFriendProfile")
-    );
+    document.getElementById("closeFriendProfile")?.addEventListener("click", () => {
+      ModalManager.closeModal("modalFriendProfile");
+    });
 
     document.getElementById("btnLogout")?.addEventListener("click", () => {
       if (ModalManager.logoutCallback) {

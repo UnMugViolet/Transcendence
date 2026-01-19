@@ -1,3 +1,6 @@
+import { leaveGame, navigateTo } from "../game/game.js";
+
+
 const headerMenuHandle = document.getElementById("headerMenuHandle");
 const headerMenu = document.getElementById("headerMenu");
 const headerMenuOverlay = document.getElementById("headerMenuOverlay");
@@ -14,7 +17,7 @@ function openHeaderMenu() {
   headerMenuHandle?.setAttribute("aria-expanded", "true");
 }
 
-function closeHeaderMenu() {
+export function closeHeaderMenu(): void {
   if (desktopQuery.matches) {
     headerMenuOverlay?.classList.add("hidden");
     headerMenuHandle?.setAttribute("aria-expanded", "false");
@@ -83,4 +86,30 @@ export function initHeaderMenu(): void {
   });
 }
 
-export { closeHeaderMenu };
+function checkVisibilityAndHide(id: string): void {
+  const element = document.getElementById(id);
+  if (element && !element.classList.contains("hidden")) {
+    element.classList.add("hidden");
+  }
+}
+
+export function initNavigateToMenu(): void {
+  const headerTitle = document.getElementById("headerTitle") as HTMLElement;
+  const pongMenu = document.getElementById("pongMenu") as HTMLElement;
+  const elements = ["lobby", "userDashboard", "viewGame"];
+
+  if (!headerTitle)
+    return ;
+
+  headerTitle.addEventListener("click", () => {
+
+    // Loop over all views and hide them
+    elements.forEach(element => {
+      checkVisibilityAndHide(element);
+    });
+
+    navigateTo('pongMenu', true);
+    if (pongMenu.classList.contains("hidden"))
+        pongMenu.classList.remove("hidden");
+  });
+}

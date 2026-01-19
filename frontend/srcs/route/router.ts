@@ -7,9 +7,68 @@ import { loadUserDashboard } from "../user/dashboard.js";
  */
 export class Router {
   /**
+   * Hide any global overlays/menus/modals that are not part of a routed view.
+   * This prevents fixed elements from lingering across hash navigation.
+   */
+  private static resetGlobalUI(): void {
+    const hideModal = (id: string) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.add("hidden");
+      el.classList.remove("flex");
+    };
+
+    const hideEl = (id: string) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.add("hidden");
+    };
+
+    // Header burger menu (mobile)
+    const headerMenu = document.getElementById("headerMenu");
+    const headerMenuOverlay = document.getElementById("headerMenuOverlay");
+    const headerMenuHandle = document.getElementById("headerMenuHandle");
+    if (headerMenu) {
+      headerMenu.classList.add("translate-x-full");
+      headerMenu.classList.remove("translate-x-0");
+    }
+    if (headerMenuOverlay) headerMenuOverlay.classList.add("hidden");
+    if (headerMenuHandle) headerMenuHandle.setAttribute("aria-expanded", "false");
+
+    // Dropdowns/popups
+    hideEl("langDropdown");
+    hideEl("notifPopup");
+
+    // Friends sidebar overlay
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    const sidebarHandle = document.getElementById("sidebarHandle");
+    if (sidebar) sidebar.classList.add("-translate-x-full");
+    if (overlay) overlay.classList.add("hidden");
+    if (sidebarHandle) sidebarHandle.classList.remove("translate-x-64");
+
+    // Auth/Profile/2FA modals
+    hideModal("modalSignIn");
+    hideModal("modalSignUp");
+    hideModal("modalProfile");
+    hideModal("modalFriendProfile");
+    hideModal("modal2FASetup");
+    hideModal("modal2FALogin");
+
+    // Game flow modals
+    hideModal("modalGamePause");
+    hideModal("modalReconnect");
+
+    // Dashboard modal
+    hideEl("matchHistoryModal");
+  }
+
+  /**
    * Shows a specific view and hides others
    */
   static showView(viewId: ViewId): void {
+    Router.resetGlobalUI();
+
     const token = AuthManager.getToken();
     
     // Allow pongMenu to be shown without a token (for anonymous/logged-out users)
@@ -23,7 +82,10 @@ export class Router {
 
     // Hide all views with .view class
     const views = document.querySelectorAll(".view");
-    views.forEach((view) => (view as HTMLDivElement).classList.add("hidden"));
+    views.forEach((view) => {
+      (view as HTMLDivElement).classList.add("hidden");
+      (view as HTMLDivElement).classList.remove("flex");
+    });
 
     // Ensure pong menu (full-screen menu) is hidden except when explicitly showing it
     const pongMenu = document.getElementById("pongMenu") as HTMLDivElement | null;

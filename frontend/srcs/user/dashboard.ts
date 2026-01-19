@@ -3,6 +3,7 @@ import { BACKEND_URL } from "../utils/config.js";
 import type { ApiResponse, UserStats, RecentGame } from "../types/types.js";
 import { Router } from "../route/router.js";
 import { i18n } from "../utils/i18n.js";
+import { navigateTo } from "../game/game.js";
 
 
 export async function getUserStats(): Promise<UserStats> {
@@ -64,7 +65,7 @@ export async function loadUserDashboard() {
     populateMatchHistoryTable(stats, myId);
 
   } catch (err) {
-    console.error(err);
+    navigateTo("pongMenu");
     content.innerHTML = `<p class="text-red-400">Failed to load dashboard</p>`;
   }
 }

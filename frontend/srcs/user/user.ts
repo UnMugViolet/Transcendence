@@ -252,7 +252,8 @@ export class UserManager implements User {
       }
     }
 
-    console.log("Logging out user");
+    // Close the header modal
+    closeHeaderMenu();
     
     // Clear authentication data
     AuthManager.clearAuth();
@@ -263,7 +264,6 @@ export class UserManager implements User {
     // Navigate to pongMenu and handle routing
     navigateTo("pongMenu", true);
     handleRoute();
-    closeHeaderMenu();
     
     // Now reinitialize pong buttons AFTER routing
     initPongBtns();
