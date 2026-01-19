@@ -108,15 +108,6 @@ export function saveMatchToHistory(partyId, game) {
     ? Math.floor((Date.now() - game.created) / 1000)
     : null;
 
-  console.log("🏆 Saving tournament match", {
-  partyId,
-  mode: game.mode,
-  winnerId,
-  p1Score,
-  p2Score
-  });
-
-
   db.prepare(`
     INSERT INTO match_history (
       party_id,
@@ -140,12 +131,6 @@ export function saveMatchToHistory(partyId, game) {
     game.created,
     duration
   );
-
-  console.log('✅ Match saved to history', {
-    p1: p1.user_id,
-    p2: p2.user_id,
-    score: `${p1Score}-${p2Score}`
-  });
 }
 
 

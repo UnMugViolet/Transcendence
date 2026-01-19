@@ -248,8 +248,6 @@ export class UserManager implements User {
         await FormManager.deleteUser(refreshToken);
       }
     }
-
-    console.log("Logging out user");
     
     // Clear authentication data
     AuthManager.clearAuth();

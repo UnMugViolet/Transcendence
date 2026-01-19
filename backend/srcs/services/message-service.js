@@ -27,7 +27,6 @@ export function sendSysMessage(partyId, message) {
 export function sendGameStateToPlayers(partyId, gameState) {
 	// Only send to players who are not 'disconnected' or 'left'
 	const players = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['disconnected', 'left', 'invited']);
-	// console.log(`DEBUG: sendGameStateToPlayers for party ${partyId}, found ${players.length} active players`);
 	players.forEach(player => {
 		const playerSocket = clients.get(player.user_id);
 		if (playerSocket) {

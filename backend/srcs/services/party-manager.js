@@ -20,7 +20,7 @@ export function handlePause(partyId, userId, games) {
 	
 	console.log(`User ${userId} disconnected from party ${partyId}`);
 	const userName = userQueries.getNameById(userId);
-	sendSysMessage(partyId, `En attente du retour de ${userName}...`);
+	sendSysMessage(partyId, `En attente du retour de ${userName}...`); // NEED TRANSLATION
 	sendPauseMessage(partyId, userId);
 }
 
@@ -243,9 +243,6 @@ export function findOrCreateParty(mode, userId, minPlayers) {
 			const presentCount = partyPlayerQueries.countByPartyIdNotStatuses(prevParty.id, ['left', 'disconnected']);
 			if (presentCount < maxPlayers) {
 				partyPlayerQueries.updateStatus(userId, prevParty.id, 'lobby');
-				const test = partyPlayerQueries.findByUserId(userId);
-				if (test)
-					console.log("test:", test);
 				const userName = userQueries.getNameById(userId);
 				console.log(`User ${userName} rejoined previous party ${prevParty.id}`);
 				return { party: prevParty, rejoined: true };

@@ -357,12 +357,9 @@ globalThis.addEventListener('hashchange', () => {
 });
 
 globalThis.addEventListener("popstate", async (event) => {
-	console.log("miel");
 	if (isInternalNavigation) {
 		return;
 	}
-
-	console.log("pops: ", mode);
 	if (started && (mode === '1v1Online' || mode === 'Tournament')) {
 		event.preventDefault();
 		// Mark that we're handling a popstate leave
@@ -447,7 +444,6 @@ yes?.addEventListener("click", async () => {
 			return;
 		}
 		let data = await res.json();
-		console.log(`resume response:`, data);
 		mode = data.mode;
 		if (mode === 'Tournament')
 			tournamentTeam = data.team;
@@ -675,7 +671,6 @@ function startTimer(sec: number) {
 }
 
 export async function handleGameRemote(data: any) {
-	console.log("type: ", data.type);
 	if (data.type === "start") {
 		modalGamePause?.classList.add("hidden");
 		if (pauseInterval) {
@@ -692,7 +687,6 @@ export async function handleGameRemote(data: any) {
 			team = 2;
 		else
 			team = 0;
-		console.log("data:", data);
 		if (data.players && Array.isArray(data.players)) {
 			const p1 = (data.players as Array<any>).find(p => p.team === data.team1);
 			const p2 = (data.players as Array<any>).find(p => p.team === data.team2);
@@ -722,7 +716,6 @@ export async function handleGameRemote(data: any) {
 		return true;
 	}
 	if (data.type === "reconnect" && !started) {
-		console.log(`status: ${data.status}, sessionStorage: ${sessionStorage.getItem("partyId")}`);
 		if (data.status === 'waiting' && sessionStorage.getItem("partyId"))
 			openLobby(null, data.gameMode);
 		else if (data.gameMode === "1v1Online" || data.gameMode === "Tournament") {
@@ -739,7 +732,6 @@ export async function handleGameRemote(data: any) {
 		lastServerUpdateTs = performance.now();
 		warnedNoServerUpdates = false;
 		
-		console.log("value: ", value);
 		posYPlayer1 = value.paddle1Y * height;
 		posYPlayer2 = value.paddle2Y * height;
 		ballX = value.ballX * width;

@@ -158,7 +158,6 @@ function recentGameWidget(stats: UserStats, myId: number): string {
 
       <div class="space-y-3 overflow-y-scroll max-h-20 pr-2">
         ${stats.recentGames.map(game => {
-          console.log("recentGames FRONT", stats.recentGames);
           return `
             <div class="flex flex-col bg-black bg-opacity-30 rounded-lg p-3">
               <div class="flex justify-between text-xs text-amber-200 mb-1">

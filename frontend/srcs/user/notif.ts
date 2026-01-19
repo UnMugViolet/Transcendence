@@ -84,8 +84,6 @@ export async function loadNotifications() {
     const data_invite = await res2.json();
     if (!res2.ok) throw new Error(data_invite.error || i18n.t("errorNotifications"));
 
-	console.log("data invites: ", data_invite);
-
     const notifList = document.getElementById("notifList");
 
     if (!notifList) {

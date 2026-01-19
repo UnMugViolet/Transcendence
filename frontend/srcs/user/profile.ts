@@ -131,7 +131,6 @@ formProfile?.addEventListener("submit", async (e) => {
 	const stayConnected = AuthManager.getStorageType() === localStorage;
 
 	try {
-		console.log("isDemoUser:", isDemoUser);
 		if (isDemoUser) {
 			throw new Error(i18n.t("demoUserEditError"));
 		}
