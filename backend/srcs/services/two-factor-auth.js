@@ -7,8 +7,6 @@ async function twoFaRoutes(fastify) {
 
 
 	fastify.post('/enable', { preHandler: fastify.authenticate }, async (request, reply) => {
-    console.log('2FA enable called, user:', JSON.stringify(request.user, null, 2));
-    console.log('User object keys:', request.user ? Object.keys(request.user) : 'no user');
     
     if (!request.user || !request.user.id) {
       console.error('2FA enable: No user found in request. User object:', JSON.stringify(request.user, null, 2));

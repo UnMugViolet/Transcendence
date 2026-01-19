@@ -8,6 +8,7 @@ import { initPongBtns, navigateTo, leaveGame } from "../game/game.js";
 import { initNotifications } from "./notif.js";
 import { handleRoute } from "../route/router.js";
 import { FormManager } from "../utils/forms.js";
+import { closeHeaderMenu } from "../user/header-menu.js"
 
 /**
  * User management and authentication state
@@ -113,7 +114,7 @@ export class UserManager implements User {
 
     // Show logout button
     btnLogout?.classList.remove("hidden");
-    btnLogout?.classList.add("flex");
+    btnLogout?.classList.add("block");
     btnStats?.classList.remove("hidden");
     btnStats?.classList.add("flex");
 
@@ -121,6 +122,7 @@ export class UserManager implements User {
     if (userInfo) {
       userInfo.classList.remove("hidden");
       userInfo.classList.add("flex");
+
       
       const userName = document.getElementById("userName");
       if (userName) {
@@ -180,6 +182,7 @@ export class UserManager implements User {
         if (profileModal) {
           profileModal.classList.remove("hidden");
           profileModal.classList.add("flex");
+          closeHeaderMenu();
         }
       });
     }
@@ -193,7 +196,7 @@ export class UserManager implements User {
       const response = await ApiClient.get(`${BACKEND_URL}/profile`);
       const data = await response.json();
       
-      console.log("Profile API response:", data);
+      // console.log("Profile API response:", data);
       
       if (response.ok && data.user) {
         // Check if role exists in the response
@@ -248,6 +251,9 @@ export class UserManager implements User {
         await FormManager.deleteUser(refreshToken);
       }
     }
+
+    // Close the header modal
+    closeHeaderMenu();
     
     // Clear authentication data
     AuthManager.clearAuth();

@@ -6,7 +6,6 @@ import { ModalManager } from "./modal.js";
  * Two-Factor Authentication manager
  */
 export class TwoFactorAuthManager {
-  private static currentUserId: number | null = null;
   private static currentTempToken: string | null = null;
   private static setupAccessToken: string | null = null;
   private static setupResolve: ((verified: boolean) => void) | null = null;
@@ -52,7 +51,7 @@ export class TwoFactorAuthManager {
       // Display QR code
       const qrCodeContainer = document.getElementById('qrCodeContainer');
       if (qrCodeContainer) {
-        qrCodeContainer.innerHTML = `<img src="${data.qrCode}" alt="QR Code" class="w-64 h-64" />`;
+        qrCodeContainer.innerHTML = `<img src="${data.qrCode}" alt="QR Code" class="w-44 h-44 sm:w-64 sm:h-64" />`;
       }
 
       // Display manual secret
@@ -221,7 +220,9 @@ export class TwoFactorAuthManager {
 
       try {
         const accessToken = this.setupAccessToken || sessionStorage.getItem('token') || localStorage.getItem('token');
-        if (!accessToken) throw new Error('No access token found');
+        if (!accessToken) {
+          throw new Error('No access token found');
+        }
 
         await this.verifySetupCode(accessToken, code);
         
@@ -244,26 +245,17 @@ export class TwoFactorAuthManager {
       }
     });
 
-    // Skip 2FA button
-    const skip2FA = document.getElementById('skip2FA');
+    // Skip 2FA button log the user and return without enforcing 2FA
+    const skip2FA = document.getElementById('skip2FA') as HTMLButtonElement;
     skip2FA?.addEventListener('click', () => {
-      if (this.setupEnforced) {
-        const TwoFAModal = document.getElementById('modal2FASetup') as HTMLElement;
-        const modalSignup = document.getElementById('id="modalSignUp"') as HTMLElement;
-
-        if (TwoFAModal) {
-          TwoFAModal.classList.remove('flex');
-          TwoFAModal.classList.add('hidden');
-        }
-        if (modalSignup) {
-          modalSignup.classList.remove('hidden');
-          modalSignup.classList.add('flex');
-        }
-        
-        return;
-      }
-
       this.closeSetupModal();
+
+      // If signup modal is still visible, close it so the app can proceed.
+      const modalSignup = document.getElementById('modalSignUp') as HTMLElement | null;
+      if (modalSignup) {
+        modalSignup.classList.remove('flex');
+        modalSignup.classList.add('hidden');
+      }
 
       if (this.setupResolve) {
         this.setupResolve(false);

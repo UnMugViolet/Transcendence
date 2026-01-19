@@ -199,10 +199,8 @@ formProfile?.addEventListener("submit", async (e) => {
 			if (wantsTwoFA) {
 				// Enable 2FA: enforce verification before closing
 				const verified = await TwoFactorAuthManager.showSetupModal(token, stayConnected, () => {}, { enforced: true });
-				if (!verified) {
-					throw new Error('2FA setup is required');
-				}
-				profileTwoFAEnabled = true;
+				// If the user skips, keep 2FA disabled (verify-enable wasn't called).
+				profileTwoFAEnabled = Boolean(verified);
 			} else {
 				// Disable 2FA: require password + 2FA code
 				if (!password) {
