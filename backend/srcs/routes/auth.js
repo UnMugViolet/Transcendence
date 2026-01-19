@@ -3,6 +3,7 @@ import db from '../db.js';
 import speakeasy from 'speakeasy';
 
 import { BACKEND_URL } from "../config.js";
+import { clients } from './chat.js';
 import { checkName, checkPassword } from '../utils.js';
 
 // Common schema definitions
@@ -198,6 +199,11 @@ async function authRoutes(fastify) {
 			return reply.status(404).send({ error: 'User not found' });
 		}
 
+		const userAlreadyLoggedIn = clients.has(user.id);
+		if (userAlreadyLoggedIn) {
+			console.log(`User ${name} is already logged in elsewhere.`);
+			return reply.status(403).send({ error: 'User is already logged in elsewhere' });
+		}
 		const isValidPass = bcrypt.compareSync(password, user.password);
 		if (!isValidPass) {
 			return reply.status(401).send({ error: 'Invalid password' });
