@@ -873,7 +873,7 @@ function configureLobbyUI(gameMode: string): void {
 	}
 
 	// Show/hide local lobby options
-	if ((gameMode === '1v1Offline' || gameMode === 'IA') && lobbyLocalOptions) {
+	if ((gameMode === '1v1Offline' || gameMode === 'IA' || gameMode === 'OfflineTournament') && lobbyLocalOptions) {
 		lobbyLocalOptions.classList.remove('hidden');
 		lobbyLocalOptions.classList.add('flex');
 		

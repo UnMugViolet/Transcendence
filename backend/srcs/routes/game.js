@@ -135,7 +135,7 @@ const errorResponseSchema = {
 	properties: { error: { type: 'string' } }
 };
 
-const gameModes = ['1v1Online', '1v1Offline', '2v2', 'IA', 'Tournament'];
+const gameModes = ['1v1Online', '1v1Offline', '2v2', 'IA', 'Tournament', 'OfflineTournament'];
 
 async function gameRoutes(fastify) {
 	const minPlayers = {
@@ -143,7 +143,8 @@ async function gameRoutes(fastify) {
 		'1v1Offline': 1,
 		'2v2': 4,
 		'IA': 1,
-		'Tournament': 4
+		'Tournament': 4,
+		'OfflineTournament': 1
 	};
 
 	// DEBUG endpoint
