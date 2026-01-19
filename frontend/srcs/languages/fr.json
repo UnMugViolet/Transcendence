@@ -9,6 +9,7 @@
   "local": "LOCAL",
   "online": "EN LIGNE",
   "tournament": "TOURNOI",
+  "offTournament": "TOURNOI (hors ligne)",
   "ai": "IA",
   "menu": "MENU",
   "player2": "NOM DU JOUEUR 2",
