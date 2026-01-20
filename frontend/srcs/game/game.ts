@@ -927,7 +927,6 @@ async function startingGame(resume = false, timer = true) {
 
 async function endingGame(data: any) {
 	console.log("Game is ending...");
-	console.log("Ending game data:", data); // DEBUG: voir ce que le backend envoie
 	started = false;
 	gameId = 0;
 	team = 0;
@@ -936,6 +935,8 @@ async function endingGame(data: any) {
 	ctx.font = "40px Arial";
 	ctx.fillStyle = "rgb(254, 243, 199)";
 	ctx.textAlign = "center";
+
+	const isTournament = data.mode === 'Tournament' || data.mode === 'OfflineTournament';
 
 	let winnerName = data.winner;
 	if ((data.mode === '1v1Offline' || data.mode === 'IA') && winnerName) {
@@ -947,24 +948,21 @@ async function endingGame(data: any) {
 		// Replace generic names with actual names
 		if (player1Name && genericPlayer1Names.some(name => winnerName.includes(name))) {
 			winnerName = player1Name;
-			console.log("Replaced with player1Name:", winnerName); // DEBUG
 		} else if (player2Name && genericPlayer2Names.some(name => winnerName.includes(name))) {
 			winnerName = player2Name;
-			console.log("Replaced with player2Name:", winnerName); // DEBUG
 		}
 	}
-	if (winnerName && !data.round && data.mode === 'Tournament')
+	if (winnerName && !data.round && isTournament)
 		ctx.fillText(`${winnerName} ${i18n.t("wonTournament")}`, width / 2, height / 2);
 	else if (winnerName)
 		ctx.fillText(`${winnerName} ${i18n.t("wonGame")}`, width / 2, height / 2);
-	if (!(data.winner && data.round && data.mode === 'Tournament'))
+	if (!(data.winner && data.round && isTournament))
 	{
 		goodBye?.classList.remove("hidden");
 		await sleep(3000);
 		navigateTo('pongMenu', true, false);
 		handleRoute();
 	}
-	
 }
 
 function formatTime(sec: number) {
