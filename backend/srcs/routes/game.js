@@ -241,7 +241,8 @@ async function gameRoutes(fastify) {
 				type: 'object',
 				required: ['mode'],
 				properties: {
-					mode: { type: 'string', enum: gameModes, description: 'Game mode' }
+					mode: { type: 'string', enum: gameModes, description: 'Game mode' },
+					Player2Name: { type: 'string' }
 				}
 			},
 			response: {
@@ -304,11 +305,11 @@ async function gameRoutes(fastify) {
 		if (pauses.has(party.id)) {
 			pauses.delete(party.id);
 		}
+		console.log("playerName: ", request.body.Player2Name);
 		partyQueries.updateStatus(party.id, 'active');
 		if (!info) {
-			await setTeam(party.id, games);
+			await setTeam(party.id, games, null, null, request.body.Player2Name);
 		}
-
 		await broadcastStartMessage(party.id, false, games, pauses);
 		parties = partyQueries.findByStatus('active');
 
@@ -518,7 +519,8 @@ async function gameRoutes(fastify) {
 		// Upsert player record
 		partyPlayerQueries.upsert(party.id, userId, userTeam, 'lobby');
 
-		sendJoinNotificationToParty(party.id);
+		if (party.type != 'IA' && party.type != '1v1Offline' && party.type != 'OfflineTournament')
+			sendJoinNotificationToParty(party.id);
 		return { message: 'Joined party', partyId: party.id, status: 'waiting' };
 	});
 
