@@ -421,7 +421,7 @@ async function chat(fastify) {
 
 			clients.set(payload.id, connection.socket || connection);
 			if (metricsInstance) metricsInstance.recordWebSocketConnection();
-			console.log(`🔌 Client connecté : ${payload.name} (ID: ${payload.id})`);
+			console.log(`🔌 Client connected : ${payload.name} (ID: ${payload.id})`);
 			console.log(`DEBUG: Total clients connected: ${clients.size}`);
 			console.log(`DEBUG: Client IDs: [${Array.from(clients.keys()).join(', ')}]`);
 			console.log(`DEBUG: Connection object keys:`, Object.keys(connection));
@@ -456,8 +456,6 @@ async function chat(fastify) {
 				}
 				
 				const party = partyPlayerQueries.findByUserIdMultipleStatuses(payload.id, ['active', 'waiting', 'lobby'])[0];
-				if (!party)
-					console.log("no party?");
 				if (party) {
 					partyPlayerQueries.updateStatus(payload.id, party.party_id, 'disconnected');
 					console.log(`User ${payload.name} set to disconnected in party ${party.party_id}`);
@@ -469,7 +467,7 @@ async function chat(fastify) {
 					}
 				}
 				
-				console.log(`❌ Client ${payload.name} déconnecté (ID: ${payload.id})`);
+				console.log(`❌ Client ${payload.name} disconnected (ID: ${payload.id})`);
 				clients.delete(payload.id);
 				if (metricsInstance) metricsInstance.recordWebSocketDisconnection();
 				console.log(`DEBUG: Clients after disconnect: ${clients.size} remaining`);
