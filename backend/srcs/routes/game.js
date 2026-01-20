@@ -262,7 +262,9 @@ async function gameRoutes(fastify) {
 								}
 							}
 						},
-						mode: { type: 'string' }
+						mode: { type: 'string' },
+						team1: { type: 'integer' },
+						team2: { type: 'integer' }
 					}
 				},
 				400: errorResponseSchema,
@@ -307,14 +309,20 @@ async function gameRoutes(fastify) {
 		}
 		console.log("playerName: ", request.body.Player2Name);
 		partyQueries.updateStatus(party.id, 'active');
+		let p1 = 1;
+		let p2 = 2;
 		if (!info) {
 			await setTeam(party.id, games, null, null, request.body.Player2Name);
+			await broadcastStartMessage(party.id, false, games, pauses);
+		} else {
+			p1 = info.p1;
+			p2 = info.p2;
+			await broadcastStartMessage(party.id, false, games, pauses, info.p1, info.p2);			
 		}
-		await broadcastStartMessage(party.id, false, games, pauses);
 		parties = partyQueries.findByStatus('active');
 
 		const playersWithNames = partyPlayerQueries.getPlayersWithNames(party.id);
-		return { message: 'Game started', partyId: party.id, players: playersWithNames, mode: mode };
+		return { message: 'Game started', partyId: party.id, players: playersWithNames, mode: mode, team1: p1, team2: p2 };
 	});
 
 	// Offline tournament start endpoint - allows tournament with aliases (no user registration required)

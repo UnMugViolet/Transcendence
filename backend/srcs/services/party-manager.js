@@ -32,8 +32,10 @@ export async function setTeam(partyId, games, team1 = null, team2 = null, player
 	
 	const game = games.get(partyId);
 	const party = partyQueries.findById(partyId);
+	game.mode = party.type;
 	
 	if (party.type === 'Tournament' || party.type === 'OfflineTournament') {
+		console.log(`set teams to ${team1} and ${team2} for tournament`);
 		game.team1 = team1;
 		game.team2 = team2;
 	} else {

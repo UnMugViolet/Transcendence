@@ -40,7 +40,8 @@ export function createGame() {
 		team1down: false,
 		team2up: false,
 		team2down:false,
-		Player2Name: null
+		Player2Name: null,
+		mode: null
 	};
 }
 
@@ -62,6 +63,17 @@ export function resetRound(game) {
 }
 
 export function movePlayer(game, data) {
+	if (game.mode && (game.mode === '1v1Offline' || game.mode === 'OfflineTournament'))
+	{
+		if (data.team === 1) {
+			game.team1up = data.up;
+			game.team1down = data.down;
+		}
+		if (data.team === 2) {
+			game.team2up = data.up;
+			game.team2down = data.down;
+		}
+	}
 	if (data.team === game.team1) {
 		game.team1up = data.up;
 		game.team1down = data.down;

@@ -769,14 +769,14 @@ start?.addEventListener("click", async () => {
 			}
 		} else {
 			if (mode === '1v1Offline') {
-			const lobbyInput = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
-			if (lobbyInput && lobbyInput.value && lobbyInput.value.trim()) {
-				sessionStorage.setItem('player2Name', lobbyInput.value.trim());
-			} else {
-				sessionStorage.setItem('player2Name', i18n.t("playerTwo") || "Player 2");
-			}
-			const username = sessionStorage.getItem('username') || sessionStorage.getItem('player1Name') || i18n.t("player1");
-			sessionStorage.setItem('player1Name', username);
+				const lobbyInput = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
+				if (lobbyInput && lobbyInput.value && lobbyInput.value.trim()) {
+					sessionStorage.setItem('player2Name', lobbyInput.value.trim());
+				} else {
+					sessionStorage.setItem('player2Name', i18n.t("playerTwo") || "Player 2");
+				}
+				const username = sessionStorage.getItem('username') || sessionStorage.getItem('player1Name') || i18n.t("player1");
+				sessionStorage.setItem('player1Name', username);
 			} else if (mode === 'IA') {
 				// Set up AI opponent name
 				const username = sessionStorage.getItem('username') || sessionStorage.getItem('player1Name') || i18n.t("player1");
@@ -803,8 +803,8 @@ start?.addEventListener("click", async () => {
 			}
 
 			if (data.players) {
-				const p1 = (data.players as Array<any>).find(p => p.team === 1);
-				const p2 = (data.players as Array<any>).find(p => p.team === 2);
+				const p1 = (data.players as Array<any>).find(p => p.team === data.team1);
+				const p2 = (data.players as Array<any>).find(p => p.team === data.team2);
 				if (p1) {
 					sessionStorage.setItem("player1Name", p1.name);
 				}
@@ -817,6 +817,7 @@ start?.addEventListener("click", async () => {
 		// hide local lobby options when the game actually starts
 		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
 		const lobbyTournamentOptions = document.getElementById('lobbyTournamentOptions');
+		const lobbyOnlineGroup = document.getElementById('lobbyOnlineGroup');
 
 		if (lobbyLocalOptions) {
 			lobbyLocalOptions.classList.add('hidden');
@@ -824,6 +825,10 @@ start?.addEventListener("click", async () => {
 		if (lobbyTournamentOptions) {
 			lobbyTournamentOptions.classList.add('hidden');
 		}
+		if (lobbyOnlineGroup) {
+			lobbyOnlineGroup.classList.add('hidden');
+		}
+
 
 		navigateTo('viewGame');
 

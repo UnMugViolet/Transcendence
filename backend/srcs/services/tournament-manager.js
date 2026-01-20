@@ -16,36 +16,39 @@ export function createTournament() {
 }
 
 export function findNextMatchPlayers(tournamentData, maxTeams = 8) {
-	let round = 0;
-	let p1 = 0;
-	let p2 = 0;
-	
-	for (let i = 1; i <= maxTeams; i++) {
-		if (tournamentData[i] > round) {
-			round = tournamentData[i];
-			p1 = i;
-		}
-		if (p1 && tournamentData[i] === round && i !== p1 && tournamentData[p1] !== tournamentData[p2]) {
-			p2 = i;
-		}
-	}
-	
-	return { round, p1, p2 };
+    let round = 0;
+    for (let i = 1; i <= maxTeams; i++) {
+        const v = tournamentData[i] || 0;
+        if (v > round) round = v;
+    }
+    if (round === 0) return { round: 0, p1: 0, p2: 0 };
+
+    let p1 = 0, p2 = 0;
+    for (let i = 1; i <= maxTeams; i++) {
+        if ((tournamentData[i] || 0) === round) {
+            if (!p1) p1 = i;
+            else if (!p2) { p2 = i; break; }
+        }
+    }
+
+    return { round, p1, p2 };
 }
 
 export function setupNextMatch(partyId, tournamentData) {
-	const isOffline = tournamentData.isOffline;
+	if (!tournamentData) return { round: 0 };
+	const isOffline = tournamentData["isOffline"];
 	
 	// Get players based on tournament type
 	const players = isOffline 
-		? localTournamentPlayerQueries.findByPartyId(partyId)
-		: partyPlayerQueries.findByPartyId(partyId);
+	? localTournamentPlayerQueries.findByPartyId(partyId)
+	: partyPlayerQueries.findByPartyId(partyId);
+	if (!players) return { round: 0 };
 	
-	if (!players || !tournamentData) return { round: 0 };
-
+	console.log("tournament data: ", tournamentData);
 	const { round, p1, p2 } = findNextMatchPlayers(tournamentData);
 	tournamentData["p1"] = p1;
 	tournamentData["p2"] = p2;
+	console.log(`p1: ${p1}, p2: ${p2}`);
 
 	if (round === 0) return { round: 0 };
 
@@ -133,7 +136,7 @@ export function sendNextGameMessage(party, game, tournamentData) {
 	if (!shouldSend) return;
 	
 	game.send = true;
-	const isOffline = tournamentData.isOffline;
+	const isOffline = tournamentData["isOffline"];
 	const players = isOffline 
 		? localTournamentPlayerQueries.findByPartyId(party.id)
 		: partyPlayerQueries.findByPartyId(party.id);
@@ -193,7 +196,7 @@ export function initializeTournament(partyId, players) {
  */
 export function initializeOfflineTournament(partyId, aliases) {
 	const tournamentData = createTournament();
-	tournamentData.isOffline = true;
+	tournamentData["isOffline"] = true;
 	const nbPlayers = aliases.length;
 	
 	// First, clear any existing local tournament players for this party
