@@ -1,1 +1,2 @@
-export const BACKEND_URL = 'http://localhost:3000';
+const isProduction = process.env.NODE_ENV === 'production';
+export const BACKEND_URL = isProduction ? 'https://localhost:3443' : 'http://localhost:3000';

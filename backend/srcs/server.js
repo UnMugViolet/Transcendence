@@ -24,12 +24,44 @@ import { clients } from './routes/chat.js';
 import { gameLoop, pauseLoop } from './routes/game.js';
 import { i18n } from './services/i18n-service.js';
 
+// Check if running in production with HTTPS
+const isProduction = process.env.NODE_ENV === 'production';
+const sslCertPath = process.env.SSL_CERT_PATH;
+const sslKeyPath = process.env.SSL_KEY_PATH;
+
+// Configure HTTPS for production
+let httpsOptions = null;
+if (isProduction && sslCertPath && sslKeyPath) {
+	try {
+		httpsOptions = {
+			key: fs.readFileSync(sslKeyPath),
+			cert: fs.readFileSync(sslCertPath)
+		};
+		console.log('🔒 HTTPS certificates loaded successfully');
+	} catch (err) {
+		console.error('⚠️ Failed to load SSL certificates:', err.message);
+	}
+}
+
 const fastify = Fastify({ 
-	logger: {level: 'warn'}
+	logger: {level: 'warn'},
+	...(httpsOptions && { https: httpsOptions })
 });
 
 
 // Swagger configuration
+const swaggerServers = isProduction ? [
+	{
+		url: 'https://localhost:3443',
+		description: 'Production server (HTTPS)'
+	}
+] : [
+	{
+		url: 'http://localhost:3000',
+		description: 'Development server (HTTP)'
+	}
+];
+
 await fastify.register(fastifySwagger, {
 	openapi: {
 		openapi: '3.0.0',
@@ -38,12 +70,7 @@ await fastify.register(fastifySwagger, {
 			description: 'API documentation for the Transcendence LLDBQIA + Team',
 			version: '1.0.0'
 		},
-		servers: [
-			{
-				url: 'http://localhost:3000',
-				description: 'Development server (HTTP)'
-			}
-		],
+		servers: swaggerServers,
 		tags: [
 			{ name: 'Auth', description: 'Authentication endpoints' },
 			{ name: 'Users', description: 'User management endpoints' },
@@ -254,10 +281,13 @@ process.on('SIGTERM', async () => {
 });
 
 
-fastify.listen({ port: 3000, host: '0.0.0.0' })
+const serverPort = isProduction && httpsOptions ? 3443 : 3000;
+const protocol = isProduction && httpsOptions ? 'https' : 'http';
+
+fastify.listen({ port: serverPort, host: '0.0.0.0' })
 	.then(() => {
-		console.log('✅ Server running on http://localhost:3000');
-		console.log('📚 API Documentation available at http://localhost:3000/docs');
+		console.log(`✅ Server running on ${protocol}://localhost:${serverPort}`);
+		console.log(`📚 API Documentation available at ${protocol}://localhost:${serverPort}/docs`);
 		// Update user metrics on startup
 		const totalUsersCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
 		const demoUsersCount = db.prepare(`

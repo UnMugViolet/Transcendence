@@ -15,7 +15,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "max(up{job=\"backend\"})",
+          "expr": "max(up{job=~\"backend.*\"})",
           "refId": "A"
         }
       ],
@@ -216,7 +216,7 @@
       "type": "gauge",
       "targets": [
         {
-          "expr": "sum(rate(nodejs_process_cpu_seconds_total{job=\"backend\"}[5m])) * 100",
+          "expr": "sum(rate(nodejs_process_cpu_seconds_total{job=~\"backend.*\"}[5m])) * 100",
           "refId": "A"
         }
       ],

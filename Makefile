@@ -4,6 +4,7 @@ PORT_DEV 	= 8080
 PORT_GF 	= 10100
 PORT_PROD 	= 8443
 BACK_PORT 	= 3000
+BACK_PROD 	= 3443
 
 DOCKER_COMPOSE = docker compose
 
@@ -46,8 +47,8 @@ prod: ## Launch the docker services (production)
 	@chmod +x grafana/provision-users.sh
 	@./grafana/provision-users.sh
 	@echo "$(GREEN)$(APP_NAME) available at $(RESET) $(WHITE) https://$(IP):$(PORT_PROD) $(RESET)"
-	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) https://$(IP):$(BACK_PORT) $(RESET)"
-	@echo "$(GREEN)API Documentation available at $(RESET) $(WHITE) https://$(IP):$(BACK_PORT)/docs $(RESET)"
+	@echo "$(GREEN)Backend API available at $(RESET) $(WHITE) https://$(IP):$(BACK_PROD) $(RESET)"
+	@echo "$(GREEN)API Documentation available at $(RESET) $(WHITE) https://$(IP):$(BACK_PROD)/docs $(RESET)"
 
 down: ## Stop the docker services
 	@echo "$(CYAN) $(BOLD) Stopping containers...$(RESET)"
@@ -68,6 +69,11 @@ docs: ## Open API documentation in browser
 	@echo "$(GREEN)📚 Opening API documentation...$(RESET)"
 	@echo "$(WHITE)API Documentation: http://$(IP):$(BACK_PORT)/docs$(RESET)"
 	@firefox http://$(IP):$(BACK_PORT)/docs 2>/dev/null || open http://$(IP):$(BACK_PORT)/docs 2>/dev/null || echo "Please open http://$(IP):$(BACK_PORT)/docs in your browser"
+
+docs-prod: ## Open API prod documentation in browser
+	@echo "$(GREEN)📚 Opening API documentation...$(RESET)"
+	@echo "$(WHITE)API Documentation: https://$(IP):$(BACK_PROD)/docs$(RESET)"
+	@firefox https://$(IP):$(BACK_PROD)/docs 2>/dev/null || open https://$(IP):$(BACK_PROD)/docs 2>/dev/null || echo "Please open https://$(IP):$(BACK_PROD)/docs in your browser"
 
 prod-logs: ## Show the logs of all containers
 	@$(DOCKER_COMPOSE) logs 

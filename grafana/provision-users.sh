@@ -23,7 +23,11 @@ if [ -z "$GF_SECURITY_ADMIN_USER" ] || [ -z "$GF_SECURITY_ADMIN_PASSWORD" ] || [
     exit 1
 fi
 
-GRAFANA_URL="http://localhost:10100"
+if [ "$NODE_ENV" = "production" ]; then
+    GRAFANA_URL="https://localhost:10100"
+else
+    GRAFANA_URL="http://localhost:10100"
+fi
 
 
 echo -e "${YELLOW}========================================${NC}"
@@ -35,7 +39,7 @@ echo -e "\n${YELLOW}Waiting for Grafana to be ready...${NC}"
 max_attempts=30
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
-    if curl -s -o /dev/null -w "%{http_code}" "${GRAFANA_URL}/api/health" | grep -q "200"; then
+    if curl -sk -o /dev/null -w "%{http_code}" "${GRAFANA_URL}/api/health" | grep -q "200"; then
         echo -e "${GREEN}✓ Grafana is ready!${NC}"
         break
     fi
@@ -63,7 +67,7 @@ create_user() {
     local admin_pass="${GF_SECURITY_ADMIN_PASSWORD}"
     
     # Create user
-    response=$(curl -s -X POST \
+    response=$(curl -sk -X POST \
         -H "Content-Type: application/json" \
         -d "{\"name\":\"${username}\",\"email\":\"${email}\",\"login\":\"${username}\",\"password\":\"${password}\",\"OrgId\":1}" \
         --user "${admin_user}:${admin_pass}" \
@@ -76,7 +80,7 @@ create_user() {
         user_id=$(echo "$response" | grep -o '"id":[0-9]*' | grep -o '[0-9]*')
         
         # Update user role
-        curl -s -X PATCH \
+        curl -sk -X PATCH \
             -H "Content-Type: application/json" \
             -d "{\"role\":\"${role}\"}" \
             --user "${admin_user}:${admin_pass}" \

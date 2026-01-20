@@ -4,8 +4,9 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://transcendence_prometheus:9090
+    url: https://transcendence_prometheus:9090
     isDefault: true
     editable: true
     jsonData:
       timeInterval: 15s
+      tlsSkipVerify: true

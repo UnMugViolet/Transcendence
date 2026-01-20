@@ -42,7 +42,18 @@ scrape_configs:
       - targets: ['backend_dev:3000']
         labels:
           environment: 'development'
-      - targets: ['backend:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 9s
+
+  # Backend production with HTTPS
+  - job_name: 'backend-prod'
+    honor_labels: true
+    scheme: https
+    tls_config:
+      insecure_skip_verify: true
+    static_configs:
+      - targets: ['backend:3443']
         labels:
           environment: 'production'
     metrics_path: '/metrics'
