@@ -1,4 +1,6 @@
 import { i18n } from "./i18n.js";
+import { ApiClient } from "./api.js";
+import { AuthManager } from "../user/auth.js";
 
 /**
  *  Inserts language options into the language dropdown and sets up event listeners for language selection.
@@ -26,7 +28,16 @@ export async function populateLanguageDropdown(availableLangs: string[]) {
 			localStorage.setItem("lang", lang);
 			updateLanguageButton(lang);
 			langDropdown?.classList.add('hidden');
-		},);
+			
+			// Sync language preference with backend if user is authenticated
+			const isAuth = AuthManager.isAuthenticated();
+			console.log(`Language changed to ${lang}. User authenticated: ${isAuth}`);
+			if (isAuth) {
+				const success = await ApiClient.updateLanguage(lang);
+			} else {
+				console.log('Skipping backend update: user not authenticated');
+			}
+		});
 	});
 }
 
@@ -50,8 +61,8 @@ export function updateLanguageButton(langCode: string) {
 	const currentLangText: HTMLSpanElement | null | undefined = langButton?.querySelector('span');
 
 	if (langButton && currentFlag && currentLangText) {
-		const createdButton: HTMLButtonElement = document.createElement('button');
 		// Update the button's data-lang attribute
+		langButton.setAttribute('data-lang', langCode);
 
 		// Update the flag image
 		currentFlag.src = `img/flags/${langCode}.png`;

@@ -340,6 +340,13 @@
 					class="mt-3 text-sm sm:text-base font-semibold text-red-500 uppercase transition-colors duration-200 group-hover:text-amber-100">
 				</span>
 			</button>
+			<button id="btnLocalTournament"
+				class="group flex flex-col items-center justify-center w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-full bg-amber-100 hover:bg-red-500 shadow-lg transform transition-transform duration-200 hover:scale-110">
+				<img src="img/btn/canon-spatial.png" alt="Local Tournament" class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
+				<span data-i18n="offTournament"
+					class="mt-3 text-sm sm:text-base font-semibold text-red-500 uppercase transition-colors duration-200 group-hover:text-amber-100">
+				</span>
+			</button>
 		</div>
 	</div>
 
@@ -369,6 +376,30 @@
 			<input id="lobbyPlayer2Name" type="text" placeholder="Player 2 Name"
 				class="p-2 rounded bg-amber-100 text-black w-56" />
 		</div>
+		
+		<!-- Offline Tournament Player Entry -->
+		<div id="lobbyTournamentOptions" class="hidden flex-col items-center gap-4 w-full max-w-md">
+			<h2 data-i18n="tournamentPlayers" class="text-2xl font-bold text-amber-100">Tournament Players</h2>
+			<p data-i18n="tournamentPlayersHint" class="text-amber-200 text-sm text-center">Enter aliases for 4-8 players (no registration required)</p>
+			
+			<div id="tournamentPlayersList" class="flex flex-col gap-2 w-full max-h-64 overflow-y-auto">
+				<!-- Player inputs will be added here dynamically -->
+			</div>
+			
+			<div class="flex gap-2">
+				<button id="btnAddTournamentPlayer" type="button"
+					class="text-white px-4 py-2 text-lg font-bold bg-blue-500 rounded hover:bg-blue-600 shadow-lg transition-transform duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+					<span data-i18n="addPlayer">+ Add Player</span>
+				</button>
+				<button id="btnRemoveTournamentPlayer" type="button"
+					class="text-white px-4 py-2 text-lg font-bold bg-orange-500 rounded hover:bg-orange-600 shadow-lg transition-transform duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+					<span data-i18n="removePlayer">- Remove</span>
+				</button>
+			</div>
+			
+			<p id="tournamentPlayerCount" class="text-amber-200 text-sm"></p>
+		</div>
+		
 		<div id="lobbyOnlineGroup" class="hidden flex justify-between items-center gap-2"></div>
 		<div class="flex flex-row-reverse items-center justify-center gap-5">
 			<button data-i18n="start" id="btnStart"
@@ -379,7 +410,7 @@
 			</button>
 		</div>
 
-		<p id="startMessage" class="text-red-500 mt-2 hidden"></p>
+		<p id="startMessage" class="bg-amber-100 rounded-xl py-2 px-2 text-red-500 font-semibold mt-2 hidden"></p>
 
 		<span id="goodBye" data-i18n="thanks"
 			class="hidden sm:text-6xl md:text-7xl text-amber-100 font-bold text-center leading-tight"

@@ -1,3 +1,11 @@
 {
-	"notEnough": "Pas assez de joueurs pour commencer la partie"
+	"notEnough": "Pas assez de joueurs pour commencer la partie",
+	"matchBetween": "Match entre {{p1Name}} et {{p2Name}} ! Bonne chance !",
+	"nextMatchBetween": "Le prochain match sera entre {{p1Name}} et {{p2Name}} ! Tenez-vous prêts !",
+	"finalMatch": "Le gagnant de ce match jouera contre {{p1Name}} en finale ! Soyez prêts pour le grand match !",
+	"playerLeft": "{{playerName}} a quitté la partie.",
+	"playerLeftTournament": "{{leftPlayerName}} a quitté la partie et est éliminé du tournoi. Victoire pour {{activePlayerName}} !",
+	"playerReconnected": "{{playerName}} s'est reconnecté !",
+	"playerDisconnected": "{{playerName}} a été déconnecté.",
+	"waitingForPlayer": "En attente du retour de {{userName}}..."
 }

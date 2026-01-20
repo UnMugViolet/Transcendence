@@ -1,15 +1,17 @@
-import { partyPlayerQueries, userQueries } from './database-queries.js';
+import { partyPlayerQueries, userQueries, localTournamentPlayerQueries } from './database-queries.js';
 import { sendSysMessage } from './message-service.js';
 
 /**
  * Tournament management service
+ * Supports both online tournaments (with registered users) and offline tournaments (with local aliases)
  */
 
 export function createTournament() {
 	return {
 		1: 0, 2: 0, 3: 0, 4: 0, 
 		5: 0, 6: 0, 7: 0, 8: 0,
-		"p1": 0, "p2": 0
+		"p1": 0, "p2": 0,
+		"isOffline": false  // Flag to track if this is an offline tournament
 	};
 }
 
@@ -32,7 +34,13 @@ export function findNextMatchPlayers(tournamentData, maxTeams = 8) {
 }
 
 export function setupNextMatch(partyId, tournamentData) {
-	const players = partyPlayerQueries.findByPartyId(partyId);
+	const isOffline = tournamentData.isOffline;
+	
+	// Get players based on tournament type
+	const players = isOffline 
+		? localTournamentPlayerQueries.findByPartyId(partyId)
+		: partyPlayerQueries.findByPartyId(partyId);
+	
 	if (!players || !tournamentData) return { round: 0 };
 
 	const { round, p1, p2 } = findNextMatchPlayers(tournamentData);
@@ -41,23 +49,41 @@ export function setupNextMatch(partyId, tournamentData) {
 
 	if (round === 0) return { round: 0 };
 
-	const p1Info = partyPlayerQueries.findByPartyIdAndTeam(partyId, p1);
-	const p2Info = partyPlayerQueries.findByPartyIdAndTeam(partyId, p2);
-	const p1Name = userQueries.getNameById(p1Info.user_id);
-	const p2Name = userQueries.getNameById(p2Info.user_id);
+	// Get player info based on tournament type
+	const p1Info = isOffline 
+		? localTournamentPlayerQueries.findByPartyIdAndTeam(partyId, p1)
+		: partyPlayerQueries.findByPartyIdAndTeam(partyId, p1);
+	const p2Info = isOffline 
+		? localTournamentPlayerQueries.findByPartyIdAndTeam(partyId, p2)
+		: partyPlayerQueries.findByPartyIdAndTeam(partyId, p2);
+	
+	// Get names based on tournament type
+	const p1Name = isOffline ? (p1Info.alias) : userQueries.getNameById(p1Info.user_id);
+	const p2Name = isOffline ? (p2Info.alias) : userQueries.getNameById(p2Info.user_id);
 	
 	console.log(`Next match in tournament for party ${partyId} is between team ${p1} (${p1Name}) and team ${p2} (${p2Name})`);
 
-	const playerStates = checkPlayerStates(p1Info, p2Info);
-	
-	sendSysMessage(partyId, `Match entre ${p1Name} et ${p2Name} ! Bonne chance !`);
-	
-	handlePlayerStates(partyId, playerStates, p1Info, p2Info);
+	// For offline tournaments, players are always "active" locally
+	if (isOffline) {
+		sendSysMessage(partyId, 'matchBetween', { p1Name, p2Name });
+		localTournamentPlayerQueries.updateStatus(partyId, p1, 'active');
+		localTournamentPlayerQueries.updateStatus(partyId, p2, 'active');
+	} else {
+		const playerStates = checkPlayerStates(p1Info, p2Info);
+		sendSysMessage(partyId, 'matchBetween', { p1Name, p2Name });
+		handlePlayerStates(partyId, playerStates, p1Info, p2Info);
+	}
 	
 	console.log(`Tournament data: ${JSON.stringify(tournamentData)}`);
 	tournamentData[p1]--;
 	tournamentData[p2]--;
 	
+	// For offline tournaments, there are no afk/left states
+	if (isOffline) {
+		return { round, p1, p2, afk: -1, left: -1, p1Name, p2Name };
+	}
+	
+	const playerStates = checkPlayerStates(p1Info, p2Info);
 	return { 
 		round, 
 		p1, 
@@ -91,7 +117,7 @@ function handlePlayerStates(partyId, playerStates, p1Info, p2Info) {
 		
 		const leftPlayerName = userQueries.getNameById(playerStates.leftId);
 		const activePlayerName = userQueries.getNameById(activeId);
-		sendSysMessage(partyId, `${leftPlayerName} a quitté la partie et est éliminé du tournoi. Victoire pour ${activePlayerName} !`);
+		sendSysMessage(partyId, 'playerLeftTournament', { leftPlayerName, activePlayerName });
 	} else {
 		// Both players active
 		partyPlayerQueries.updateStatus(p1Info.user_id, partyId, 'active');
@@ -101,28 +127,37 @@ function handlePlayerStates(partyId, playerStates, p1Info, p2Info) {
 
 export function sendNextGameMessage(party, game, tournamentData) {
 	const mode = party.type;
-	if (mode !== 'Tournament') return;
+	if (mode !== 'Tournament' && mode !== 'OfflineTournament') return;
 	
 	const shouldSend = (game.score1 === 8 || game.score2 === 8 || Date.now() - game.created >= 60000) && !game.send;
 	if (!shouldSend) return;
 	
 	game.send = true;
-	const players = partyPlayerQueries.findByPartyId(party.id);
+	const isOffline = tournamentData.isOffline;
+	const players = isOffline 
+		? localTournamentPlayerQueries.findByPartyId(party.id)
+		: partyPlayerQueries.findByPartyId(party.id);
 	const { round, p1, p2 } = findNextMatchPlayers(tournamentData, players.length);
 	
 	console.log(`Round# : ${round}`);
 	console.log(`Data : ${JSON.stringify(tournamentData)}`);
 	
 	if (round > 0) {
-		const p1Name = p1 ? userQueries.getNameById(partyPlayerQueries.getUserIdByPartyAndTeam(party.id, p1)) : '';
-		const p2Name = p2 ? userQueries.getNameById(partyPlayerQueries.getUserIdByPartyAndTeam(party.id, p2)) : '';
+		let p1Name, p2Name;
 		
-		let msg = `Le prochain match sera entre ${p1Name} et ${p2Name} ! Tenez-vous prêts !`;
-		if (round === 1) {
-			msg = `Le gagnant de ce match jouera contre ${p1Name} en finale ! Soyez prêts pour le grand match !`;
+		if (isOffline) {
+			p1Name = p1 ? localTournamentPlayerQueries.getAliasByPartyAndTeam(party.id, p1) : '';
+			p2Name = p2 ? localTournamentPlayerQueries.getAliasByPartyAndTeam(party.id, p2) : '';
+		} else {
+			p1Name = p1 ? userQueries.getNameById(partyPlayerQueries.getUserIdByPartyAndTeam(party.id, p1)) : '';
+			p2Name = p2 ? userQueries.getNameById(partyPlayerQueries.getUserIdByPartyAndTeam(party.id, p2)) : '';
 		}
 		
-		sendSysMessage(party.id, msg);
+		let msg = round === 1 
+			? 'finalMatch'
+			: 'nextMatchBetween';
+		
+		sendSysMessage(party.id, msg, { p1Name, p2Name });
 	}
 }
 
@@ -148,4 +183,53 @@ export function initializeTournament(partyId, players) {
 	});
 	
 	return tournamentData;
+}
+
+/**
+ * Initialize an offline tournament with local player aliases (no user registration required)
+ * @param {number} partyId - The party ID
+ * @param {string[]} aliases - Array of player alias strings
+ * @returns {object} Tournament data structure
+ */
+export function initializeOfflineTournament(partyId, aliases) {
+	const tournamentData = createTournament();
+	tournamentData.isOffline = true;
+	const nbPlayers = aliases.length;
+	
+	// First, clear any existing local tournament players for this party
+	localTournamentPlayerQueries.delete(partyId);
+	
+	aliases.forEach(alias => {
+		let team = Math.floor(Math.random() * nbPlayers) + 1;
+		while (tournamentData[team] !== 0) {
+			team = Math.floor(Math.random() * nbPlayers) + 1;
+		}
+		
+		if (team <= 8 - nbPlayers) {
+			tournamentData[team] = 2;
+		} else {
+			tournamentData[team] = 3;
+		}
+		
+		// Create local tournament player with the alias
+		localTournamentPlayerQueries.create(partyId, alias, team);
+		console.log(`Local player "${alias}" assigned to team ${team} in offline tournament for party ${partyId}`);
+	});
+	
+	return tournamentData;
+}
+
+/**
+ * Get player name for offline tournament by team number
+ * @param {number} partyId - The party ID
+ * @param {number} team - The team number
+ * @param {boolean} isOffline - Whether this is an offline tournament
+ * @returns {string} Player name/alias
+ */
+export function getPlayerNameByTeam(partyId, team, isOffline) {
+	if (isOffline) {
+		return localTournamentPlayerQueries.getAliasByPartyAndTeam(partyId, team) || 'Unknown';
+	}
+	const userId = partyPlayerQueries.getUserIdByPartyAndTeam(partyId, team);
+	return userId ? userQueries.getNameById(userId) : 'Unknown';
 }

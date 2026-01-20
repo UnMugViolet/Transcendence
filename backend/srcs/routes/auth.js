@@ -228,7 +228,27 @@ async function authRoutes(fastify) {
 	});
 
 
-	fastify.post('/login/2fa', async (request, reply) => {
+	fastify.post('/login/2fa', {
+		schema: {
+			description: 'Complete 2FA login flow using temporary token and 2FA code',
+			tags: ['2FA', 'Auth'],
+			body: {
+				type: 'object',
+				required: ['tempToken', 'token'],
+				properties: {
+					tempToken: { type: 'string', description: 'Temporary JWT token received from /login when 2FA is enabled' },
+					token: { type: 'string', description: '6-digit TOTP code or backup code' },
+					stayConnect: { type: 'boolean', description: 'If true, refresh token lasts 7 days; otherwise 1 hour' }
+				}
+			},
+			response: {
+				200: authResponseSchema,
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema
+			}
+		}, 
+	}, async (request, reply) => {
 		const { tempToken, token, stayConnect } = request.body;
 
 		if (!tempToken || !token) {

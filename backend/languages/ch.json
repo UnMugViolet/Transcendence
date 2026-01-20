@@ -1,3 +1,11 @@
 {
-	"notEnough": "没有足够的玩家来开始游戏"
+	"notEnough": "没有足够的玩家来开始游戏",
+	"matchBetween": "{{p1Name}} 和 {{p2Name}} 之间的比赛！祝你好运！",
+	"nextMatchBetween": "下一场比赛将在 {{p1Name}} 和 {{p2Name}} 之间！准备好了！",
+	"finalMatch": "这场比赛的获胜者将在决赛中对阵 {{p1Name}}！准备好迎接大赛吧！",
+	"playerLeft": "{{playerName}} 离开了游戏。",
+	"playerLeftTournament": "{{leftPlayerName}} 离开了游戏并被淘汰出锦标赛。{{activePlayerName}} 获胜！",
+	"playerReconnected": "{{playerName}} 重新连接！",
+	"playerDisconnected": "{{playerName}} 已断开连接。",
+	"waitingForPlayer": "等待 {{userName}} 返回..."
 }

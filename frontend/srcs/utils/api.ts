@@ -130,4 +130,34 @@ export class ApiClient {
   static async delete(url: string): Promise<Response> {
     return this.fetchWithAuth(url, { method: "DELETE" });
   }
+
+  /**
+   * Makes a PATCH request with JSON data
+   */
+  static async patch(url: string, data: any): Promise<Response> {
+    return this.fetchWithAuth(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Update user language preference on the backend
+   */
+  static async updateLanguage(language: string): Promise<boolean> {
+    try {
+      const response = await this.patch(`${BACKEND_URL}/language`, { language });
+      if (response.ok) {
+        console.log(`Language preference updated to: ${language}`);
+        return true;
+      } else {
+        console.error('Failed to update language preference:', await response.text());
+        return false;
+      }
+    } catch (error) {
+      console.error('Error updating language preference:', error);
+      return false;
+    }
+  }
 }

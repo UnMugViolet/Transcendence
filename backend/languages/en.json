@@ -1,3 +1,11 @@
 {
-	"notEnough": "Not enough players to start the game"
+	"notEnough": "Not enough players to start the game",
+	"matchBetween": "Match between {{p1Name}} and {{p2Name}}! Good luck!",
+	"nextMatchBetween": "Next match will be between {{p1Name}} and {{p2Name}}! Get ready!",
+	"finalMatch": "The winner of this match will play against {{p1Name}} in the final! Get ready for the big match!",
+	"playerLeft": "{{playerName}} left the game.",
+	"playerLeftTournament": "{{leftPlayerName}} left the game and is eliminated from the tournament. Victory for {{activePlayerName}}!",
+	"playerReconnected": "{{playerName}} reconnected!",
+	"playerDisconnected": "{{playerName}} has been disconnected.",
+	"waitingForPlayer": "Waiting for {{userName}} to return..."
 }

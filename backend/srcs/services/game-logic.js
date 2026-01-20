@@ -39,7 +39,8 @@ export function createGame() {
 		team1up: false,
 		team1down: false,
 		team2up: false,
-		team2down:false
+		team2down:false,
+		Player2Name: null
 	};
 }
 
@@ -51,7 +52,7 @@ export function resetRound(game) {
 	
 	const side = Math.floor(Math.random() * 10) % 2 === 0 ? 1 : -1;
 	game.angle = side === 1 ? 0 : Math.PI;
-	game.angle = game.angle + (Math.random() * (Math.PI / 2)) - (Math.random() * (Math.PI / 2));
+	game.angle = game.angle + (Math.random() * (Math.PI / 4)) - (Math.random() * (Math.PI / 4));
 	if (game.angle < 0)
 		game.angle += 2 * Math.PI;
 	if (game.angle === Math.PI / 2 || game.angle === 3 * Math.PI / 2) {

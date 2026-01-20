@@ -55,7 +55,7 @@ async function usersRoutes(fastify) {
 	}, async (request) => {
 		console.log('User profile requested:', request.user.name);
 		const info = db.prepare(`
-			SELECT u.id, u.name, u.profile_picture, u.created_at, u.role_id, r.id as role_id, r.name as role_name
+			SELECT u.id, u.name, u.profile_picture, u.created_at, u.language, u.role_id, r.id as role_id, r.name as role_name
 			FROM users u
 			LEFT JOIN roles r ON u.role_id = r.id
 			WHERE u.id = ?
@@ -67,6 +67,7 @@ async function usersRoutes(fastify) {
 			name: info.name,
 			profile_picture: info.profile_picture,
 			created_at: info.created_at,
+			language: info.language || 'en',
 			role: {
 				id: info.role_id,
 				name: info.role_name
@@ -313,6 +314,54 @@ async function usersRoutes(fastify) {
 		db.prepare(`UPDATE users SET profile_picture = ? WHERE id = ?`).run(filename, userId);
 
 		return { message: 'Profile picture updated', filename };
+	});
+
+	// Update user language preference
+	fastify.patch('/language', {
+		preHandler: fastify.authenticate,
+		schema: {
+			description: 'Update user language preference',
+			tags: ['Users'],
+			security: [{ bearerAuth: [] }],
+			body: {
+				type: 'object',
+				required: ['language'],
+				properties: {
+					language: { 
+						type: 'string',
+						enum: ['en', 'fr', 'ch'],
+						description: 'Language code (en, fr, ch)'
+					}
+				}
+			},
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						message: { type: 'string' },
+						language: { type: 'string' }
+					}
+				},
+				400: errorResponseSchema
+			}
+		}
+	}, async (request, reply) => {
+		const userId = request.user.id;
+		const { language } = request.body;
+
+		// Validate language
+		const supportedLanguages = ['en', 'fr', 'ch'];
+		if (!supportedLanguages.includes(language)) {
+			return reply.status(400).send({ error: 'Unsupported language' });
+		}
+
+		try {
+			db.prepare('UPDATE users SET language = ? WHERE id = ?').run(language, userId);
+			return { message: 'Language preference updated', language };
+		} catch (error) {
+			console.error('Error updating language:', error);
+			return reply.status(500).send({ error: 'Failed to update language preference' });
+		}
 	});
 }
 
