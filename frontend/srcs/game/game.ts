@@ -438,24 +438,60 @@ function resizeCanvas(recenter: boolean = false) {
 	const viewportWidth = window.innerWidth;
 	const viewportHeight = window.innerHeight;
 	const isPortrait = viewportHeight > viewportWidth;
+	const isMobile = viewportWidth < 1024; // Use lg breakpoint
 
-	// Update canvas pixel size to match CSS size (when visible)
-	let newClientWidth = pong.clientWidth || prevWidth || 800;
-	let newClientHeight = pong.clientHeight || prevHeight || 600;
+	// Calculate available space
+	let newClientWidth: number;
+	let newClientHeight: number;
 	
-	// Ensure canvas maintains a good aspect ratio
 	if (isPortrait) {
-		// Portrait mode: prioritize width, adjust height
-		const maxWidth = Math.min(viewportWidth * 0.95, 800);
-		const aspectRatio = 3/4; // Portrait aspect ratio
-		newClientWidth = maxWidth;
-		newClientHeight = maxWidth / aspectRatio;
+		// Portrait mode: fit to width, adjust height with portrait aspect ratio
+		// Account for: header (64px), controls (60px), chat (192px), button (35px), padding (20px) = ~370px
+		const reservedSpace = 370;
+		const availableHeight = Math.max(viewportHeight - reservedSpace, 250);
+		const availableWidth = viewportWidth - 20; // Small padding
+		
+		// Use 3:4 aspect ratio for portrait (width:height)
+		const aspectRatio = 3 / 4;
+		
+		// Calculate based on both constraints
+		const widthBasedHeight = availableWidth / aspectRatio;
+		const heightBasedWidth = availableHeight * aspectRatio;
+		
+		if (widthBasedHeight <= availableHeight) {
+			newClientWidth = availableWidth;
+			newClientHeight = widthBasedHeight;
+		} else {
+			newClientWidth = heightBasedWidth;
+			newClientHeight = availableHeight;
+		}
 	} else {
-		// Landscape mode: use more available width for better experience
-		const maxWidth = Math.min(viewportWidth * 1, 1600);
-		const aspectRatio = 16/10;
-		newClientWidth = maxWidth;
-		newClientHeight = maxWidth / aspectRatio;
+		// Landscape mode: use 16:10 aspect ratio
+		const aspectRatio = 16 / 10;
+		
+		if (isMobile) {
+			// Mobile landscape: Account for header (64px), controls (60px), button (35px), padding (20px) = ~180px
+			const reservedSpace = 180;
+			const availableHeight = Math.max(viewportHeight - reservedSpace, 180);
+			const availableWidth = viewportWidth - 10;
+			
+			// Calculate based on both constraints
+			const heightBasedWidth = availableHeight * aspectRatio;
+			const widthBasedHeight = availableWidth / aspectRatio;
+			
+			if (widthBasedHeight <= availableHeight) {
+				newClientWidth = availableWidth;
+				newClientHeight = widthBasedHeight;
+			} else {
+				newClientWidth = heightBasedWidth;
+				newClientHeight = availableHeight;
+			}
+		} else {
+			// Desktop: use container width
+			const containerWidth = pong.parentElement?.clientWidth || viewportWidth * 0.7;
+			newClientWidth = Math.min(containerWidth * 0.95, 1600);
+			newClientHeight = newClientWidth / aspectRatio;
+		}
 	}
 	
 	// Use devicePixelRatio for sharp rendering (fixes pixelation)
@@ -463,9 +499,6 @@ function resizeCanvas(recenter: boolean = false) {
 	pong.width = newClientWidth * dpr;
 	pong.height = newClientHeight * dpr;
 	
-	// Set CSS size
-	pong.style.width = `${newClientWidth}px`;
-	pong.style.height = `${newClientHeight}px`;
 	
 	// Scale context to match device pixel ratio
 	ctx.scale(dpr, dpr);
@@ -842,9 +875,14 @@ async function startingGame(resume = false, timer = true) {
 	// One more pass on next frame to catch freshly-laid-out size
 	setTimeout(() => resizeCanvas(false), 0);
 	ctx.clearRect(0, 0, width, height);
-	// Dynamic font sizes based on canvas height
-	const messageFont = Math.max(28, Math.floor(height * 0.08)); // ~8% of height
-	const countdownFont = Math.max(48, Math.floor(height * 0.2)); // ~20% of height
+	// Dynamic font sizes based on canvas height (smaller for mobile)
+	const isMobile = window.innerWidth < 768;
+	const messageFont = isMobile
+		? Math.max(18, Math.floor(height * 0.06))
+		: Math.max(28, Math.floor(height * 0.08));
+	const countdownFont = isMobile
+		? Math.max(32, Math.floor(height * 0.12))
+		: Math.max(48, Math.floor(height * 0.15));
 	ctx.font = `${messageFont}px Arial`;
 	ctx.fillStyle = "rgb(254, 243, 199)";
 	ctx.textAlign = "center";
@@ -852,7 +890,7 @@ async function startingGame(resume = false, timer = true) {
 	if (timer) {
 		// Display the starting message
 		const startMessage = resume ? i18n.t("gameResumes") : i18n.t("gameStarts");
-		const messageSpacing = Math.floor(height * 0.1); // 15% spacing
+		const messageSpacing = Math.floor(height * 0.08); //8% spacing
 		ctx.fillText(startMessage, width / 2, height / 2 - messageSpacing);
 		
 		let countdown = 5;
@@ -1491,12 +1529,21 @@ function draw() {
 	const player1Name = sessionStorage.getItem("player1Name") || i18n.t("player1");
 	const player2Name = sessionStorage.getItem("player2Name") || i18n.t("playerTwo");
 
-	// Responsive font sizes based on canvas dimensions
-	const nameFontSize = Math.max(16, Math.min(32, Math.floor(height * 0.04)));
-	const scoreFontSize = Math.max(24, Math.min(72, Math.floor(height * 0.08)));
-	// Improved spacing - scores at top, names below with proper gap
-	const scoreYPosition = Math.max(50, Math.floor(height * 0.1));
-	const nameYPosition = scoreYPosition + Math.max(35, Math.floor(height * 0.06));
+	// Responsive font sizes based on canvas dimensions (smaller for mobile)
+	const isMobile = window.innerWidth < 768;
+	const nameFontSize = isMobile 
+		? Math.max(12, Math.min(20, Math.floor(height * 0.035)))
+		: Math.max(16, Math.min(32, Math.floor(height * 0.04)));
+	const scoreFontSize = isMobile
+		? Math.max(20, Math.min(48, Math.floor(height * 0.07)))
+		: Math.max(24, Math.min(72, Math.floor(height * 0.08)));
+	// Improved spacing - scores at top, names below with proper gap (tighter on mobile)
+	const scoreYPosition = isMobile 
+		? Math.max(35, Math.floor(height * 0.08))
+		: Math.max(50, Math.floor(height * 0.1));
+	const nameYPosition = scoreYPosition + (isMobile 
+		? Math.max(25, Math.floor(height * 0.05))
+		: Math.max(35, Math.floor(height * 0.06)));
 
 	// Draw player names
 	ctx.font = `${nameFontSize}px Arial`;
