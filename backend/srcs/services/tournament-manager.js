@@ -26,8 +26,12 @@ export function findNextMatchPlayers(tournamentData, maxTeams = 8) {
     let p1 = 0, p2 = 0;
     for (let i = 1; i <= maxTeams; i++) {
         if ((tournamentData[i] || 0) === round) {
-            if (!p1) p1 = i;
-            else if (!p2) { p2 = i; break; }
+            if (!p1) {
+				p1 = i;
+			}
+            else if (!p2) { 
+				p2 = i; break;
+			}
         }
     }
 
@@ -35,14 +39,18 @@ export function findNextMatchPlayers(tournamentData, maxTeams = 8) {
 }
 
 export function setupNextMatch(partyId, tournamentData) {
-	if (!tournamentData) return { round: 0 };
+	if (!tournamentData) {
+		 return { round: 0 };
+	}
 	const isOffline = tournamentData["isOffline"];
 	
 	// Get players based on tournament type
 	const players = isOffline 
 	? localTournamentPlayerQueries.findByPartyId(partyId)
 	: partyPlayerQueries.findByPartyId(partyId);
-	if (!players) return { round: 0 };
+	if (!players) {
+		 return { round: 0 };
+	}
 	
 	console.log("tournament data: ", tournamentData);
 	const { round, p1, p2 } = findNextMatchPlayers(tournamentData);
@@ -50,7 +58,9 @@ export function setupNextMatch(partyId, tournamentData) {
 	tournamentData["p2"] = p2;
 	console.log(`p1: ${p1}, p2: ${p2}`);
 
-	if (round === 0) return { round: 0 };
+	if (round === 0) {
+		return { round: 0 };
+	}
 
 	// Get player info based on tournament type
 	const p1Info = isOffline 
@@ -130,10 +140,12 @@ function handlePlayerStates(partyId, playerStates, p1Info, p2Info) {
 
 export function sendNextGameMessage(party, game, tournamentData) {
 	const mode = party.type;
-	if (mode !== 'Tournament' && mode !== 'OfflineTournament') return;
+	if (mode !== 'Tournament' && mode !== 'OfflineTournament')
+		return;
 	
 	const shouldSend = (game.score1 === 8 || game.score2 === 8 || Date.now() - game.created >= 60000) && !game.send;
-	if (!shouldSend) return;
+	if (!shouldSend) 
+		return;
 	
 	game.send = true;
 	const isOffline = tournamentData["isOffline"];

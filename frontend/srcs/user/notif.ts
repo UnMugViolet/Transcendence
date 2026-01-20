@@ -46,7 +46,8 @@ export function initNotifications() {
     return;
   }
 
-  notifBtn.addEventListener("click", async () => {
+  notifBtn.addEventListener("click", async (e) => {
+    e.stopPropagation(); // Prevent immediate close 
     await loadNotifications();
     notifPopup.classList.toggle("hidden");
 	if (!notifPopup.classList.contains("hidden")) {
@@ -56,13 +57,14 @@ export function initNotifications() {
   document.addEventListener("click", (e) => {
     if (!notifPopup.classList.contains("hidden")) {
       const target = e.target as HTMLElement;
-      if (!notifPopup.contains(target) && !notifBtn.contains(target)) {
+      const notifContainer = document.getElementById("notifications");
+      // Check if click is outside both popup and the entire notification container
+      if (!notifPopup.contains(target) && notifContainer && !notifContainer.contains(target)) {
         notifPopup.classList.add("hidden");
       }
     }
   });
   loadNotifications();
-//   setInterval(loadNotifications, 5000); // Reload every 5 seconds
 }
 
 export async function loadNotifications() {
