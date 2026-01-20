@@ -66,32 +66,26 @@ await fastify.register(fastifySwagger, {
 });
 
 await fastify.register(fastifySwaggerUi, {
-	routePrefix: '/docs',
-	uiConfig: {
-		docExpansion: 'list',
-		deepLinking: true
-	},
-	staticCSP: true,
-	transformSpecificationClone: true
+	routePrefix: '/docs'
 });
 
-fastify.register(fastifyCors, {
+await fastify.register(fastifyCors, {
 	origin: '*',
 	credentials: true 
 });
 
-fastify.register(fastifyjwt, {
+await fastify.register(fastifyjwt, {
 	secret: process.env.JWT_SECRET,
 	sign: {
 		expiresIn: '20min'
 	}
 });
 
-fastify.register(fastifyMultipart, {
+await fastify.register(fastifyMultipart, {
   limits: { fileSize: 2 * 1024 * 1024 }
 });
 
-fastify.register(fastifyStatic, {
+await fastify.register(fastifyStatic, {
   root: path.join(process.cwd(), 'img'),
   prefix: '/img/',
 });

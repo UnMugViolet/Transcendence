@@ -152,7 +152,7 @@ function timeAgo(timestamp: number): string {
 
 function recentGameWidget(stats: UserStats, myId: number): string {
   return `
-    <div id="recentGamesCard" class="bg-black w-full bg-opacity-40 rounded-xl px-4 py-2 mx-auto max-w-md relative">
+    <div id="recentGamesCard" class="bg-black w-full bg-opacity-40 rounded-xl px-4 py-2 mx-auto relative">
       <div class="flex justify-between items-start mb-3">
         <h2 data-i18n="recentGames" class="text-lg font-semibold text-amber-100"></h2>
       </div>
