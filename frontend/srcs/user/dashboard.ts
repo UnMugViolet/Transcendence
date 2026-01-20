@@ -79,20 +79,20 @@ function formatDuration(seconds: number): string {
 function statsCards(stats: UserStats): string {
   return `
     <div class="grid grid-cols-2 gap-4">
-      ${statCard(i18n.t("games"), stats.totalGames,)}
-      ${statCard(i18n.t("wins"), stats.wins)}
-      ${statCard(i18n.t("losses"), stats.losses)}
-      ${statCard(i18n.t("avgScore"), stats.avgScore)}
-      ${statCard(i18n.t("avgDuration"), formatDuration(stats.avgDuration))}
-      ${statCard("🏆 Tournaments Won", stats.tournamentWins)}
+      ${statCard("games", stats.totalGames)}
+      ${statCard("wins", stats.wins)}
+      ${statCard("losses", stats.losses)}
+      ${statCard("avgScore", stats.avgScore)}
+      ${statCard("avgDuration", formatDuration(stats.avgDuration))}
+      ${statCard("tournamentsWon", stats.tournamentWins)}
     </div>
   `;
 }
 
-function statCard(label: string, value: number | string): string {
+function statCard(i18nKey: string, value: number | string): string {
   return `
     <div class="bg-black bg-opacity-40 rounded-xl p-4">
-      <p class="text-sm font-medium text-amber-100">${label}</p>
+      <p data-i18n="${i18nKey}" class="text-sm font-medium text-amber-100"></p>
       <p class="text-3xl font-bold text-amber-200">${value}</p>
     </div>
   `;
@@ -280,7 +280,7 @@ function populateMatchHistoryTable(stats: UserStats, myId: number) {
           <td>${opponent}</td>
           <td class="text-center font-bold">${game.myScore} - ${game.oppScore}</td>
           <td class="text-center ${game.isWin ? "text-green-400" : "text-red-400"}">
-            ${game.isWin ? "Win" : "Loss"}
+            <span data-i18n="${game.isWin ? 'win' : 'loss'}"></span>
           </td>
           <td class="text-center">${Math.floor(game.duration/60)}m ${game.duration%60}s</td>
         </tr>
@@ -299,7 +299,7 @@ function renderMatchHistoryTable(games: RecentGame[]) {
       <td>${game.opponent_name}</td>
       <td class="text-center font-bold">${game.myScore} - ${game.oppScore}</td>
       <td class="text-center ${game.isWin ? "text-green-400" : "text-red-400"}">
-        ${game.isWin ? "Win" : "Loss"}
+        <span data-i18n="${game.isWin ? 'win' : 'loss'}"></span>
       </td>
       <td class="text-center">
         ${Math.floor(game.duration / 60)}m ${game.duration % 60}s

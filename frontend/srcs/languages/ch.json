@@ -96,7 +96,7 @@
   "losses": "失败",
   "winRate": "胜率",
   "avgScore": "平均得分",
-  "tournamentsWon": "赢得的锦标赛",
+  "tournamentsWon": "🏆 赢得的锦标赛",
   "avgDuration": "平均持续时间",
   "recentGames": "最近的游戏",
   "noRecentGames": "没有最近的游戏。",
@@ -108,6 +108,8 @@
   "minutesAgo": "分钟前",
   "hoursAgo": "小时前",
   "matchHistory": "比赛历史",
+  "win": "胜利",
+  "loss": "失败",
 
   "setup2FA": "设置双因素认证",
   "scanQR": "使用Google Authenticator或任何TOTP应用扫描此二维码：",

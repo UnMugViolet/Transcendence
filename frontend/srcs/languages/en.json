@@ -98,7 +98,7 @@
   "losses": "Losses",
   "winRate": "Win Rate",
   "avgScore": "Average Score",
-  "tournamentsWon": "Tournaments Won",
+  "tournamentsWon": " 🏆 Tournaments Won",
   "avgDuration": "Average Duration",
   "recentGames": "Recent Games",
   "noRecentGames": "No recent games.",
@@ -110,6 +110,8 @@
   "minutesAgo": "minutes ago",
   "hoursAgo": "hours ago",
   "matchHistory": "Match History",
+  "win": "Win",
+  "loss": "Loss",
 
   "setup2FA": "Setup Two-Factor Authentication",
   "scanQR": "Scan this QR code with Google Authenticator or any TOTP app:",
