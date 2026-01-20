@@ -58,8 +58,8 @@ export function setupNextMatch(partyId, tournamentData) {
 		: partyPlayerQueries.findByPartyIdAndTeam(partyId, p2);
 	
 	// Get names based on tournament type
-	const p1Name = isOffline ? p1Info.alias : userQueries.getNameById(p1Info.user_id);
-	const p2Name = isOffline ? p2Info.alias : userQueries.getNameById(p2Info.user_id);
+	const p1Name = isOffline ? (p1Info.alias) : userQueries.getNameById(p1Info.user_id);
+	const p2Name = isOffline ? (p2Info.alias) : userQueries.getNameById(p2Info.user_id);
 	
 	console.log(`Next match in tournament for party ${partyId} is between team ${p1} (${p1Name}) and team ${p2} (${p2Name})`);
 

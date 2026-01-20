@@ -33,7 +33,7 @@ export async function setTeam(partyId, games, team1 = null, team2 = null) {
 	const game = games.get(partyId);
 	const party = partyQueries.findById(partyId);
 	
-	if (party.type === 'Tournament') {
+	if (party.type === 'Tournament' || party.type === 'OfflineTournament') {
 		game.team1 = team1;
 		game.team2 = team2;
 	} else {
@@ -47,14 +47,14 @@ export async function setTeam(partyId, games, team1 = null, team2 = null) {
 export async function handleEndGame(partyId, game, mode, games, tournament) {
 	const isOfflineTournament = mode === 'OfflineTournament';
 	const teamLoser = determineLosingTeam(partyId, game, isOfflineTournament);
-	
+	console.log("loserteam: ", teamLoser);
 	if ((mode === 'Tournament' || mode === 'OfflineTournament') && tournament[partyId]) {
 		tournament[partyId][teamLoser] = 0;
 	}
 	
 	updatePlayerStatuses(partyId, teamLoser, isOfflineTournament);
 	const winnerName = getWinnerName(partyId, game, teamLoser, isOfflineTournament);
-
+	game.started = false;
 	try {
 		// Only save match history for registered users (not offline tournament)
 		if (!isOfflineTournament) {
@@ -115,11 +115,11 @@ function determineLosingTeam(partyId, game, isOfflineTournament = false) {
 function updatePlayerStatuses(partyId, teamLoser, isOfflineTournament = false) {
 	if (isOfflineTournament) {
 		// For offline tournaments, update local tournament player statuses
-		localTournamentPlayerQueries.updateStatusByPartyAndCurrentStatus('waiting', partyId, 'active');
 		localTournamentPlayerQueries.updateStatusByPartyTeamAndCurrentStatus('eliminated', partyId, teamLoser, 'active');
+		localTournamentPlayerQueries.updateStatusByPartyAndCurrentStatus('waiting', partyId, 'active');
 	} else {
-		partyPlayerQueries.updateStatusByPartyAndCurrentStatus('waiting', partyId, 'active');
 		partyPlayerQueries.updateStatusByPartyTeamAndCurrentStatus('eliminated', partyId, teamLoser, 'active');
+		partyPlayerQueries.updateStatusByPartyAndCurrentStatus('waiting', partyId, 'active');
 	}
 }
 
