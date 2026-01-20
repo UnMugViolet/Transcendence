@@ -114,7 +114,7 @@ services:
       - GF_PATHS_CONFIG=/etc/grafana/grafana.ini
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/config/grafana.ini:/etc/grafana/grafana.ini:ro
     depends_on:
