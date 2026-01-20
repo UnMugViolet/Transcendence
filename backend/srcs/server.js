@@ -22,6 +22,7 @@ import gameRoutes from './routes/game.js';
 import statsRoutes from './routes/stats.js';
 import { clients } from './routes/chat.js';
 import { gameLoop, pauseLoop } from './routes/game.js';
+import { i18n } from './services/i18n-service.js';
 
 const fastify = Fastify({ 
 	logger: {level: 'warn'}
@@ -93,6 +94,48 @@ fastify.register(fastifyMultipart, {
 fastify.register(fastifyStatic, {
   root: path.join(process.cwd(), 'img'),
   prefix: '/img/',
+});
+
+// Custom error handler for schema validation
+fastify.setErrorHandler((error, request, reply) => {
+	const lang = request.headers['accept-language'] || 'en';
+	
+	// Handle Fastify schema validation errors
+	if (error.validation) {
+		const firstError = error.validation[0];
+		
+		// Check for missing required fields
+		if (firstError.keyword === 'required') {
+			const missingField = firstError.params.missingProperty;
+			
+			if (missingField === 'name') {
+				return reply.status(400).send({ error: i18n.t('nameRequired', lang) });
+			}
+			if (missingField === 'password') {
+				return reply.status(400).send({ error: i18n.t('passwordRequired', lang) });
+			}
+			if (missingField === 'token') {
+				return reply.status(400).send({ error: i18n.t('tokenRequired', lang) });
+			}
+		}
+		
+		// Handle minLength/maxLength errors
+		if (firstError.keyword === 'minLength' && firstError.instancePath === '/name') {
+			return reply.status(400).send({ error: i18n.t('nameMinLength', lang) });
+		}
+		if (firstError.keyword === 'maxLength' && firstError.instancePath === '/name') {
+			return reply.status(400).send({ error: i18n.t('nameMaxLength', lang) });
+		}
+		if (firstError.keyword === 'minLength' && firstError.instancePath === '/password') {
+			return reply.status(400).send({ error: i18n.t('passwordMinLength', lang) });
+		}
+		
+		// Generic validation error
+		return reply.status(400).send({ error: error.message });
+	}
+	
+	// Handle other errors normally
+	reply.send(error);
 });
 
 fastify.register(statsRoutes, { 

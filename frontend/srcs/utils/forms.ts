@@ -5,6 +5,7 @@ import { ModalManager } from "./modal.js";
 import { initChatSocket } from "../user/chat.js";
 import { AuthResponse, LoginResponse } from "../types/types.js";
 import { i18n } from "./i18n.js";
+import { fetchCurrentLanguage } from "./langs.js";
 import { initPongBtns } from "../game/game.js";
 import { TwoFactorAuthManager } from "./twofa.js";
 import { closeHeaderMenu } from "../user/header-menu.js";
@@ -62,7 +63,10 @@ export class FormManager {
       try {
         const response = await fetch(`${BACKEND_URL}/register`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept-Language": fetchCurrentLanguage()
+          },
           body: JSON.stringify({
             name: username,
             password: password,
@@ -137,7 +141,10 @@ export class FormManager {
       try {
         const response = await fetch(`${BACKEND_URL}/login`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept-Language": fetchCurrentLanguage()
+          },
           body: JSON.stringify({
             name: username,
             password: password,
@@ -160,7 +167,10 @@ export class FormManager {
               // Complete login with 2FA code
               const verify2FAResponse = await fetch(`${BACKEND_URL}/login/2fa`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                  "Content-Type": "application/json",
+                  "Accept-Language": fetchCurrentLanguage()
+                },
                 body: JSON.stringify({
                   tempToken: (data as any).tempToken,
                   token: code,
@@ -301,7 +311,10 @@ export class FormManager {
 
         const response = await fetch(`${BACKEND_URL}/register`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept-Language": fetchCurrentLanguage()
+          },
           body: JSON.stringify({
             name: demoUsername,
             password: password,

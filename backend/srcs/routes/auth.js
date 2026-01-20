@@ -2,9 +2,9 @@ import bcrypt from 'bcrypt';
 import db from '../db.js';
 import speakeasy from 'speakeasy';
 
-import { BACKEND_URL } from "../config.js";
 import { clients } from './chat.js';
 import { checkName, checkPassword } from '../utils.js';
+import { i18n } from '../services/i18n-service.js';
 
 // Common schema definitions
 const errorResponseSchema = {
@@ -110,18 +110,20 @@ async function authRoutes(fastify) {
 
 
 		if (!name) {
-			return reply.status(400).send({ error: 'Name is required' });
+			return reply.status(400).send({ error: i18n.t('nameRequired', request.headers['accept-language']) });
 		}
 		if (!password) {
-			return reply.status(400).send({ error: 'Password is required' });
+			return reply.status(400).send({ error: i18n.t('passwordRequired', request.headers['accept-language']) });
 		}
 
-		let check = checkName(name);
+		const lang = request.headers['accept-language'];
+
+		let check = checkName(name, lang);
 		if (!check.valid) {
 			return reply.status(400).send({ error: check.error });
 		}
 
-		check = checkPassword(password);
+		check = checkPassword(password, lang);
 		if (!check.valid) {
 			return reply.status(400).send({ error: check.error });
 		}
@@ -129,13 +131,13 @@ async function authRoutes(fastify) {
 		// Validate roleType
 		const allowedRoles = ['user', 'admin', 'demo'];
 		if (!allowedRoles.includes(roleType)) {
-			return reply.status(400).send({ error: 'Invalid role type' });
+			return reply.status(400).send({ error: i18n.t('invalidRoleType', request.headers['accept-language']) });
 		}
 
 		// Get role ID from role name
 		const roleRecord = db.prepare('SELECT id FROM roles WHERE name = ?').get(roleType);
 		if (!roleRecord) {
-			return reply.status(500).send({ error: 'Role not found in database' });
+			return reply.status(500).send({ error: i18n.t('roleNotFound', request.headers['accept-language']) });
 		}
 
 		const hashedPass = bcrypt.hashSync(password, 10);
@@ -151,7 +153,7 @@ async function authRoutes(fastify) {
 			return { ...tokens, role };
 		} catch (err) {
 			if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-				return reply.status(409).send({ error: 'Name already exists' });
+				return reply.status(409).send({ error: i18n.t('userAlreadyExists', request.headers['accept-language']) });
 			}
 			throw err;
 		}
@@ -184,25 +186,25 @@ async function authRoutes(fastify) {
 
 
 		if (!name) {
-			return reply.status(400).send({ error: 'Name is required' });
+			return reply.status(400).send({ error: i18n.t('nameRequired', request.headers['accept-language']) });
 		}
 		if (!password) {
-			return reply.status(400).send({ error: 'Password is required' });
+			return reply.status(400).send({ error: i18n.t('passwordRequired', request.headers['accept-language']) });
 		}
 
 		const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name);
 		if (!user) {
-			return reply.status(404).send({ error: 'User not found' });
+			return reply.status(404).send({ error: i18n.t('userNotFound', request.headers['accept-language']) });
 		}
 
 		const userAlreadyLoggedIn = clients.has(user.id);
 		if (userAlreadyLoggedIn) {
 			console.log(`User ${name} is already logged in elsewhere.`);
-			return reply.status(403).send({ error: 'User is already logged in elsewhere' });
+			return reply.status(403).send({ error: i18n.t('userAlreadyLogged', request.headers['accept-language']) });
 		}
 		const isValidPass = bcrypt.compareSync(password, user.password);
 		if (!isValidPass) {
-			return reply.status(401).send({ error: 'Invalid password' });
+			return reply.status(401).send({ error: i18n.t('invalidPassword', request.headers['accept-language']) });
 		}
 
 		// Check if 2FA is enabled
@@ -252,26 +254,26 @@ async function authRoutes(fastify) {
 		const { tempToken, token, stayConnect } = request.body;
 
 		if (!tempToken || !token) {
-			return reply.status(400).send({ error: 'tempToken and token are required' });
+			return reply.status(400).send({ error: i18n.t('tempTokenAndTokenRequired', request.headers['accept-language']) });
 		}
 
 		let payload;
 		try {
 			payload = fastify.jwt.verify(tempToken);
 		} catch (err) {
-			return reply.status(401).send({ error: 'Invalid or expired tempToken' });
+			return reply.status(401).send({ error: i18n.t('invalidOrExpiredTempToken', request.headers['accept-language']) });
 		}
 		if (payload?.type !== '2fa' || !payload?.id) {
-			return reply.status(401).send({ error: 'Invalid tempToken' });
+			return reply.status(401).send({ error: i18n.t('invalidTempToken', request.headers['accept-language']) });
 		}
 
 		const userId = payload.id;
 		const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
 		if (!user) {
-			return reply.status(404).send({ error: 'User not found' });
+			return reply.status(404).send({ error: i18n.t('userNotFound', request.headers['accept-language']) });
 		}
 		if (!user.two_fa_enabled || !user.two_fa_secret) {
-			return reply.status(400).send({ error: '2FA not enabled for this user' });
+			return reply.status(400).send({ error: i18n.t('2faNotEnabled', request.headers['accept-language']) });
 		}
 
 		// Verify TOTP first
@@ -298,7 +300,7 @@ async function authRoutes(fastify) {
 		}
 
 		if (!verified) {
-			return reply.status(401).send({ error: 'Invalid token' });
+			return reply.status(401).send({ error: i18n.t('invalidToken', request.headers['accept-language']) });
 		}
 
 		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), user.id);
@@ -338,33 +340,33 @@ async function authRoutes(fastify) {
 		const { token } = request.body;
 
 		if (!token) {
-			return reply.status(400).send({ error: 'Token is required' });
+			return reply.status(400).send({ error: i18n.t('tokenRequired', request.headers['accept-language']) });
 		}
 
 		try {
 			const payload = fastify.jwt.verify(token);
 			if (payload.type !== 'refresh') {
-				return reply.status(401).send({ error: 'Unauthorized' });
+				return reply.status(401).send({ error: i18n.t('unauthorized', request.headers['accept-language']) });
 			}
 		} catch (err) {
 			console.error('Error verifying token in /user delete route:', err);
-			return reply.status(401).send({ error: 'Invalid token' });
+			return reply.status(401).send({ error: i18n.t('invalidToken', request.headers['accept-language']) });
 		}
 		const now = Date.now();
 
 		const tokenInfo = db.prepare('SELECT * FROM refresh_tokens WHERE token = ?').get(token);
 		if (!tokenInfo) {
-			return reply.status(404).send({ error: 'Token not found' });
+			return reply.status(404).send({ error: i18n.t('tokenNotFound', request.headers['accept-language']) });
 		}
 
 		if (now - tokenInfo.last_used_at > tokenInfo.timeout) {
 			db.prepare('DELETE FROM refresh_tokens WHERE token = ? AND user_agent = ?').run(token, request.headers['user-agent']);
-			return reply.status(401).send({ error: 'Token expired' });
+			return reply.status(401).send({ error: i18n.t('tokenExpired', request.headers['accept-language']) });
 		}
 
 		const user = db.prepare('SELECT * FROM users WHERE id = ?').get(tokenInfo.user_id);
 		if (!user) {
-			return reply.status(404).send({ error: 'User not found' });
+			return reply.status(404).send({ error: i18n.t('userNotFound', request.headers['accept-language']) });
 		}
 
 		db.prepare('UPDATE refresh_tokens SET last_used_at = ? WHERE token = ? AND user_agent = ?').run(Date.now(), token, request.headers['user-agent']);
@@ -404,21 +406,21 @@ async function authRoutes(fastify) {
 		const { token } = request.body;
 
 		if (!token) {
-			return reply.status(400).send({ error: 'Token is required' });
+			return reply.status(400).send({ error: i18n.t('tokenRequired', request.headers['accept-language']) });
 		}
 
 		try {
 			const payload = fastify.jwt.verify(token);
 			if (payload.type !== 'refresh') {
-				return reply.status(401).send({ error: 'Unauthorized' });
+				return reply.status(401).send({ error: i18n.t('unauthorized', request.headers['accept-language']) });
 			}
 		} catch (err) {
-			return reply.status(401).send({ error: 'Invalid token' });
+			return reply.status(401).send({ error: i18n.t('invalidToken', request.headers['accept-language']) });
 		}
 
 		const tokenInfo = db.prepare('SELECT * FROM refresh_tokens WHERE token = ?').get(token);
 		if (!tokenInfo) {
-			return reply.status(404).send({ error: 'Token not found' });
+			return reply.status(404).send({ error: i18n.t('tokenNotFound', request.headers['accept-language']) });
 		}
 
 		const userId = tokenInfo.user_id;
@@ -448,7 +450,7 @@ async function authRoutes(fastify) {
 			return { message: 'User deleted successfully' };
 		} catch (err) {
 			console.error("Error deleting user:", err);
-			return reply.status(500).send({ error: 'Failed to delete user' });
+			return reply.status(500).send({ error: i18n.t('failedToDeleteUser', request.headers['accept-language']) });
 		}
 	});
 }

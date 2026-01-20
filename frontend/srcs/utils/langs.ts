@@ -41,7 +41,7 @@ export async function populateLanguageDropdown(availableLangs: string[]) {
 	});
 }
 
-function fetchCurrentLanguage(): string {
+export function fetchCurrentLanguage(): string {
 	const langButton : HTMLElement | null = document.getElementById('langButton');
 
 	if (langButton) {
