@@ -65,12 +65,12 @@ export function setupNextMatch(partyId, tournamentData) {
 
 	// For offline tournaments, players are always "active" locally
 	if (isOffline) {
-		sendSysMessage(partyId, `Match entre ${p1Name} et ${p2Name} ! Bonne chance !`);
+		sendSysMessage(partyId, 'matchBetween', { p1Name, p2Name });
 		localTournamentPlayerQueries.updateStatus(partyId, p1, 'active');
 		localTournamentPlayerQueries.updateStatus(partyId, p2, 'active');
 	} else {
 		const playerStates = checkPlayerStates(p1Info, p2Info);
-		sendSysMessage(partyId, `Match entre ${p1Name} et ${p2Name} ! Bonne chance !`);
+		sendSysMessage(partyId, 'matchBetween', { p1Name, p2Name });
 		handlePlayerStates(partyId, playerStates, p1Info, p2Info);
 	}
 	
@@ -117,7 +117,7 @@ function handlePlayerStates(partyId, playerStates, p1Info, p2Info) {
 		
 		const leftPlayerName = userQueries.getNameById(playerStates.leftId);
 		const activePlayerName = userQueries.getNameById(activeId);
-		sendSysMessage(partyId, `${leftPlayerName} a quitté la partie et est éliminé du tournoi. Victoire pour ${activePlayerName} !`);
+		sendSysMessage(partyId, 'playerLeftTournament', { leftPlayerName, activePlayerName });
 	} else {
 		// Both players active
 		partyPlayerQueries.updateStatus(p1Info.user_id, partyId, 'active');
@@ -153,12 +153,11 @@ export function sendNextGameMessage(party, game, tournamentData) {
 			p2Name = p2 ? userQueries.getNameById(partyPlayerQueries.getUserIdByPartyAndTeam(party.id, p2)) : '';
 		}
 		
-		let msg = `Le prochain match sera entre ${p1Name} et ${p2Name} ! Tenez-vous prêts !`;
-		if (round === 1) {
-			msg = `Le gagnant de ce match jouera contre ${p1Name} en finale ! Soyez prêts pour le grand match !`;
-		}
+		let msg = round === 1 
+			? 'finalMatch'
+			: 'nextMatchBetween';
 		
-		sendSysMessage(party.id, msg);
+		sendSysMessage(party.id, msg, { p1Name, p2Name });
 	}
 }
 

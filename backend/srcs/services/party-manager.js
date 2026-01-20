@@ -20,7 +20,7 @@ export function handlePause(partyId, userId, games) {
 	
 	console.log(`User ${userId} disconnected from party ${partyId}`);
 	const userName = userQueries.getNameById(userId);
-	sendSysMessage(partyId, `En attente du retour de ${userName}...`); // NEED TRANSLATION
+	sendSysMessage(partyId, 'waitingForPlayer', { userName });
 	sendPauseMessage(partyId, userId);
 }
 

@@ -7,7 +7,9 @@ import db from '../db.js';
 // User queries
 export const userQueries = {
 	findById: (userId) => db.prepare('SELECT * FROM users WHERE id = ?').get(userId),
-	getNameById: (userId) => db.prepare('SELECT name FROM users WHERE id = ?').get(userId)?.name
+	getNameById: (userId) => db.prepare('SELECT name FROM users WHERE id = ?').get(userId)?.name,
+	getLanguageById: (userId) => db.prepare('SELECT language FROM users WHERE id = ?').get(userId)?.language || 'en',
+	updateLanguage: (userId, language) => db.prepare('UPDATE users SET language = ? WHERE id = ?').run(language, userId)
 };
 
 // Party queries

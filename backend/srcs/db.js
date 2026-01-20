@@ -48,6 +48,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS users (
 	two_fa_enabled INTEGER NOT NULL DEFAULT 0,
 	two_fa_secret TEXT,
 	two_fa_backup_codes TEXT,
+	language VARCHAR(10) NOT NULL DEFAULT 'en',
     FOREIGN KEY (role_id) REFERENCES roles(id)
 )`).run();
 

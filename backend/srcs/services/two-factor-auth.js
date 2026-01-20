@@ -3,10 +3,12 @@ import QRCode from 'qrcode';
 import crypto from 'crypto';
 import db from '../db.js';
 
+
 async function twoFaRoutes(fastify) {
 
-
 	fastify.post('/enable', { preHandler: fastify.authenticate }, async (request, reply) => {
+
+
     
     if (!request.user || !request.user.id) {
       console.error('2FA enable: No user found in request. User object:', JSON.stringify(request.user, null, 2));

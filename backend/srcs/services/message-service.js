@@ -1,24 +1,38 @@
 import { clients } from '../routes/chat.js';
 import { partyPlayerQueries, userQueries } from './database-queries.js';
+import { i18n } from './i18n-service.js';
 
 /**
  * Message service for sending system and game messages
  */
 
-export function sendSysMessage(partyId, message) {
-	const msg = {
-		type: 'party',
-		from: -1,
-		fromName: 'System',
-		to: partyId,
-		message,
-		send_at: Date.now()
-	};
-	
+/**
+ * Send a system message with translation support
+ * @param {number} partyId - Party ID
+ * @param {string} keyOrMessage - Translation key or plain message
+ * @param {object} params - Parameters for translation interpolation
+ * @param {boolean} translate - Whether to translate (default: true)
+ */
+export function sendSysMessage(partyId, keyOrMessage, params = {}, translate = true) {
 	const players = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['disconnected', 'left']);
+	
 	players.forEach(player => {
 		const playerSocket = clients.get(player.user_id);
 		if (playerSocket) {
+			// Get translated message for this specific user
+			const message = translate 
+				? i18n.tUser(keyOrMessage, player.user_id, params)
+				: keyOrMessage;
+			
+			const msg = {
+				type: 'party',
+				from: -1,
+				fromName: 'System',
+				to: partyId,
+				message,
+				send_at: Date.now()
+			};
+			
 			playerSocket.send(JSON.stringify(msg));
 		}
 	});

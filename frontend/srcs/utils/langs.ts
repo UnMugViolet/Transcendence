@@ -1,4 +1,6 @@
 import { i18n } from "./i18n.js";
+import { ApiClient } from "./api.js";
+import { AuthManager } from "../user/auth.js";
 
 /**
  *  Inserts language options into the language dropdown and sets up event listeners for language selection.
@@ -26,6 +28,11 @@ export async function populateLanguageDropdown(availableLangs: string[]) {
 			localStorage.setItem("lang", lang);
 			updateLanguageButton(lang);
 			langDropdown?.classList.add('hidden');
+			
+			// Sync language preference with backend if user is authenticated
+			if (AuthManager.isAuthenticated()) {
+				await ApiClient.updateLanguage(lang);
+			}
 		},);
 	});
 }
