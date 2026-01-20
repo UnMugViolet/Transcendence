@@ -390,7 +390,7 @@ async function twoFaRoutes(fastify) {
   fastify.post('/verify', {
 		schema: {
 			description: 'Verify 2FA token during login flow',
-			tags: ['2FA', 'Authentication'],
+			tags: ['2FA'],
 			body: {
 				type: 'object',
 				required: ['userId', 'token'],

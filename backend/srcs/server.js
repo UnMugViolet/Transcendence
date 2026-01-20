@@ -156,7 +156,7 @@ fastify.get('/', {
 		}
 	}
 }, async () => {
-	return { message: 'Hello from Fastify & SQLite 🎉' };
+	return { message: 'Checkout documentation for the Transcendence API at /docs' };
 });
 
 // Prometheus metrics endpoint

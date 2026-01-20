@@ -30,10 +30,14 @@ export async function populateLanguageDropdown(availableLangs: string[]) {
 			langDropdown?.classList.add('hidden');
 			
 			// Sync language preference with backend if user is authenticated
-			if (AuthManager.isAuthenticated()) {
-				await ApiClient.updateLanguage(lang);
+			const isAuth = AuthManager.isAuthenticated();
+			console.log(`Language changed to ${lang}. User authenticated: ${isAuth}`);
+			if (isAuth) {
+				const success = await ApiClient.updateLanguage(lang);
+			} else {
+				console.log('Skipping backend update: user not authenticated');
 			}
-		},);
+		});
 	});
 }
 
@@ -57,8 +61,8 @@ export function updateLanguageButton(langCode: string) {
 	const currentLangText: HTMLSpanElement | null | undefined = langButton?.querySelector('span');
 
 	if (langButton && currentFlag && currentLangText) {
-		const createdButton: HTMLButtonElement = document.createElement('button');
 		// Update the button's data-lang attribute
+		langButton.setAttribute('data-lang', langCode);
 
 		// Update the flag image
 		currentFlag.src = `img/flags/${langCode}.png`;
