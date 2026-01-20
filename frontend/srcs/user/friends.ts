@@ -273,6 +273,7 @@ export async function loadFriends() {
       const li = document.createElement("li");
       li.className =
       "flex items-center justify-between bg-rose-700 p-2 rounded cursor-pointer hover:bg-rose-600";
+      li.id = `friend-${friend.friend_id}`;
 
       const left = document.createElement("div");
       left.className = "flex items-center gap-2";
@@ -287,6 +288,7 @@ export async function loadFriends() {
       onlineBadge.className = friend.online === 'true'
         ? "w-2 h-2 bg-green-500 rounded-full inline-block"
         : "w-2 h-2 bg-gray-400 rounded-full inline-block";
+      onlineBadge.id = `badge-${friend.friend_id}`;
 
       const span = document.createElement("span");
       span.textContent = friend.friend_name;
@@ -303,10 +305,11 @@ export async function loadFriends() {
       openChatWindow(friend.friend_id, friend.friend_name, friend.friend_pfp);
       });
     });
-    } catch (err) {
+  } catch (err) {
       console.error("Error loading friends:", err);
-    }
   }
+}
+
 
 
 

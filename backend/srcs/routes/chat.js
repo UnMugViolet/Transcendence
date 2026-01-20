@@ -6,6 +6,7 @@ import {
 	partyPlayerQueries,
 	partyQueries
 } from '../services/database-queries.js';
+import { addUserOnline, removeUserOnline } from '../services/presence-service.js';
 import {
 	validateInviteRequest,
 	validateInviterParty,
@@ -420,8 +421,29 @@ async function chat(fastify) {
 			if (payload.type !== 'access') throw new Error('Unauthorized');
 
 			clients.set(payload.id, connection.socket || connection);
+			addUserOnline(payload.id);
 			if (metricsInstance) metricsInstance.recordWebSocketConnection();
 			console.log(`🔌 Client connecté : ${payload.name} (ID: ${payload.id})`);
+			
+			// Notify friends that this user is now online
+			const friends = db.prepare(`
+				SELECT CASE WHEN f.id1 = ? THEN f.id2 ELSE f.id1 END AS friend_id
+				FROM friends f
+				WHERE (f.id1 = ? OR f.id2 = ?) AND f.status = 'accepted'
+			`).all(payload.id, payload.id, payload.id);
+			
+			friends.forEach(friend => {
+				const friendSocket = clients.get(friend.friend_id);
+				if (friendSocket) {
+					friendSocket.send(JSON.stringify({ 
+						type: 'presence', 
+						userId: payload.id, 
+						status: 'online',
+						name: payload.name 
+					}));
+				}
+			});
+			
 			console.log(`DEBUG: Total clients connected: ${clients.size}`);
 			console.log(`DEBUG: Client IDs: [${Array.from(clients.keys()).join(', ')}]`);
 			console.log(`DEBUG: Connection object keys:`, Object.keys(connection));
@@ -445,6 +467,7 @@ async function chat(fastify) {
 
 			(connection.socket || connection).on('close', (code, reason) => {
 				console.log(`WS close for ${payload.name} (id=${payload.id}) code=${code} reason=${reason}`);
+				removeUserOnline(payload.id);
 				
 				// Check if user has already left - don't override 'left' status with 'disconnected'
 				const currentParty = partyPlayerQueries.findByUserIdNotStatus(payload.id, 'left');
@@ -473,6 +496,25 @@ async function chat(fastify) {
 				clients.delete(payload.id);
 				if (metricsInstance) metricsInstance.recordWebSocketDisconnection();
 				console.log(`DEBUG: Clients after disconnect: ${clients.size} remaining`);
+				
+				// Notify friends that this user is now offline
+				const friends = db.prepare(`
+					SELECT CASE WHEN f.id1 = ? THEN f.id2 ELSE f.id1 END AS friend_id
+					FROM friends f
+					WHERE (f.id1 = ? OR f.id2 = ?) AND f.status = 'accepted'
+				`).all(payload.id, payload.id, payload.id);
+				
+				friends.forEach(friend => {
+					const friendSocket = clients.get(friend.friend_id);
+					if (friendSocket) {
+						friendSocket.send(JSON.stringify({ 
+							type: 'presence', 
+							userId: payload.id, 
+							status: 'offline',
+							name: payload.name 
+						}));
+					}
+				});
 			});
 
 		} catch (err) {

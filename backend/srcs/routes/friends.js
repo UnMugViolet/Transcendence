@@ -1,6 +1,7 @@
 import db from '../db.js';
 import { sendNotification } from '../services/message-service.js';
 import { isBlocked } from '../utils.js';
+import { isUserOnline } from '../services/presence-service.js';
 
 const errorResponseSchema = {
 	type: 'object',
@@ -64,18 +65,22 @@ async function friendsRoutes (fastify, options) {
 		}
 	}, async (request) => {
 		const userId = request.user.id;
-		const timeout = 15 * 60 * 1000; // 15 minutes
 		const friends = db.prepare(`
 			SELECT 
 				u.id AS friend_id,
 				u.name AS friend_name,
 				u.profile_picture AS friend_pfp,
-				f.time AS friendship_time,
-				CASE WHEN ? - u.last_seen < ? THEN 'true' ELSE 'false' END AS online
+				f.time AS friendship_time
 			FROM friends f
 			JOIN users u ON (u.id = CASE WHEN f.id1 = ? THEN f.id2 ELSE f.id1 END)
 			WHERE (f.id1 = ? OR f.id2 = ?) AND f.status = 'accepted'
-		`).all(Date.now(), timeout, userId, userId, userId);
+		`).all(userId, userId, userId);
+		
+		// Add real-time online status based on websocket connections
+		friends.forEach(friend => {
+			friend.online = isUserOnline(friend.friend_id) ? 'true' : 'false';
+		});
+		
 		return { friends };
 	});
 
