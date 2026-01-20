@@ -220,23 +220,23 @@ fastify.addHook('onClose', async () => {
 	db.prepare('DELETE FROM parties').run();
 	if (db) {
 		db.close();
-		console.log('✅ Database connection closed.'); // DEBUG
+		console.log('✅ Database connection closed.'); 
 	}
 
 	clients.forEach((socket) => {
 		socket.close(1001, 'Server is shutting down'); 
 	});
 	clients.clear();
-	console.log('✅ All WebSocket connections have been closed.'); // DEBUG
+	console.log('✅ All WebSocket connections have been closed.');
 
 	if (gameLoop) {
 		clearInterval(gameLoop);
-		console.log('✅ Game loop has been stopped.'); // DEBUG
+		console.log('✅ Game loop has been stopped.');
 	}
 
 	if (pauseLoop) {
 		clearInterval(pauseLoop);
-		console.log('✅ Pause loop has been stopped.'); // DEBUG
+		console.log('✅ Pause loop has been stopped.');
 	}
 	console.log('🛑 Fastify server has stopped cleanly.');
 });

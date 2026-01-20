@@ -32,12 +32,21 @@ import db from '../db.js';
 
 const clients = new Map();
 
+// Track last_seen update times to avoid spamming database
+const lastSeenUpdateTimes = new Map();
+const LAST_SEEN_UPDATE_INTERVAL = 5000; // Only update every 5 seconds
+
 export function handleInput(msg, userId) {
 	try {
 		const data = JSON.parse(msg);
 		
-		//update last_seen when receiving an input
-		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), userId);
+		// Update last_seen only periodically (not on every input)
+		const now = Date.now();
+		const lastUpdate = lastSeenUpdateTimes.get(userId) || 0;
+		if (now - lastUpdate >= LAST_SEEN_UPDATE_INTERVAL) {
+			db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(now, userId);
+			lastSeenUpdateTimes.set(userId, now);
+		}
 		
 		// Handle game input
 		if (data.type === 'input') {
@@ -420,11 +429,9 @@ async function chat(fastify) {
 			if (payload.type !== 'access') throw new Error('Unauthorized');
 
 			clients.set(payload.id, connection.socket || connection);
-			if (metricsInstance) metricsInstance.recordWebSocketConnection();
-			console.log(`🔌 Client connecté : ${payload.name} (ID: ${payload.id})`);
-			console.log(`DEBUG: Total clients connected: ${clients.size}`);
-			console.log(`DEBUG: Client IDs: [${Array.from(clients.keys()).join(', ')}]`);
-			console.log(`DEBUG: Connection object keys:`, Object.keys(connection));
+			if (metricsInstance) {
+				metricsInstance.recordWebSocketConnection();
+			}
 
 			// Check for reconnection scenario
 			const disconnected = partyPlayerQueries.findByUserIdAndStatus(payload.id, 'disconnected');

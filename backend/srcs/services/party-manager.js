@@ -33,6 +33,7 @@ export async function setTeam(partyId, games, team1 = null, team2 = null, player
 	const game = games.get(partyId);
 	const party = partyQueries.findById(partyId);
 	game.mode = party.type;
+	game.partyType = party.type; // Store party type for game loop optimization
 	
 	if (party.type === 'Tournament' || party.type === 'OfflineTournament') {
 		console.log(`set teams to ${team1} and ${team2} for tournament`);
@@ -185,7 +186,7 @@ export async function broadcastStartMessage(partyId, resume = false, games, paus
 	const party = partyQueries.findById(partyId);
 	const isOfflineTournament = party && party.type === 'OfflineTournament';
 	
-	console.log(`DEBUG broadcastStartMessage: partyId=${partyId}, isOfflineTournament=${isOfflineTournament}, p1=${p1}, p2=${p2}`);
+	// console.log(`DEBUG broadcastStartMessage: partyId=${partyId}, isOfflineTournament=${isOfflineTournament}, p1=${p1}, p2=${p2}`);
 	
 	// Clear any lingering pause
 	if (pauses && pauses.has(partyId)) {
@@ -194,7 +195,7 @@ export async function broadcastStartMessage(partyId, resume = false, games, paus
 	
 	// Get host players (registered users in party)
 	const partyPlayers = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['left', 'disconnected', 'invited']);
-	console.log(`DEBUG broadcastStartMessage: Found ${partyPlayers.length} party players:`, partyPlayers.map(p => ({ user_id: p.user_id, status: p.status, team: p.team })));
+	// console.log(`DEBUG broadcastStartMessage: Found ${partyPlayers.length} party players:`, partyPlayers.map(p => ({ user_id: p.user_id, status: p.status, team: p.team })));
 	
 	// Build players list with names and teams
 	let playersList;
@@ -212,7 +213,7 @@ export async function broadcastStartMessage(partyId, resume = false, games, paus
 			return { name: name || 'Unknown', team: p.team };
 		});
 	}
-	console.log(`DEBUG broadcastStartMessage: playersList =`, playersList);
+	// console.log(`DEBUG broadcastStartMessage: playersList =`, playersList);
 	
 	// Send start message to all connected host players
 	partyPlayers.forEach(player => {

@@ -64,7 +64,6 @@ export const gameLoop = setInterval(() => {
 			updatePaddle(game, 'paddle1Y', game.team1up, game.team1down);
 			updatePaddle(game, 'paddle2Y', game.team2up, game.team2down);
 			updateBall(game);
-			// console.log(`DEBUG: Game ${party.id} - Ball at ${game.ballX.toFixed(3)}, ${game.ballY.toFixed(3)}`);
 		}
 
 		// Send game state to players
@@ -603,7 +602,9 @@ async function gameRoutes(fastify) {
 			// Ensure game exists before calling handleEndGame
 			if (!games.has(party.id)) {
 				const { createGame } = await import('../services/game-logic.js');
-				games.set(party.id, createGame());
+				const game = createGame();
+				game.partyType = party.type;
+				games.set(party.id, game);
 			}
 			
 			handleEndGame(party.id, games.get(party.id), party.type, games, tournament);

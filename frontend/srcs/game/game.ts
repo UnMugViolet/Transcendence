@@ -849,7 +849,7 @@ start?.addEventListener("click", async () => {
 					
 					await startingGame(false, true);
 				} else {
-					console.log("WS 'start' already received, skipping fallback."); // DEBUG
+					console.log("WS 'start' already received, skipping fallback.");
 				}
 			}, 300);
 		}
@@ -1056,10 +1056,6 @@ export async function handleGameRemote(data: any) {
 		ballY = value.ballY * height;
 		player1Score = value.score1;
 		player2Score = value.score2;
-
-		console.log("ball position x: ", ballX, "ball position y: ", ballY
-			
-		);
 		
 		return true;
 	}

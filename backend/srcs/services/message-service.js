@@ -52,13 +52,8 @@ export function sendGameStateToPlayers(partyId, gameState) {
 			// Only mark as disconnected if not already
 			const currentStatus = player.status;
 			if (currentStatus !== 'disconnected') {
-				console.log(`DEBUG: No socket found for player ${player.user_id}, marking as disconnected.`);
 				partyPlayerQueries.updateStatus(player.user_id, partyId, 'disconnected');
-			} else {
-				console.log(`DEBUG: Player ${player.user_id} already disconnected, skipping.`);
 			}
-			// Debug: print clients map keys for investigation
-			console.log('DEBUG: Current clients map keys:', Array.from(clients.keys()));
 		}
 	});
 }
@@ -93,7 +88,6 @@ export function sendPauseMessage(partyId, excludeUserId) {
 
 export function sendStartMessage(partyId, playersList, playerTeam, userId, resume = false, team1, team2) {
 	const playerSocket = clients.get(userId);
-	console.log(`DEBUG: sendStartMessage for user ${userId}, socket exists: ${!!playerSocket}`);
 	if (playerSocket) {
 		const playerName = userQueries.getNameById(userId);
 		console.log(`User ${playerName} is on team ${playerTeam} in game for party ${partyId}`);
@@ -106,10 +100,8 @@ export function sendStartMessage(partyId, playersList, playerTeam, userId, resum
 			resume: resume, 
 			players: playersList 
 		};
-		console.log(`DEBUG: Sending start message:`, startMsg);
 		playerSocket.send(JSON.stringify(startMsg));
 	} else {
-		console.log(`ERROR: No socket found for user ${userId}`);
 	}
 }
 
