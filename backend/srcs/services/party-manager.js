@@ -24,7 +24,7 @@ export function handlePause(partyId, userId, games) {
 	sendPauseMessage(partyId, userId);
 }
 
-export async function setTeam(partyId, games, team1 = null, team2 = null) {
+export async function setTeam(partyId, games, team1 = null, team2 = null, player2Name = null) {
 	if (!games.has(partyId)) {
 		const { createGame } = await import('./game-logic.js');
 		games.set(partyId, createGame());
@@ -40,7 +40,9 @@ export async function setTeam(partyId, games, team1 = null, team2 = null) {
 		game.team1 = 1;
 		game.team2 = 2;
 	}
-	
+	if (party.type === '1v1Offline' && player2Name) {
+		game.player2Name = player2Name;
+	}
 	console.log(`Game for party ${partyId} set with teams ${game.team1} and ${game.team2}`);
 }
 
@@ -54,6 +56,7 @@ export async function handleEndGame(partyId, game, mode, games, tournament) {
 	
 	updatePlayerStatuses(partyId, teamLoser, isOfflineTournament);
 	const winnerName = getWinnerName(partyId, game, teamLoser, isOfflineTournament);
+	console.log("winnerName: ", winnerName);
 	game.started = false;
 	try {
 		// Only save match history for registered users (not offline tournament)
@@ -125,7 +128,7 @@ function updatePlayerStatuses(partyId, teamLoser, isOfflineTournament = false) {
 
 function getWinnerName(partyId, game, teamLoser, isOfflineTournament = false) {
 	const winnerTeam = (game?.team1 === teamLoser) ? game?.team2 : game?.team1;
-	
+	const party = partyQueries.findById(partyId);
 	if (isOfflineTournament) {
 		// For offline tournaments, get alias from local tournament players
 		return localTournamentPlayerQueries.getAliasByPartyAndTeam(partyId, winnerTeam) || 'Player 2';
@@ -135,10 +138,16 @@ function getWinnerName(partyId, game, teamLoser, isOfflineTournament = false) {
 		// If game is undefined, find the winning team by elimination
 		const allPlayers = partyPlayerQueries.findByPartyIdNotStatuses(partyId, ['left', 'disconnected', 'invited']);
 		const winnerId = allPlayers.find(p => p.team !== teamLoser)?.user_id;
-		return winnerId ? userQueries.getNameById(winnerId) : 'Joueur 2';
+		if (game && !winnerId && party.type === '1v1Offline') {
+			return game.player2Name;
+		}
+		return winnerId ? userQueries.getNameById(winnerId) : 'Player 2';
 	}
 	const winnerId = partyPlayerQueries.getUserIdByPartyAndTeam(partyId, winnerTeam);
-	return winnerId ? userQueries.getNameById(winnerId) : 'Joueur 2';
+	if (!winnerId && party.type === '1v1Offline') {
+		return game.player2Name;
+	}
+	return winnerId ? userQueries.getNameById(winnerId) : 'Player 2';
 }
 
 async function cleanupFinishedGame(partyId, games, isOfflineTournament = false) {

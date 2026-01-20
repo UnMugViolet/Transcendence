@@ -607,7 +607,7 @@ globalThis.addEventListener("popstate", async (event) => {
 		}
 		isInternalNavigation = true;
 		setTimeout(() => (isInternalNavigation = false), 100);
-	} else if (started && (mode === '1v1Offline' || mode === 'IA')) {
+	} else if (started && (mode === '1v1Offline' || mode === 'IA' || mode === 'OfflineTournament')) {
 		event.preventDefault();
 		leaveGame();
 	}
@@ -735,6 +735,22 @@ start?.addEventListener("click", async () => {
 				sessionStorage.setItem('offlineTournamentData', JSON.stringify(data));
 			}
 		} else {
+			if (mode === '1v1Offline') {
+			const lobbyInput = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
+			if (lobbyInput && lobbyInput.value && lobbyInput.value.trim()) {
+				sessionStorage.setItem('player2Name', lobbyInput.value.trim());
+			} else {
+				sessionStorage.setItem('player2Name', i18n.t("playerTwo") || "Player 2");
+			}
+			const username = sessionStorage.getItem('username') || sessionStorage.getItem('player1Name') || i18n.t("player1");
+			sessionStorage.setItem('player1Name', username);
+			} else if (mode === 'IA') {
+				// Set up AI opponent name
+				const username = sessionStorage.getItem('username') || sessionStorage.getItem('player1Name') || i18n.t("player1");
+				sessionStorage.setItem('player1Name', username);
+				sessionStorage.setItem('player2Name', i18n.t("ai") || "AI");
+			}
+
 			// Standard game start
 			res = await fetch(`${BACKEND_URL}/start`, {
 				method: "POST",
@@ -742,7 +758,9 @@ start?.addEventListener("click", async () => {
 					"Content-Type": "application/json",
 					"Authorization": `Bearer ${token}`
 				},
-				body: JSON.stringify({ mode })
+				body: JSON.stringify({ mode,
+					Player2Name: sessionStorage.getItem('player2Name')
+				})
 			});
 			data = await res.json();
 
@@ -761,22 +779,6 @@ start?.addEventListener("click", async () => {
 					sessionStorage.setItem("player2Name", p2.name);
 				}
 			}
-		}
-
-		if (mode === '1v1Offline') {
-			const lobbyInput = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
-			if (lobbyInput && lobbyInput.value && lobbyInput.value.trim()) {
-				sessionStorage.setItem('player2Name', lobbyInput.value.trim());
-			} else {
-				sessionStorage.setItem('player2Name', i18n.t("playerTwo") || "Player 2");
-			}
-			const username = sessionStorage.getItem('username') || sessionStorage.getItem('player1Name') || i18n.t("player1");
-			sessionStorage.setItem('player1Name', username);
-		} else if (mode === 'IA') {
-			// Set up AI opponent name
-			const username = sessionStorage.getItem('username') || sessionStorage.getItem('player1Name') || i18n.t("player1");
-			sessionStorage.setItem('player1Name', username);
-			sessionStorage.setItem('player2Name', i18n.t("ai") || "AI");
 		}
 
 		// hide local lobby options when the game actually starts
@@ -906,7 +908,7 @@ async function endingGame(data: any) {
 	{
 		goodBye?.classList.remove("hidden");
 		await sleep(3000);
-		navigateTo('pongMenu', true);
+		navigateTo('pongMenu', true, false);
 		handleRoute();
 	}
 	

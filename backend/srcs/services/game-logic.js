@@ -39,7 +39,8 @@ export function createGame() {
 		team1up: false,
 		team1down: false,
 		team2up: false,
-		team2down:false
+		team2down:false,
+		Player2Name: null
 	};
 }
 

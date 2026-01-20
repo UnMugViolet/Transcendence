@@ -1,4 +1,4 @@
-import { leaveGame, navigateTo, gameId } from "../game/game.js";
+import { leaveGame, navigateTo, gameId, showGoodbyeAndLeave } from "../game/game.js";
 import { handleRoute } from "../index.js";
 
 
@@ -107,38 +107,18 @@ export function initNavigateToMenu(): void {
     const currentView = location.hash.slice(1) || 'pongMenu';
 ``
     // If in viewGame or lobby with active game, properly leave it
-    if (currentView === 'viewGame' || currentView === 'lobby') {
+    if (currentView === 'lobby') {
       console.log("Leaving game/lobby and returning to menu...");
       // Always call leaveGame to properly cleanup - it handles all states
       // including countdown, waiting, and active game
-      await leaveGame({ navigate: true, resetState: true, closeSocket: true });
-      
-      // Loop over all views and hide them
-      elements.forEach(element => {
-        checkVisibilityAndHide(element);
-      });
-
-      // Show pong menu
-      if (pongMenu && pongMenu.classList.contains("hidden")) {
-        pongMenu.classList.remove("hidden");
-      }
-      
-      handleRoute();
-      return;
+      await leaveGame({ navigate: false, resetState: true, closeSocket: true });
     }
+	if (currentView === 'viewGame') {
+		await showGoodbyeAndLeave({ navigate: false, resetState: true, closeSocket: true });
+	}
 
     // Just navigate to menu for other views
-    navigateTo('pongMenu', true);
+    navigateTo('pongMenu', true, false);
     handleRoute();
-
-    // Loop over all views and hide them
-    elements.forEach(element => {
-      checkVisibilityAndHide(element);
-    });
-
-    // Show pong menu
-    if (pongMenu && pongMenu.classList.contains("hidden")) {
-      pongMenu.classList.remove("hidden");
-    }
   });
 }

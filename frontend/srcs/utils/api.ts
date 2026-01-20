@@ -147,7 +147,7 @@ export class ApiClient {
    */
   static async updateLanguage(language: string): Promise<boolean> {
     try {
-      const response = await this.patch(`${BACKEND_URL}/users/language`, { language });
+      const response = await this.patch(`${BACKEND_URL}/language`, { language });
       if (response.ok) {
         console.log(`Language preference updated to: ${language}`);
         return true;
