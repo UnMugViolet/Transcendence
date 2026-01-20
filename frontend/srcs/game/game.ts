@@ -1056,6 +1056,10 @@ export async function handleGameRemote(data: any) {
 		ballY = value.ballY * height;
 		player1Score = value.score1;
 		player2Score = value.score2;
+
+		console.log("ball position x: ", ballX, "ball position y: ", ballY
+			
+		);
 		
 		return true;
 	}
@@ -1580,9 +1584,10 @@ function sendInput() {
 }
 
 function remoteGameLoop() {
-	// When not simulating locally, only draw current server-fed positions and send input periodically.
 	draw();
 	sendInput();
 
-	if (started) requestAnimationFrame(remoteGameLoop);
+	if (started) {
+		requestAnimationFrame(remoteGameLoop);
+	}
 }

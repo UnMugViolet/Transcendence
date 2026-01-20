@@ -35,7 +35,7 @@ await fastify.register(fastifySwagger, {
 		openapi: '3.0.0',
 		info: {
 			title: 'Transcendence API',
-			description: 'API documentation for the Transcendence Pong game',
+			description: 'API documentation for the Transcendence LLDBQIA + Team',
 			version: '1.0.0'
 		},
 		servers: [
