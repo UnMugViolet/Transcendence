@@ -8,6 +8,9 @@ import { initPongBtns, navigateTo, leaveGame } from "../game/game.js";
 import { initNotifications } from "./notif.js";
 import { handleRoute } from "../route/router.js";
 import { FormManager } from "../utils/forms.js";
+import { closeHeaderMenu } from "../user/header-menu.js"
+import { i18n } from "../utils/i18n.js";
+import { updateLanguageButton } from "../utils/langs.js"; 
 
 /**
  * User management and authentication state
@@ -113,7 +116,7 @@ export class UserManager implements User {
 
     // Show logout button
     btnLogout?.classList.remove("hidden");
-    btnLogout?.classList.add("flex");
+    btnLogout?.classList.add("block");
     btnStats?.classList.remove("hidden");
     btnStats?.classList.add("flex");
 
@@ -121,6 +124,7 @@ export class UserManager implements User {
     if (userInfo) {
       userInfo.classList.remove("hidden");
       userInfo.classList.add("flex");
+
       
       const userName = document.getElementById("userName");
       if (userName) {
@@ -180,6 +184,7 @@ export class UserManager implements User {
         if (profileModal) {
           profileModal.classList.remove("hidden");
           profileModal.classList.add("flex");
+          closeHeaderMenu();
         }
       });
     }
@@ -193,7 +198,7 @@ export class UserManager implements User {
       const response = await ApiClient.get(`${BACKEND_URL}/profile`);
       const data = await response.json();
       
-      console.log("Profile API response:", data);
+      // console.log("Profile API response:", data);
       
       if (response.ok && data.user) {
         // Check if role exists in the response
@@ -201,6 +206,14 @@ export class UserManager implements User {
           console.error("Role missing from profile response:", data.user);
           // Fallback: assume non-demo user if role is missing
           data.user.role = { id: 2, name: 'user' };
+        }
+        // Load user's language preference from backend
+        if (data.user.language) {
+          await i18n.loadLanguage(data.user.language);
+          i18n.updateDOM();
+          localStorage.setItem("lang", data.user.language);
+          updateLanguageButton(data.user.language);
+          console.log(`Loaded user language preference: ${data.user.language}`);
         }
         
         // Create user instance with role from API response
@@ -248,6 +261,9 @@ export class UserManager implements User {
         await FormManager.deleteUser(refreshToken);
       }
     }
+
+    // Close the header modal
+    closeHeaderMenu();
     
     // Clear authentication data
     AuthManager.clearAuth();

@@ -13,6 +13,149 @@ const btnLeaveGame = document.getElementById('btnLeaveGame') as HTMLButtonElemen
 
 let mode: string = '';
 
+// Offline tournament player management
+const MIN_TOURNAMENT_PLAYERS = 4;
+const MAX_TOURNAMENT_PLAYERS = 8;
+
+/**
+ * Initialize offline tournament player inputs in the lobby
+ */
+function initTournamentPlayerInputs(): void {
+	const container = document.getElementById('tournamentPlayersList');
+	if (!container) return;
+	
+	container.innerHTML = '';
+	
+	// Add initial 4 player inputs
+	for (let i = 0; i < MIN_TOURNAMENT_PLAYERS; i++) {
+		addTournamentPlayerInput();
+	}
+	
+	updateTournamentPlayerCount();
+	setupTournamentPlayerButtons();
+}
+
+/**
+ * Add a new player input field to the tournament lobby
+ */
+function addTournamentPlayerInput(): void {
+	const container = document.getElementById('tournamentPlayersList');
+	if (!container) return;
+	
+	const playerIndex = container.children.length + 1;
+	
+	const inputWrapper = document.createElement('div');
+	inputWrapper.className = 'flex items-center gap-2 w-full';
+	
+	const label = document.createElement('span');
+	label.className = 'text-amber-100 w-24';
+	label.textContent = `${i18n.t('player') || 'Player'} ${playerIndex}:`;
+	
+	const input = document.createElement('input');
+	input.type = 'text';
+	input.placeholder = `${i18n.t('enterAlias') || 'Enter alias'}...`;
+	input.className = 'p-2 rounded bg-amber-100 text-black flex-1';
+	input.dataset.playerIndex = playerIndex.toString();
+	input.maxLength = 20;
+	
+	inputWrapper.appendChild(label);
+	inputWrapper.appendChild(input);
+	container.appendChild(inputWrapper);
+	
+	updateTournamentPlayerCount();
+}
+
+/**
+ * Remove the last player input field from the tournament lobby
+ */
+function removeTournamentPlayerInput(): void {
+	const container = document.getElementById('tournamentPlayersList');
+	if (!container || container.children.length <= MIN_TOURNAMENT_PLAYERS) return;
+	
+	container.removeChild(container.lastElementChild!);
+	updateTournamentPlayerCount();
+}
+
+/**
+ * Update the player count display and button states
+ */
+function updateTournamentPlayerCount(): void {
+	const container = document.getElementById('tournamentPlayersList');
+	const countDisplay = document.getElementById('tournamentPlayerCount');
+	const addBtn = document.getElementById('btnAddTournamentPlayer') as HTMLButtonElement;
+	const removeBtn = document.getElementById('btnRemoveTournamentPlayer') as HTMLButtonElement;
+	
+	if (!container) return;
+	
+	const count = container.children.length;
+	
+	if (countDisplay) {
+		countDisplay.textContent = `${count}/${MAX_TOURNAMENT_PLAYERS} ${i18n.t('players') || 'players'}`;
+	}
+	
+	if (addBtn) {
+		addBtn.disabled = count >= MAX_TOURNAMENT_PLAYERS;
+	}
+	
+	if (removeBtn) {
+		removeBtn.disabled = count <= MIN_TOURNAMENT_PLAYERS;
+	}
+}
+
+/**
+ * Setup event listeners for add/remove player buttons
+ */
+function setupTournamentPlayerButtons(): void {
+	const addBtn = document.getElementById('btnAddTournamentPlayer');
+	const removeBtn = document.getElementById('btnRemoveTournamentPlayer');
+	
+	if (addBtn) {
+		addBtn.onclick = () => addTournamentPlayerInput();
+	}
+	
+	if (removeBtn) {
+		removeBtn.onclick = () => removeTournamentPlayerInput();
+	}
+}
+
+/**
+ * Collect all tournament player aliases from the input fields
+ * @returns Array of player aliases or null if validation fails
+ */
+function collectTournamentPlayerAliases(): string[] | null {
+	const container = document.getElementById('tournamentPlayersList');
+	if (!container) return null;
+	
+	const inputs = container.querySelectorAll('input');
+	const aliases: string[] = [];
+	
+	for (const input of inputs) {
+		const alias = (input as HTMLInputElement).value.trim();
+		if (!alias) {
+			showStartMessage(i18n.t('allPlayersRequired') || 'All players must have an alias');
+			return null;
+		}
+		if (aliases.indexOf(alias.toLowerCase()) !== -1) {
+			showStartMessage(i18n.t('duplicateAlias') || 'All player aliases must be unique');
+			return null;
+		}
+		aliases.push(alias);
+	}
+	
+	return aliases;
+}
+
+/**
+ * Show an error/info message in the lobby
+ */
+function showStartMessage(message: string): void {
+	const startMessage = document.getElementById('startMessage');
+	if (startMessage) {
+		startMessage.textContent = message;
+		startMessage.classList.remove('hidden');
+	}
+}
+
 export async function openLobby(joinData: any, gameMode: string) {
 	// Set up game state
 	if (joinData)
@@ -22,24 +165,26 @@ export async function openLobby(joinData: any, gameMode: string) {
 	await configureLobbyUI(gameMode);
 	showGameControlButtons();
 	mode = gameMode;
+	updateControlsVisibility();
 }
 
 export function initPongBtns() {
 	const btnOffline = document.getElementById('btnOffline') as HTMLButtonElement | null;
 	const btnOnline = document.getElementById('btnOnline') as HTMLButtonElement | null;
 	const btnTournament = document.getElementById('btnTournament') as HTMLButtonElement | null;
+	const btnLocalTournament = document.getElementById('btnLocalTournament') as HTMLButtonElement | null;
 	const btnIA = document.getElementById('btnIA') as HTMLButtonElement | null;
 
 	let userLoggedIn = UserManager.isUserLoggedIn();
 	let isDemoUser = UserManager.isUserDemo();
-
-	console.log("User logged in:", userLoggedIn, "Is demo user:", isDemoUser);
 
 	// Show offline and IA buttons for everyone
 	btnOffline?.classList.add('flex');
 	btnOffline?.classList.remove('hidden');
 	btnIA?.classList.add('flex');
 	btnIA?.classList.remove('hidden');
+	btnLocalTournament?.classList.add('flex');
+	btnLocalTournament?.classList.remove('hidden');
 
 	// Show online and tournament buttons only for authenticated users (not demo users)
 	if (userLoggedIn && !isDemoUser) {
@@ -72,6 +217,22 @@ export function initPongBtns() {
 				console.error("Failed to prepare user for offline play");
 			}
 		};
+	}
+	if (btnLocalTournament) {
+		btnLocalTournament.onclick = async () => {
+			mode = 'OfflineTournament';
+			const userReady = await AuthManager.ensureUserReady();
+			if (userReady) {
+				// Close old socket if it exists, to force reconnection with new token
+				const socket = getWs();
+				if (socket && socket.readyState === WebSocket.OPEN) {
+					socket.close();
+				}
+				joinGame(mode);
+			} else {
+				console.error("Failed to prepare user for offline play");
+			}
+		}
 	}
 	if (btnOnline && userLoggedIn && !isDemoUser) {
 		btnOnline.onclick = () => {
@@ -245,7 +406,7 @@ let pendingPopstateLeave = false;
  * Shows the goodbye message and leaves the game
  * @param options Options to pass to leaveGame
  */
-async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: boolean; resetState?: boolean } = {}) {
+export async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: boolean; resetState?: boolean } = {}) {
     // Hide the game view first
     const viewGame = document.getElementById('viewGame');
     if (viewGame) {
@@ -266,19 +427,52 @@ async function showGoodbyeAndLeave(options: { navigate?: boolean; closeSocket?: 
 
 // Ensure canvas matches its visible size and recompute layout-dependent values
 function resizeCanvas(recenter: boolean = false) {
-	if (!pong) return;
+	if (!pong) {
+		return;
+	}
 
 	const prevWidth = width;
 	const prevHeight = height;
 
-	// Update canvas pixel size to match CSS size (when visible)
-	const newClientWidth = pong.clientWidth || prevWidth || 800;
-	const newClientHeight = pong.clientHeight || prevHeight || 600;
-	pong.width = newClientWidth;
-	pong.height = newClientHeight;
+	// Get viewport dimensions
+	const viewportWidth = window.innerWidth;
+	const viewportHeight = window.innerHeight;
+	const isPortrait = viewportHeight > viewportWidth;
 
-	width = pong.width;
-	height = pong.height;
+	// Update canvas pixel size to match CSS size (when visible)
+	let newClientWidth = pong.clientWidth || prevWidth || 800;
+	let newClientHeight = pong.clientHeight || prevHeight || 600;
+	
+	// Ensure canvas maintains a good aspect ratio
+	if (isPortrait) {
+		// Portrait mode: prioritize width, adjust height
+		const maxWidth = Math.min(viewportWidth * 0.95, 800);
+		const aspectRatio = 3/4; // Portrait aspect ratio
+		newClientWidth = maxWidth;
+		newClientHeight = maxWidth / aspectRatio;
+	} else {
+		// Landscape mode: use more available width for better experience
+		const maxWidth = Math.min(viewportWidth * 1, 1600);
+		const aspectRatio = 16/10;
+		newClientWidth = maxWidth;
+		newClientHeight = maxWidth / aspectRatio;
+	}
+	
+	// Use devicePixelRatio for sharp rendering (fixes pixelation)
+	const dpr = window.devicePixelRatio || 1;
+	pong.width = newClientWidth * dpr;
+	pong.height = newClientHeight * dpr;
+	
+	// Set CSS size
+	pong.style.width = `${newClientWidth}px`;
+	pong.style.height = `${newClientHeight}px`;
+	
+	// Scale context to match device pixel ratio
+	ctx.scale(dpr, dpr);
+
+	// Use logical pixels for game calculations (not physical pixels)
+	width = newClientWidth;
+	height = newClientHeight;
 
 	// Recompute sizes based on new dimensions
 	paddleWidth = 0.01 * width;
@@ -312,8 +506,27 @@ function resizeCanvas(recenter: boolean = false) {
 
 resizeCanvas(true);
 
-// Keep canvas in sync on window resize
-globalThis.addEventListener('resize', () => resizeCanvas(false));
+// Debounced resize handler to avoid excessive redraws
+let resizeTimeout: ReturnType<typeof setTimeout> | undefined;
+globalThis.addEventListener('resize', () => {
+	// Only resize if game canvas is visible
+	const viewGame = document.getElementById('viewGame');
+	if (!viewGame || viewGame.classList.contains('hidden')) {
+		return;
+	}
+	
+	// Debounce resize events to prevent excessive calls
+	if (resizeTimeout) {
+		clearTimeout(resizeTimeout);
+	}
+	resizeTimeout = setTimeout(() => {
+		resizeCanvas(false);
+		// Redraw if game is active
+		if (started) {
+			draw();
+		}
+	}, 150);
+});
 
 // Popstate trigger only when user navigates with back/forward buttons
 export let isInternalNavigation = false;
@@ -347,6 +560,7 @@ export function navigateTo(viewId: string, replace = false, leave: boolean = tru
 		} else {
 			globalThis.location.hash = '#' + viewId;
 		}
+
 		setTimeout(() => {
 			isInternalNavigation = false;
 		}, 100);
@@ -393,7 +607,7 @@ globalThis.addEventListener("popstate", async (event) => {
 		}
 		isInternalNavigation = true;
 		setTimeout(() => (isInternalNavigation = false), 100);
-	} else if (started && (mode === '1v1Offline' || mode === 'IA')) {
+	} else if (started && (mode === '1v1Offline' || mode === 'IA' || mode === 'OfflineTournament')) {
 		event.preventDefault();
 		leaveGame();
 	}
@@ -489,33 +703,39 @@ start?.addEventListener("click", async () => {
 			initChatSocket(token!, resolve);
 		});
 		console.log("Starting game...");
-		const res = await fetch(`${BACKEND_URL}/start`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"Authorization": `Bearer ${token}`
-			},
-			body: JSON.stringify({ mode })
-		});
-		const data = await res.json();
-
-		if (!res.ok) {
-			// Use backend message if provided
-			throw new Error(data?.error ? data.error : i18n.t("failedStart"));
-		}
-
-		if (data.players) {
-			const p1 = (data.players as Array<any>).find(p => p.team === 1);
-			const p2 = (data.players as Array<any>).find(p => p.team === 2);
-			if (p1) {
-				sessionStorage.setItem("player1Name", p1.name);
+		
+		let res: Response;
+		let data: any;
+		
+		// Handle offline tournament with aliases
+		if (mode === 'OfflineTournament') {
+			const aliases = collectTournamentPlayerAliases();
+			if (!aliases) {
+				return; // Validation failed, error message already shown
 			}
-			if (p2) {
-				sessionStorage.setItem("player2Name", p2.name);
+			
+			res = await fetch(`${BACKEND_URL}/start-offline-tournament`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Authorization": `Bearer ${token}`
+				},
+				body: JSON.stringify({ aliases })
+			});
+			data = await res.json();
+			
+			if (!res.ok) {
+				throw new Error(data?.error ? data.error : i18n.t("failedStart"));
 			}
-		}
-
-		if (mode === '1v1Offline') {
+			
+			// Store tournament player names for display
+			if (data.nextMatch) {
+				sessionStorage.setItem('player1Name', data.nextMatch.p1Name);
+				sessionStorage.setItem('player2Name', data.nextMatch.p2Name);
+				sessionStorage.setItem('offlineTournamentData', JSON.stringify(data));
+			}
+		} else {
+			if (mode === '1v1Offline') {
 			const lobbyInput = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
 			if (lobbyInput && lobbyInput.value && lobbyInput.value.trim()) {
 				sessionStorage.setItem('player2Name', lobbyInput.value.trim());
@@ -524,24 +744,58 @@ start?.addEventListener("click", async () => {
 			}
 			const username = sessionStorage.getItem('username') || sessionStorage.getItem('player1Name') || i18n.t("player1");
 			sessionStorage.setItem('player1Name', username);
-		} else if (mode === 'IA') {
-			// Set up AI opponent name
-			const username = sessionStorage.getItem('username') || sessionStorage.getItem('player1Name') || i18n.t("player1");
-			sessionStorage.setItem('player1Name', username);
-			sessionStorage.setItem('player2Name', i18n.t("ai") || "AI");
+			} else if (mode === 'IA') {
+				// Set up AI opponent name
+				const username = sessionStorage.getItem('username') || sessionStorage.getItem('player1Name') || i18n.t("player1");
+				sessionStorage.setItem('player1Name', username);
+				sessionStorage.setItem('player2Name', i18n.t("ai") || "AI");
+			}
+
+			// Standard game start
+			res = await fetch(`${BACKEND_URL}/start`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Authorization": `Bearer ${token}`
+				},
+				body: JSON.stringify({ mode,
+					Player2Name: sessionStorage.getItem('player2Name')
+				})
+			});
+			data = await res.json();
+
+			if (!res.ok) {
+				// Use backend message if provided
+				throw new Error(data?.error ? data.error : i18n.t("failedStart"));
+			}
+
+			if (data.players) {
+				const p1 = (data.players as Array<any>).find(p => p.team === 1);
+				const p2 = (data.players as Array<any>).find(p => p.team === 2);
+				if (p1) {
+					sessionStorage.setItem("player1Name", p1.name);
+				}
+				if (p2) {
+					sessionStorage.setItem("player2Name", p2.name);
+				}
+			}
 		}
 
 		// hide local lobby options when the game actually starts
 		const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
+		const lobbyTournamentOptions = document.getElementById('lobbyTournamentOptions');
 
 		if (lobbyLocalOptions) {
 			lobbyLocalOptions.classList.add('hidden');
+		}
+		if (lobbyTournamentOptions) {
+			lobbyTournamentOptions.classList.add('hidden');
 		}
 
 		navigateTo('viewGame');
 
 		// Fallback for single-player modes: if 'start' WS message doesn't arrive shortly, start locally
-		if ((mode === '1v1Offline' || mode === 'IA')) {
+		if ((mode === '1v1Offline' || mode === 'IA' || mode === 'OfflineTournament')) {
 			const partyId = Number((data && data.partyId) || sessionStorage.getItem('partyId'));
 			if (!gameId && partyId) gameId = partyId;
 			if (!team) team = 1;
@@ -581,9 +835,8 @@ function sleep(ms: number): Promise<void> {
 
 // Start game for all players after countdown
 async function startingGame(resume = false, timer = true) {
-	console.log("startingGame called, resume:", resume, "timer:", timer); // DEBUG
-	console.log("Game is starting!");
 	navigateTo('viewGame');
+	updateControlsVisibility();
 	// Ensure canvas has non-zero size now that the view should be visible
 	resizeCanvas(true);
 	// One more pass on next frame to catch freshly-laid-out size
@@ -599,7 +852,8 @@ async function startingGame(resume = false, timer = true) {
 	if (timer) {
 		// Display the starting message
 		const startMessage = resume ? i18n.t("gameResumes") : i18n.t("gameStarts");
-		ctx.fillText(startMessage, width / 2, height / 2 - 40);
+		const messageSpacing = Math.floor(height * 0.1); // 15% spacing
+		ctx.fillText(startMessage, width / 2, height / 2 - messageSpacing);
 		
 		let countdown = 5;
 		countdownInterval = setInterval(() => {
@@ -611,12 +865,12 @@ async function startingGame(resume = false, timer = true) {
 			ctx.font = `${messageFont}px Arial`;
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
-			ctx.fillText(startMessage, width / 2, height / 2 - 40);
+			ctx.fillText(startMessage, width / 2, height / 2 - messageSpacing);
 			
-			// Draw the countdown number
+			// Draw the countdown number with better spacing
 			ctx.fillStyle = "rgb(239, 68, 68)";
-			ctx.font = `${countdownFont}px Arial`;
-			ctx.fillText(countdown.toString(), width / 2, height / 2 + 40);
+			ctx.font = `bold ${countdownFont}px Arial`;
+			ctx.fillText(countdown.toString(), width / 2, height / 2 + messageSpacing);
 			
 			countdown--;
 			if (countdown < 0) {
@@ -629,9 +883,7 @@ async function startingGame(resume = false, timer = true) {
 	// Wait for countdown to finish before starting the game loop
 	await sleep(6000);
 	
-	// Backend is authoritative; no local simulation
-
-	// No local physics initialization; relying on backend updates
+	// Backend call for starting the game loop0
 	remoteGameLoop();
 }
 
@@ -671,7 +923,7 @@ async function endingGame(data: any) {
 	{
 		goodBye?.classList.remove("hidden");
 		await sleep(3000);
-		navigateTo('pongMenu', true);
+		navigateTo('pongMenu', true, false);
 		handleRoute();
 	}
 	
@@ -862,6 +1114,8 @@ function drawGameReadyMessage(gameMode: string): void {
 		ctx.fillText(i18n.t("offlineGameReady") || "", width / 2, height / 2);
 	} else if (gameMode === 'IA') {
 		ctx.fillText(i18n.t("aiGameReady") || "AI Game Ready - Click Start to Play!", width / 2, height / 2);
+	} else if (gameMode === 'OfflineTournament') {
+		ctx.fillText(i18n.t("offlineTournamentReady") || "Local Tournament Ready - Enter player aliases and click Start!", width / 2, height / 2);
 	} else {
 		ctx.fillText(i18n.t("waitingOpponent"), width / 2, height / 2);
 	}
@@ -911,6 +1165,7 @@ async function configureLobbyUI(gameMode: string): Promise<void> {
 	const lobby = document.getElementById("lobby");
 	const lobbyLocalOptions = document.getElementById('lobbyLocalOptions');
 	const lobbyOnlineGroup = document.getElementById('lobbyOnlineGroup');
+	const lobbyTournamentOptions = document.getElementById('lobbyTournamentOptions');
 	const player2Input = document.getElementById('lobbyPlayer2Name') as HTMLInputElement | null;
 
 	// Handle lobby visibility
@@ -933,18 +1188,30 @@ async function configureLobbyUI(gameMode: string): Promise<void> {
 		}
 	}
 
-	// Show/hide local lobby options
-	if ((gameMode === '1v1Offline' || gameMode === 'IA') && lobbyLocalOptions) {
+	// Show/hide local lobby options (for 1v1Offline only)
+	if (gameMode === '1v1Offline' && lobbyLocalOptions) {
 		lobbyLocalOptions.classList.remove('hidden');
 		lobbyLocalOptions.classList.add('flex');
-		
-		// Show player 2 name input for offline mode
-		if (gameMode === '1v1Offline' && player2Input) {
+		if (player2Input) {
 			player2Input.style.display = 'block';
 		}
 	} else if (lobbyLocalOptions) {
 		lobbyLocalOptions.classList.add('hidden');
+		if (player2Input) {
+			player2Input.style.display = 'none';
+		}
 	}
+	
+	// Show/hide offline tournament options
+	if (gameMode === 'OfflineTournament' && lobbyTournamentOptions) {
+		lobbyTournamentOptions.classList.remove('hidden');
+		lobbyTournamentOptions.classList.add('flex');
+		initTournamentPlayerInputs();
+	} else if (lobbyTournamentOptions) {
+		lobbyTournamentOptions.classList.add('hidden');
+	}
+	
+	// Show/hide online group options
 	if ((gameMode === '1v1Online' || gameMode === 'Tournament') && lobbyOnlineGroup) {
 		await displayLobbyGroup(lobbyOnlineGroup);
 		lobbyOnlineGroup.classList.remove('hidden');
@@ -1060,14 +1327,14 @@ globalThis.addEventListener("keydown", (event) => {
 	
 	// Player 2 controls (Arrow keys) - only in offline mode, or when user is team 2
 	if (event.key === "ArrowUp") {
-		if (mode === '1v1Offline') {
+		if (mode === '1v1Offline' || mode === 'OfflineTournament') {
 			upPlayer2 = true;
 		} else if (team === 2) {
 			upPlayer2 = true;
 		}
 	}
 	if (event.key === "ArrowDown") {
-		if (mode === '1v1Offline') {
+		if (mode === '1v1Offline' || mode === 'OfflineTournament') {
 			downPlayer2 = true;
 		} else if (team === 2) {
 			downPlayer2 = true;
@@ -1076,7 +1343,9 @@ globalThis.addEventListener("keydown", (event) => {
 });
 
 globalThis.addEventListener("keyup", (event) => {
-	if (isTyping()) return;
+	if (isTyping()) {
+		return;
+	}
 	
 	// Player 1 controls (WASD)
 	if (event.key === "w" || event.key === "W") {
@@ -1095,6 +1364,118 @@ globalThis.addEventListener("keyup", (event) => {
 	}
 });
 
+// On-screen control buttons (for touch devices)
+const btnUpPlayer1 = document.getElementById('btnUpPlayer1') as HTMLButtonElement | null;
+const btnDownPlayer1 = document.getElementById('btnDownPlayer1') as HTMLButtonElement | null;
+const btnUpPlayer2 = document.getElementById('btnUpPlayer2') as HTMLButtonElement | null;
+const btnDownPlayer2 = document.getElementById('btnDownPlayer2') as HTMLButtonElement | null;
+const player2Controls = document.getElementById('player2Controls') as HTMLDivElement | null;
+
+// Player 1 Up button
+if (btnUpPlayer1) {
+	btnUpPlayer1.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		upPlayer1 = true;
+	});
+	btnUpPlayer1.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		upPlayer1 = false;
+	});
+	btnUpPlayer1.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		upPlayer1 = true;
+	});
+	btnUpPlayer1.addEventListener('mouseup', (e) => {
+		e.preventDefault();
+		upPlayer1 = false;
+	});
+	btnUpPlayer1.addEventListener('mouseleave', () => {
+		upPlayer1 = false;
+	});
+}
+
+// Player 1 Down button
+if (btnDownPlayer1) {
+	btnDownPlayer1.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		downPlayer1 = true;
+	});
+	btnDownPlayer1.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		downPlayer1 = false;
+	});
+	btnDownPlayer1.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		downPlayer1 = true;
+	});
+	btnDownPlayer1.addEventListener('mouseup', (e) => {
+		e.preventDefault();
+		downPlayer1 = false;
+	});
+	btnDownPlayer1.addEventListener('mouseleave', () => {
+		downPlayer1 = false;
+	});
+}
+
+// Player 2 Up button
+if (btnUpPlayer2) {
+	btnUpPlayer2.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		upPlayer2 = true;
+	});
+	btnUpPlayer2.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		upPlayer2 = false;
+	});
+	btnUpPlayer2.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		upPlayer2 = true;
+	});
+	btnUpPlayer2.addEventListener('mouseup', (e) => {
+		e.preventDefault();
+		upPlayer2 = false;
+	});
+	btnUpPlayer2.addEventListener('mouseleave', () => {
+		upPlayer2 = false;
+	});
+}
+
+// Player 2 Down button
+if (btnDownPlayer2) {
+	btnDownPlayer2.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		downPlayer2 = true;
+	});
+	btnDownPlayer2.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		downPlayer2 = false;
+	});
+	btnDownPlayer2.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		downPlayer2 = true;
+	});
+	btnDownPlayer2.addEventListener('mouseup', (e) => {
+		e.preventDefault();
+		downPlayer2 = false;
+	});
+	btnDownPlayer2.addEventListener('mouseleave', () => {
+		downPlayer2 = false;
+	});
+}
+
+// Show/hide player 2 controls based on game mode
+export function updateControlsVisibility() {
+	if (player2Controls) {
+		if (mode === '1v1Offline' || mode === 'OfflineTournament') {
+			player2Controls.classList.remove('hidden');
+			player2Controls.classList.add('flex');
+		} else {
+			player2Controls.classList.add('hidden');
+			player2Controls.classList.remove('flex');
+		}
+	}
+}
+
 function draw() {
 	ctx.clearRect(0, 0, width, height);
 	ctx.fillStyle = "rgb(254, 243, 199)";
@@ -1110,19 +1491,26 @@ function draw() {
 	const player1Name = sessionStorage.getItem("player1Name") || i18n.t("player1");
 	const player2Name = sessionStorage.getItem("player2Name") || i18n.t("playerTwo");
 
-	ctx.font = "20px Arial";
+	// Responsive font sizes based on canvas dimensions
+	const nameFontSize = Math.max(16, Math.min(32, Math.floor(height * 0.04)));
+	const scoreFontSize = Math.max(24, Math.min(72, Math.floor(height * 0.08)));
+	// Improved spacing - scores at top, names below with proper gap
+	const scoreYPosition = Math.max(50, Math.floor(height * 0.1));
+	const nameYPosition = scoreYPosition + Math.max(35, Math.floor(height * 0.06));
+
+	// Draw player names
+	ctx.font = `${nameFontSize}px Arial`;
 	ctx.fillStyle = "rgb(254, 243, 199)";
 	ctx.textAlign = "center";
+	ctx.fillText(player1Name, width * 0.25, nameYPosition);
+	ctx.fillText(player2Name, width * 0.75, nameYPosition);
 
-	ctx.fillText(player1Name, width * 0.25, 80);
-	ctx.fillText(player2Name, width * 0.75, 80);
-
-	ctx.font = "40px Arial";
+	// Draw scores
+	ctx.font = `bold ${scoreFontSize}px Arial`;
 	ctx.fillStyle = "rgb(254, 243, 199)";
 	ctx.textAlign = "center";
-
-	ctx.fillText(player1Score.toString(), width * 0.25, 50);
-	ctx.fillText(player2Score.toString(), width * 0.75, 50);
+	ctx.fillText(player1Score.toString(), width * 0.25, scoreYPosition);
+	ctx.fillText(player2Score.toString(), width * 0.75, scoreYPosition);
 
 }
 
@@ -1130,7 +1518,7 @@ function sendInput() {
 	const socket = getWs();
 	if (!socket || !started) return;
 
-	if (mode === '1v1Offline') {
+	if (mode === '1v1Offline' || mode === 'OfflineTournament') {
 		// Send inputs for both paddles from one client (shared keyboard)
 		socket.send(JSON.stringify({ type: "input", game: gameId, team: 1, up: upPlayer1, down: downPlayer1 }));
 		socket.send(JSON.stringify({ type: "input", game: gameId, team: 2, up: upPlayer2, down: downPlayer2 }));

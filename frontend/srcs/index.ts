@@ -10,6 +10,9 @@ import { i18n } from "./utils/i18n.js";
 import { initNotifications } from "./user/notif.js";
 import { initPongBtns } from "./game/game.js";
 import { TwoFactorAuthManager } from "./utils/twofa.js";
+import { initHeaderMenu } from "./user/header-menu.js";
+import { closeHeaderMenu } from "./user/header-menu.js";
+import { initNavigateToMenu } from "./user/header-menu.js"
 
 /**
  * Language dropdown setup
@@ -102,12 +105,17 @@ class Application {
         FormManager.setupFormListeners();
         TwoFactorAuthManager.setupEventListeners();
         LanguageManager.init();
+        initHeaderMenu();
         Router.init();
+
+        // Handle the title for going to the pong menu
+        initNavigateToMenu();
 
         // Attach stats button behavior: navigate to dashboard
         const statsBtn = document.getElementById('btnStats');
         statsBtn?.addEventListener('click', () => {
           window.location.hash = '#userDashboard';
+          closeHeaderMenu();
         });
 
         const dashboardBack = document.getElementById('dashboardBack');
@@ -136,9 +144,7 @@ class Application {
     if (token && AuthManager.isAuthenticated()) {
       // User is authenticated
       await UserManager.fetchUserProfile();
-      initChatSocket(token, () => {
-        console.log("Chat WebSocket ready on page load");
-      });
+      initChatSocket(token, () => {});
     } else {
       // User is not authenticated
       setSidebarEnabled(false);

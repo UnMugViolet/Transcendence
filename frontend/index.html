@@ -18,74 +18,90 @@
 
 
 	<header class="flex items-center justify-between h-16 p-4 bg-rose-950 bg-opacity-90 shadow z-50">
-		<!-- Partie gauche : avatar + username -->
+
+		<!-- Left part title -->
 		<div class="flex items-center gap-4">
-			<h1 class="uppercase text-4xl text-amber-100 font-bold" style="font-family: 'Syne Mono', cursive;">
+			<h1 id="headerTitle" class="uppercase text-2xl md:text-4xl text-amber-100 font-bold cursor-pointer" style="font-family: 'Syne Mono', cursive;">
 				Transcendence</h1>
-			<div id="userInfo" class="hidden items-center gap-2 hover:cursor-pointer">
-				<img id="userAvatar" class="w-12 h-12 rounded-full object-cover" src="" />
-				<span id="userName" class="text-amber-100 font-semibold"></span>
-			</div>
+			<!-- Desktop slot for profile (moved here via JS) -->
+			<div id="headerUserSlot" class="hidden md:flex items-center"></div>
 		</div>
 
-		<!-- Partie droite : boutons -->
+		<!-- Desktop: normal menu inline | Mobile: burger opens slide-out from right -->
 		<div class="flex items-center gap-2">
-			<div id="authButtons" class="hidden justify-end p-4 gap-2">
-				<button id="btnSignIn" data-i18n="signIn"
-					class="bg-purple-600 text-amber-100 px-4 py-2 rounded hover:bg-purple-500">
-				</button>
-				<button id="btnSignUp" data-i18n="signUp"
-					class="bg-orange-700 text-amber-100 px-4 py-2 rounded hover:bg-orange-600">
-				</button>
-			</div>
+			<div id="headerMenu"
+				class="fixed top-16 right-0 w-80 max-w-[85vw] h-[calc(100vh-4rem)] bg-rose-950 bg-opacity-95 text-amber-100 translate-x-full transition-transform duration-300 z-50 p-4 flex justify-center flex-col gap-6 overflow-y-auto
+					md:static md:top-auto md:right-auto md:w-auto md:max-w-none md:h-auto md:p-0 md:bg-transparent md:translate-x-0 md:flex-row md:items-center md:gap-3 md:overflow-visible">
 
-			<!-- Stats button -->
-			<button id="btnStats" class="hidden items-center bg-transparent text-amber-100 hover:text-white">
-				<img src="img/btn/stats1.png" alt="Stats" class="w-10 h-10" />
-				<span class="text-amber-100 font-semibold ml-2">Stats</span>
-			</button>
-
-			<div id="notifications" class="hidden relative cursor-pointer mx-10">
-				<button class="flex items-center justify-center w-15 h-15 relative">
-					<img id="notifLogo" src="img/notif/walkie-talkie2.png" alt="Notifications" class="w-10 h-10">
-					<!-- Badge rouge -->
-					<span id="notifBadge"
-						class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 items-center justify-center rounded-full pointer-events-none">
-						0
-					</span>
-				</button>
-
-				<!-- Popup pour toutes les notifications -->
-				<div id="notifPopup"
-					class="hidden absolute right-0 mt-2 w-96 bg-gray-800 text-white rounded shadow-lg z-50">
-					<ul id="notifList" class="flex flex-col p-2 gap-2 max-h-60 overflow-y-auto">
-						<!-- Notifications listées ici -->
-					</ul>
+				<div id="userInfo" class="hidden items-center md:flex-row flex-col gap-3 hover:cursor-pointer">
+					<img id="userAvatar" class="w-32 h-32 md:w-12 md:h-12 rounded-full object-cover" src="" />
+					<span id="userName" class="text-amber-100 font-semibold"></span>
 				</div>
-			</div>
-			<!-- Language selector -->
-			<div id="languageMenu" class="relative">
-				<button id="langButton" class="flex items-center gap-2 bg-transparent text-amber-100 hover:text-white">
-					<img id="currentFlag" src="img/flags/en.png" alt="EN"
-						class="w-6 h-6 rounded-full border border-amber-100" />
-					<span class="uppercase text-sm">EN</span>
-					<svg class="w-4 h-4 text-amber-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-					</svg>
+
+				<div id="authButtons" class="hidden flex-col gap-2 md:flex-row md:items-center">
+					<button id="btnSignIn" data-i18n="signIn"
+						class="bg-purple-600 text-amber-100 px-4 py-2 rounded hover:bg-purple-500">
+					</button>
+					<button id="btnSignUp" data-i18n="signUp"
+						class="bg-orange-700 text-amber-100 px-4 py-2 rounded hover:bg-orange-600">
+					</button>
+				</div>
+
+				<button id="btnStats" class="hidden items-center bg-transparent text-amber-100 hover:text-white">
+					<img src="img/btn/stats1.png" alt="Stats" class="w-10 h-10" />
+					<span class="text-amber-100 font-semibold ml-2">Stats</span>
 				</button>
 
-				<!-- Dropdown -->
-				<div id="langDropdown"
-					class="hidden absolute right-0 mt-2 w-28 bg-rose-900 text-amber-100 rounded shadow-lg z-50">
-					<!-- Dynamically generated language buttons in lang.ts-->
+				<div id="notifications" class="hidden relative cursor-pointer md:mx-4">
+					<button class="flex items-center justify-center w-15 h-15 relative">
+						<img id="notifLogo" src="img/notif/walkie-talkie2.png" alt="Notifications" class="w-11 h-auto md:w-10 md:h-10">
+						<span id="notifBadge"
+							class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 items-center justify-center rounded-full pointer-events-none">
+							0
+						</span>
+						<p class="md:hidden text-amber-100 font-semibold">Notifications</p>
+					</button>
+
+					<div id="notifPopup" class="hidden absolute right-0 mt-2 w-72 bg-gray-800 text-white rounded shadow-lg z-50">
+						<ul id="notifList" class="flex flex-col p-2 gap-2 max-h-60 overflow-y-auto">
+							<!-- Notifications listées ici -->
+						</ul>
+					</div>
 				</div>
+
+				<div id="languageMenu" class="relative">
+					<button id="langButton" class="flex justify-center items-center w-full md:w-auto gap-2 bg-transparent text-amber-100 hover:text-white">
+						<img id="currentFlag" src="img/flags/en.png" alt="EN"
+							class="w-6 h-6 rounded-full border border-amber-100" />
+						<span class="uppercase text-sm">EN</span>
+						<svg class="w-4 h-4 text-amber-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+						</svg>
+					</button>
+
+					<div id="langDropdown"
+						class="hidden absolute left-0 right-0 md:left-auto md:right-0 mt-2 w-full md:w-28 bg-rose-900 text-amber-100 rounded shadow-lg z-50">
+						<!-- Dynamically generated language buttons in lang.ts-->
+					</div>
+				</div>
+
+				<button id="btnLogout" data-i18n="logout"
+					class="hidden bg-rose-600 text-amber-100 px-4 py-2 rounded hover:bg-rose-500">
+				</button>
 			</div>
 
-			<button id="btnLogout" data-i18n="logout"
-				class="hidden bg-rose-600 text-amber-100 px-4 py-2 rounded hover:bg-rose-500">
+			<button id="headerMenuHandle"
+				class="md:hidden flex items-center justify-center w-12 h-12 rounded bg-transparent text-amber-100 hover:text-white"
+				aria-label="Menu" aria-controls="headerMenu" aria-expanded="false">
+				<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+				</svg>
 			</button>
 		</div>
 	</header>
+
+	<!-- Header burger menu overlay (mobile only) -->
+	<div id="headerMenuOverlay" class="md:hidden fixed inset-0 bg-black bg-opacity-50 hidden z-40"></div>
 
 
 	<!-- MODALE Sign Up -->
@@ -145,17 +161,17 @@
 
 	<!-- MODALE 2FA Setup -->
 	<div id="modal2FASetup" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
-		<div class="bg-white p-6 rounded shadow-md w-full max-w-md">
-			<h2 class="text-xl font-bold mb-4">🔐 Setup Two-Factor Authentication</h2>
+		<div class="bg-white p-4 sm:p-6 rounded shadow-md w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
+			<h2 data-i18n="setup2FA" class="text-xl font-bold md:mb-4 mb-2"></h2>
 			
 			<!-- QR Code Section -->
-			<div id="qrCodeSection" class="flex flex-col items-center gap-4 mb-6">
-				<p class="text-sm text-gray-600 text-center">Scan this QR code with Google Authenticator or any TOTP app:</p>
+			<div id="qrCodeSection" class="flex flex-col items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+				<p data-i18n="scanQR" class="text-sm text-gray-600 text-center"></p>
 				<div id="qrCodeContainer" class="bg-white p-4 border-2 border-gray-300 rounded">
 					<!-- QR code will be inserted here -->
 				</div>
 				<div class="w-full">
-					<p class="text-xs text-gray-500 mb-2">Or enter this code manually:</p>
+					<p data-i18n="manualEntry" class="text-xs text-gray-500 mb-2"></p>
 					<div class="bg-gray-100 p-2 rounded border border-gray-300">
 						<code id="manualSecret" class="text-sm font-mono break-all"></code>
 					</div>
@@ -163,23 +179,22 @@
 			</div>
 
 			<!-- Backup Codes Section -->
-			<div id="backupCodesSection" class="mb-6">
-				<p class="text-sm font-semibold text-gray-700 mb-2">⚠️ Save these backup codes:</p>
-				<p class="text-xs text-gray-500 mb-2">You can use these if you lose access to your authenticator app.</p>
+			<div id="backupCodesSection" class="mb-4 sm:mb-6">
+				<p data-i18n="saveBackupCodes" class="text-sm font-semibold text-gray-700 mb-2"></p>
+				<p data-i18n="backupCodesWarning" class="text-xs text-gray-500 mb-2"></p>
 				<div class="bg-yellow-50 border border-yellow-300 rounded p-3 max-h-32 overflow-y-auto">
 					<div id="backupCodesList" class="grid grid-cols-2 gap-1 text-xs font-mono">
 						<!-- Backup codes will be inserted here -->
 					</div>
 				</div>
-				<button id="copyBackupCodes" class="mt-2 text-xs bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 w-full">
-					📋 Copy All Backup Codes
+				<button id="copyBackupCodes" data-i18n="copyBackupCodes" class="mt-2 text-xs bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 w-full">
 				</button>
 			</div>
 
 			<!-- Verification Section -->
 			<form id="form2FAVerify" class="flex flex-col gap-4">
 				<div>
-					<label class="block text-sm font-medium mb-2">Enter the 6-digit code from your app:</label>
+					<label data-i18n="enterCode" class="block text-sm font-medium mb-2"></label>
 					<input type="text" id="input2FACode" 
 						placeholder="000000" 
 						maxlength="6" 
@@ -187,11 +202,9 @@
 						class="border p-2 rounded w-full text-center text-2xl font-mono tracking-widest" 
 						autocomplete="off" />
 				</div>
-				<button type="submit" class="bg-green-500 text-white p-2 rounded hover:bg-green-600 font-semibold">
-					✓ Verify and Complete Setup
+				<button data-i18n="verifyComplete" type="submit" class="bg-green-500 text-white p-2 rounded hover:bg-green-600 font-semibold">
 				</button>
-				<button type="button" id="skip2FA" class="text-sm text-gray-500 hover:text-gray-700 underline">
-					Skip for now (not recommended)
+				<button data-i18n="skipSetup" type="button" id="skip2FA" class="text-sm text-gray-500 hover:text-gray-700 underline">
 				</button>
 			</form>
 			<p id="message2FA" class="text-red-500 mt-2 text-sm"></p>
@@ -201,8 +214,8 @@
 	<!-- MODALE 2FA Login Verification -->
 	<div id="modal2FALogin" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
 		<div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
-			<h2 class="text-xl font-bold mb-4">🔐 Two-Factor Authentication</h2>
-			<p class="text-sm text-gray-600 mb-4">Enter the 6-digit code from your authenticator app:</p>
+			<h2 data-i18n="twoFALogin" class="text-xl font-bold mb-4"></h2>
+			<p data-i18n="enterCodeLogin" class="text-sm text-gray-600 mb-4"></p>
 			<form id="form2FALogin" class="flex flex-col gap-4">
 				<input type="text" id="input2FALoginCode" 
 					placeholder="000000" 
@@ -210,57 +223,86 @@
 					pattern="[0-9]{6}"
 					class="border p-2 rounded text-center text-2xl font-mono tracking-widest" 
 					autocomplete="off" />
-				<button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 font-semibold">
-					Verify
+				<button data-i18n="verify" type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 font-semibold">
 				</button>
-				<button type="button" id="cancel2FALogin" class="text-sm text-gray-500 hover:text-gray-700 underline">
-					Cancel
+				<button data-i18n="cancel" type="button" id="cancel2FALogin" class="text-sm text-gray-500 hover:text-gray-700 underline">
 				</button>
 			</form>
-			<p class="text-xs text-gray-500 mt-4">💡 You can also use a backup code if you've lost access to your authenticator app.</p>
+			<p data-i18n="backupCodeHint" class="text-xs text-gray-500 mt-4"></p>
 			<p id="message2FALogin" class="text-red-500 mt-2 text-sm"></p>
 		</div>
 	</div>
 
 
-	<section id="viewGame" class="hidden flex-col view items-center justify-center p-4 gap-6">
-		<div class="relative flex flex-row justify-center mt-20 flex-wrap lg:flex-nowrap gap-4">
+	<section id="viewGame" class="hidden flex-col view items-center justify-center p-2 sm:p-4 gap-4">
+		<div class="relative flex flex-col lg:flex-row justify-center w-full max-w-7xl gap-4">
 			<!-- Zone Pong -->
-			<div id="pongContainer" class="w-full lg:w-3/4 max-w-4xl p-4 bg-rose-950 bg-opacity-80 rounded-lg shadow-lg">
-				<canvas id="pongCanvas" class="bg-black bg-opacity-50 rounded w-full h-[600px]"></canvas>
+			<div id="pongContainer" class="flex-1 w-full p-2 sm:p-4 bg-rose-950 bg-opacity-80 rounded-lg shadow-lg">
+				<canvas id="pongCanvas" class="bg-black bg-opacity-50 rounded w-full h-auto max-h-[60vh] lg:max-h-[70vh]"></canvas>
+				
+				<!-- On-screen controls (visible on touch devices) -->
+				<div id="gameControls" class="flex justify-between items-center mt-4 gap-4 lg:hidden">
+					<!-- Player 1 Controls (Left Side) -->
+					<div class="flex flex-col gap-2">
+						<button id="btnUpPlayer1" class="bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-rose-950 font-bold p-4 rounded-lg shadow-lg transition-all touch-none select-none">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7" />
+							</svg>
+						</button>
+						<button id="btnDownPlayer1" class="bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-rose-950 font-bold p-4 rounded-lg shadow-lg transition-all touch-none select-none">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
+							</svg>
+						</button>
+					</div>
+					
+					<!-- Player 2 Controls (Right Side) - Only for offline mode -->
+					<div id="player2Controls" class="flex flex-col gap-2">
+						<button id="btnUpPlayer2" class="bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-rose-950 font-bold p-4 rounded-lg shadow-lg transition-all touch-none select-none">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7" />
+							</svg>
+						</button>
+						<button id="btnDownPlayer2" class="bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-rose-950 font-bold p-4 rounded-lg shadow-lg transition-all touch-none select-none">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
+							</svg>
+						</button>
+					</div>
+				</div>
 			</div>
 	
-			<!-- 💬 Global chat -->
+			<!-- 💬 Global chat (responsive layout) -->
 			<div id="gameChat"
-				class="w-full lg:w-80 h-[600px] bg-black bg-opacity-70 text-amber-100 flex flex-col border border-rose-950 rounded-2xl shadow-lg overflow-hidden">
+				class="w-full lg:w-80 lg:min-w-[320px] h-[40vh] lg:h-auto bg-black bg-opacity-70 text-amber-100 flex flex-col border border-rose-950 rounded-2xl shadow-lg overflow-hidden">
 				<div data-i18n="globalChat"
-					class="p-3 text-lg font-bold border-b border-rose-950 bg-rose-950 rounded-t-2xl flex justify-between items-center">
+					class="p-2 sm:p-3 text-base sm:text-lg font-bold border-b border-rose-950 bg-rose-950 rounded-t-2xl flex justify-between items-center">
 				</div>
 	
 				<!-- Messages added dynamically-->
-				<div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-2 text-sm scroll-smooth"></div>
+				<div id="chatMessages" class="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 text-xs sm:text-sm"></div>
 	
 				<!-- Input -->
-				<form id="chatForm" class="p-3 border-tgis border-rose-950 flex bg-rose-950 rounded-b-2xl">
+				<form id="chatForm" class="p-2 sm:p-3 border-t border-rose-950 flex bg-rose-950 rounded-b-2xl">
 					<input id="chatInput" type="text" autocomplete="off" data-i18n-placeholder="messagePlaceholder"
-						class="flex-1 bg-amber-100 text-black p-2 rounded-l outline-none" />
-					<button type="submit" class="bg-red-500 px-4 rounded-r hover:bg-red-400">
+						class="flex-1 bg-amber-100 text-black p-2 text-sm rounded-l outline-none" />
+					<button type="submit" class="bg-red-500 px-3 sm:px-4 rounded-r hover:bg-red-400">
 						➤
 					</button>
 				</form>
 			</div>
 		</div>
-		<div class="w-full flex justify-center items-center">
+		<div class="w-full flex justify-center items-center mt-2">
 			<button
 				id="btnLeaveGame"
 				data-i18n="leaveGame" 
-				class="text-white px-6 py-3 text-2xl font-bold bg-red-500 rounded hover:bg-red-600 shadow-lg transition-transform duration-200 hover:scale-105">
+				class="text-white px-4 sm:px-6 py-2 sm:py-3 text-lg sm:text-2xl font-bold bg-red-500 rounded hover:bg-red-600 shadow-lg transition-transform duration-200 hover:scale-105">
 			</button>
 		</div>
 	</section>
 
 	<!-- Menu Pong -->
-	<div id="pongMenu" class="flex fixed inset-0 flex-col items-center justify-center gap-4 z-20 px-4"
+	<div id="pongMenu" class="flex fixed inset-0 h-svh flex-col items-center justify-center gap-4 z-20 px-4"
 		style="pointer-events: auto;">
 		<h2 id="menuTitle" class="text-5xl sm:text-6xl md:text-7xl text-amber-100 font-bold text-center leading-tight"
 			style="font-family: 'Syne Mono', cursive;">
@@ -298,6 +340,13 @@
 					class="mt-3 text-sm sm:text-base font-semibold text-red-500 uppercase transition-colors duration-200 group-hover:text-amber-100">
 				</span>
 			</button>
+			<button id="btnLocalTournament"
+				class="group flex flex-col items-center justify-center w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-full bg-amber-100 hover:bg-red-500 shadow-lg transform transition-transform duration-200 hover:scale-110">
+				<img src="img/btn/canon-spatial.png" alt="Local Tournament" class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
+				<span data-i18n="offTournament"
+					class="mt-3 text-sm sm:text-base font-semibold text-red-500 uppercase transition-colors duration-200 group-hover:text-amber-100">
+				</span>
+			</button>
 		</div>
 	</div>
 
@@ -327,6 +376,30 @@
 			<input id="lobbyPlayer2Name" type="text" placeholder="Player 2 Name"
 				class="p-2 rounded bg-amber-100 text-black w-56" />
 		</div>
+		
+		<!-- Offline Tournament Player Entry -->
+		<div id="lobbyTournamentOptions" class="hidden flex-col items-center gap-4 w-full max-w-md">
+			<h2 data-i18n="tournamentPlayers" class="text-2xl font-bold text-amber-100">Tournament Players</h2>
+			<p data-i18n="tournamentPlayersHint" class="text-amber-200 text-sm text-center">Enter aliases for 4-8 players (no registration required)</p>
+			
+			<div id="tournamentPlayersList" class="flex flex-col gap-2 w-full max-h-64 overflow-y-auto">
+				<!-- Player inputs will be added here dynamically -->
+			</div>
+			
+			<div class="flex gap-2">
+				<button id="btnAddTournamentPlayer" type="button"
+					class="text-white px-4 py-2 text-lg font-bold bg-blue-500 rounded hover:bg-blue-600 shadow-lg transition-transform duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+					<span data-i18n="addPlayer">+ Add Player</span>
+				</button>
+				<button id="btnRemoveTournamentPlayer" type="button"
+					class="text-white px-4 py-2 text-lg font-bold bg-orange-500 rounded hover:bg-orange-600 shadow-lg transition-transform duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+					<span data-i18n="removePlayer">- Remove</span>
+				</button>
+			</div>
+			
+			<p id="tournamentPlayerCount" class="text-amber-200 text-sm"></p>
+		</div>
+		
 		<div id="lobbyOnlineGroup" class="hidden flex justify-between items-center gap-2"></div>
 		<div class="flex flex-row-reverse items-center justify-center gap-5">
 			<button data-i18n="start" id="btnStart"
@@ -337,7 +410,7 @@
 			</button>
 		</div>
 
-		<p id="startMessage" class="text-red-500 mt-2 hidden"></p>
+		<p id="startMessage" class="bg-amber-100 rounded-xl py-2 px-2 text-red-500 font-semibold mt-2 hidden"></p>
 
 		<span id="goodBye" data-i18n="thanks"
 			class="hidden sm:text-6xl md:text-7xl text-amber-100 font-bold text-center leading-tight"
@@ -351,7 +424,7 @@
 			<!-- <div class="bg-rose-950 bg-opacity-80 rounded-lg p-4 text-amber-100">Stats will appear here.</div>
 			<div class="bg-rose-950 bg-opacity-80 rounded-lg p-4 text-amber-100">More widgets.</div> -->
 		</div>
-		<div class="flex flex-col sm:flex-row gap-4 mt-6">
+		<div class="flex flex-row gap-4 py-6">
 			<button data-i18n="matchHistory" id="matchHistory" class="bg-purple-800 text-amber-100 px-6 py-2 rounded hover:bg-purple-600"></button>
 			<button data-i18n="back" id="dashboardBack" class="bg-red-600 text-amber-100 px-6 py-2 rounded hover:bg-red-500"></button>
 		</div>

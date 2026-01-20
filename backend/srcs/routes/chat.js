@@ -457,14 +457,13 @@ async function chat(fastify) {
 				
 				const party = partyPlayerQueries.findByUserIdMultipleStatuses(payload.id, ['active', 'waiting', 'lobby'])[0];
 				if (party) {
-					partyPlayerQueries.updateStatus(payload.id, party.party_id, 'disconnected');
-					console.log(`User ${payload.name} set to disconnected in party ${party.party_id}`);
-					sendSysMessage(party.party_id, `${payload.name} a été déconnecté.`);
-					
-					if (party.status === 'active') {
-						// Route via game wrapper to ensure internal games map is provided
-						pauseGameFromWS(party.party_id, payload.id);
-					}
+				partyPlayerQueries.updateStatus(payload.id, party.party_id, 'disconnected');
+				console.log(`User ${payload.name} set to disconnected in party ${party.party_id}`);
+				sendSysMessage(party.party_id, 'playerDisconnected', { playerName: payload.name });					
+				if (party.status === 'active') {
+					// Route via game wrapper to ensure internal games map is provided
+					pauseGameFromWS(party.party_id, payload.id);
+				}
 				}
 				
 				console.log(`❌ Client ${payload.name} disconnected (ID: ${payload.id})`);

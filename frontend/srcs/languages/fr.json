@@ -9,6 +9,7 @@
   "local": "LOCAL",
   "online": "EN LIGNE",
   "tournament": "TOURNOI",
+  "offTournament": "TOURNOI (hors ligne)",
   "ai": "IA",
   "menu": "MENU",
   "player2": "NOM DU JOUEUR 2",
@@ -106,6 +107,32 @@
   "justNow": "À l'instant",
   "minutesAgo": "minutes",
   "hoursAgo": "heures",
-  "matchHistory": "Historique des matchs"
+  "matchHistory": "Historique des matchs",
+
+  "setup2FA": "Configuration de l'authentification à deux facteurs",
+  "scanQR": "Scannez ce code QR avec Google Authenticator ou toute application TOTP :",
+  "manualEntry": "Ou entrez ce code manuellement :",
+  "saveBackupCodes": "Enregistrez ces codes de secours :",
+  "backupCodesWarning": "Vous pouvez les utiliser si vous perdez l'accès à votre application d'authentification.",
+  "copyBackupCodes": "Copier tous les codes de secours",
+  "enterCode": "Entrez le code à 6 chiffres de votre application :",
+  "verifyComplete": "Vérifier et terminer la configuration",
+  "skipSetup": "Ignorer pour l'instant (non recommandé)",
+  "twoFALogin": "Authentification à deux facteurs",
+  "enterCodeLogin": "Entrez le code à 6 chiffres de votre application d'authentification :",
+  "verify": "Vérifier",
+  "cancel": "Annuler",
+  "backupCodeHint": "Vous pouvez également utiliser un code de secours si vous avez perdu l'accès à votre application d'authentification.",
+
+  "tournamentPlayers": "Joueurs du tournoi",
+  "tournamentPlayersHint": "Entrez les pseudos de 4 à 8 joueurs (pas d'inscription requise)",
+  "addPlayer": "+ Ajouter",
+  "removePlayer": "- Retirer",
+  "player": "Joueur",
+  "players": "joueurs",
+  "enterAlias": "Entrez un pseudo",
+  "allPlayersRequired": "Tous les joueurs doivent avoir un pseudo",
+  "duplicateAlias": "Tous les pseudos doivent être uniques",
+  "offlineTournamentReady": "Tournoi local prêt - Entrez les pseudos et cliquez sur Démarrer !"
 
 }

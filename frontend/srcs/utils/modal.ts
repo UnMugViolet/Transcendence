@@ -1,4 +1,5 @@
 import { ModalId } from "../types/types.js";
+import { closeHeaderMenu } from "../user/header-menu.js";
 
 /**
  * Modal management utilities
@@ -12,6 +13,19 @@ export class ModalManager {
     if (modal) {
       modal.classList.remove("hidden");
       modal.classList.add("flex");
+      
+      // Clear error messages when opening auth modals
+      if (id === "modalSignUp") {
+        const messageEl = document.getElementById("messageSignUp");
+        if (messageEl) {
+           messageEl.textContent = "";
+        }
+      } else if (id === "modalSignIn") {
+        const messageEl = document.getElementById("messageSignIn");
+        if (messageEl) {
+          messageEl.textContent = "";
+        }
+      }
     } else {
       console.error(`Modal ${id} not found`);
     }
@@ -58,20 +72,19 @@ export class ModalManager {
     });
 
     // Close modal listeners
-    document.getElementById("closeSignUp")?.addEventListener("click", () => 
-      ModalManager.closeModal("modalSignUp")
-    );
+    document.getElementById("closeSignUp")?.addEventListener("click", () => {
+      ModalManager.closeModal("modalSignUp");
+    });
     
-    document.getElementById("closeSignIn")?.addEventListener("click", () => 
-      ModalManager.closeModal("modalSignIn")
-    );
+    document.getElementById("closeSignIn")?.addEventListener("click", () => {
+      ModalManager.closeModal("modalSignIn");
+    });
 
-    document.getElementById("closeFriendProfile")?.addEventListener("click", () => 
-      ModalManager.closeModal("modalFriendProfile")
-    );
+    document.getElementById("closeFriendProfile")?.addEventListener("click", () => {
+      ModalManager.closeModal("modalFriendProfile");
+    });
 
     document.getElementById("btnLogout")?.addEventListener("click", () => {
-      // Use a simple callback approach to avoid circular dependency
       if (ModalManager.logoutCallback) {
         ModalManager.logoutCallback();
       }

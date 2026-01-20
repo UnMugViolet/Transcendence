@@ -9,6 +9,7 @@
   "local": "LOCAL",
   "online": "ONLINE",
   "tournament": "TOURNAMENT",
+  "offTournament": "TOURNAMENT (offline)",
   "ai": "AI",
   "menu": "MENU",
   "player2": "PLAYER 2 NAME",
@@ -108,6 +109,32 @@
   "justNow": "Just now",
   "minutesAgo": "minutes ago",
   "hoursAgo": "hours ago",
-  "matchHistory": "Match History"
+  "matchHistory": "Match History",
+
+  "setup2FA": "Setup Two-Factor Authentication",
+  "scanQR": "Scan this QR code with Google Authenticator or any TOTP app:",
+  "manualEntry": "Or enter this code manually:",
+  "saveBackupCodes": "Save these backup codes:",
+  "backupCodesWarning": "You can use these if you lose access to your authenticator app.",
+  "copyBackupCodes": "Copy All Backup Codes",
+  "enterCode": "Enter the 6-digit code from your app:",
+  "verifyComplete": "Verify and Complete Setup",
+  "skipSetup": "Skip for now (not recommended)",
+  "twoFALogin": "Two-Factor Authentication",
+  "enterCodeLogin": "Enter the 6-digit code from your authenticator app:",
+  "verify": "Verify",
+  "cancel": "Cancel",
+  "backupCodeHint": "You can also use a backup code if you've lost access to your authenticator app.",
+
+  "tournamentPlayers": "Tournament Players",
+  "tournamentPlayersHint": "Enter aliases for 4-8 players (no registration required)",
+  "addPlayer": "+ Add Player",
+  "removePlayer": "- Remove",
+  "player": "Player",
+  "players": "players",
+  "enterAlias": "Enter alias",
+  "allPlayersRequired": "All players must have an alias",
+  "duplicateAlias": "All player aliases must be unique",
+  "offlineTournamentReady": "Local Tournament Ready - Enter player aliases and click Start!"
 
 }

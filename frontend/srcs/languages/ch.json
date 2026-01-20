@@ -9,6 +9,7 @@
   "local": "本地",
   "online": "在线",
   "tournament": "锦标赛",
+  "offTournament": "锦标赛（离线）",
   "ai": "AI",
   "menu": "菜单",
   "player2": "玩家2名称",
@@ -106,6 +107,32 @@
   "justNow": "刚刚",
   "minutesAgo": "分钟前",
   "hoursAgo": "小时前",
-  "matchHistory": "比赛历史"
-  
+  "matchHistory": "比赛历史",
+
+  "setup2FA": "设置双因素认证",
+  "scanQR": "使用Google Authenticator或任何TOTP应用扫描此二维码：",
+  "manualEntry": "或手动输入此代码：",
+  "saveBackupCodes": "保存这些备用代码：",
+  "backupCodesWarning": "如果您无法访问身份验证器应用，可以使用这些代码。",
+  "copyBackupCodes": "复制所有备用代码",
+  "enterCode": "输入应用中的6位数字代码：",
+  "verifyComplete": "验证并完成设置",
+  "skipSetup": "暂时跳过（不推荐）",
+  "twoFALogin": "双因素认证",
+  "enterCodeLogin": "输入身份验证器应用中的6位数字代码：",
+  "verify": "验证",
+  "cancel": "取消",
+  "backupCodeHint": "如果您无法访问身份验证器应用，也可以使用备用代码。",
+
+
+  "tournamentPlayers": "锦标赛玩家",
+  "tournamentPlayersHint": "请输入4到8个玩家的昵称（无需注册）",
+  "addPlayer": "+ 添加玩家",
+  "removePlayer": "- 移除玩家",
+  "player": "玩家",
+  "players": "玩家",
+  "enterAlias": "请输入昵称",
+  "allPlayersRequired": "所有玩家都必须有昵称",
+  "duplicateAlias": "所有昵称必须唯一",
+  "offlineTournamentReady": "本地锦标赛准备就绪 - 输入昵称并点击开始！"
 }

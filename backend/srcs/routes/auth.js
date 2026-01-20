@@ -108,7 +108,6 @@ async function authRoutes(fastify) {
 		const stayConnect = request.body.stayConnect;
 		const roleType = request.body.roleType || 'user'; // Default to 'user' role
 
-		console.log('Received request to add user:', name, 'with roleType:', roleType);
 
 		if (!name) {
 			return reply.status(400).send({ error: 'Name is required' });
@@ -148,7 +147,6 @@ async function authRoutes(fastify) {
 
 			const role = db.prepare('SELECT id, name FROM roles WHERE id = ?').get(roleRecord.id);
 
-			console.log("User ", name, " added with ID:", info.lastInsertRowid, "and role:", role.name);
 			const tokens = await genKey(info.lastInsertRowid, name, stayConnect, request.headers['user-agent']);
 			return { ...tokens, role };
 		} catch (err) {
@@ -174,7 +172,6 @@ async function authRoutes(fastify) {
 				}
 			},
 			response: {
-				200: authResponseSchema,
 				400: errorResponseSchema,
 				401: errorResponseSchema,
 				404: errorResponseSchema
@@ -185,7 +182,6 @@ async function authRoutes(fastify) {
 		const password = request.body.password;
 		const stayConnect = request.body.stayConnect;
 
-		console.log('Received request to login user:', name);
 
 		if (!name) {
 			return reply.status(400).send({ error: 'Name is required' });
@@ -210,8 +206,8 @@ async function authRoutes(fastify) {
 		}
 
 		// Check if 2FA is enabled
-		if (user.two_fa_enabled) { 
-			return {
+		if (user.two_fa_enabled) {
+			return reply.code(200).send({
 				requiresTwoFA: true,
 				userId: user.id,
 				tempToken: fastify.jwt.sign({ 
@@ -219,7 +215,7 @@ async function authRoutes(fastify) {
 					name: user.name, 
 					type: '2fa'
 				}, { expiresIn: '5min' })
-			};
+			});
 		}
 
 		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), user.id);
@@ -228,11 +224,31 @@ async function authRoutes(fastify) {
 
 		console.log("User ", name, " logged in successfully with role:", role.name);
 		const tokens = await genKey(user.id, user.name, stayConnect, request.headers['user-agent']);
-		return { ...tokens, role };
+		return reply.code(200).send({ ...tokens, role });
 	});
 
 
-	fastify.post('/login/2fa', async (request, reply) => {
+	fastify.post('/login/2fa', {
+		schema: {
+			description: 'Complete 2FA login flow using temporary token and 2FA code',
+			tags: ['2FA', 'Auth'],
+			body: {
+				type: 'object',
+				required: ['tempToken', 'token'],
+				properties: {
+					tempToken: { type: 'string', description: 'Temporary JWT token received from /login when 2FA is enabled' },
+					token: { type: 'string', description: '6-digit TOTP code or backup code' },
+					stayConnect: { type: 'boolean', description: 'If true, refresh token lasts 7 days; otherwise 1 hour' }
+				}
+			},
+			response: {
+				200: authResponseSchema,
+				400: errorResponseSchema,
+				401: errorResponseSchema,
+				404: errorResponseSchema
+			}
+		}, 
+	}, async (request, reply) => {
 		const { tempToken, token, stayConnect } = request.body;
 
 		if (!tempToken || !token) {
