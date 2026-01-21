@@ -341,7 +341,6 @@ export class FormManager {
           AuthManager.storeUserInfo(demoUsername, decoded.id.toString(), true);
         }
 
-        console.log("Demo user created successfully:", demoUsername);
 
         // Fetch complete user profile (including profile picture) from backend
         await UserManager.fetchUserProfile();
