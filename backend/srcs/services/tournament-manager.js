@@ -95,14 +95,13 @@ export function setupNextMatch(partyId, tournamentData) {
 	if (isOffline) {
 		return { round, p1, p2, afk: -1, left: -1, p1Name, p2Name };
 	}
-	
-	const playerStates = checkPlayerStates(p1Info, p2Info);
+
 	return { 
 		round, 
 		p1, 
 		p2, 
 		afk: playerStates.afkId, 
-		left: playerStates.leftId 
+		left: playerStates.leftId
 	};
 }
 
