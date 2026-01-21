@@ -944,24 +944,11 @@ async function endingGame(data: any) {
 	const isTournament = data.mode === 'Tournament' || data.mode === 'OfflineTournament';
 
 	let winnerName = data.winner;
-	if ((data.mode === '1v1Offline' || data.mode === 'IA') && winnerName) {
-		const player1Name = sessionStorage.getItem("player1Name");
-		const player2Name = sessionStorage.getItem("player2Name");		
-		const genericPlayer1Names = ["Joueur 1", "Player 1", "玩家1"];
-		const genericPlayer2Names = ["Joueur 2", "Player 2", "玩家 2"];
-		
-		// Replace generic names with actual names
-		if (player1Name && genericPlayer1Names.some(name => winnerName.includes(name))) {
-			winnerName = player1Name;
-		} else if (player2Name && genericPlayer2Names.some(name => winnerName.includes(name))) {
-			winnerName = player2Name;
-		}
-	}
 	if (winnerName && !data.round && isTournament)
 		ctx.fillText(`${winnerName} ${i18n.t("wonTournament")}`, width / 2, height / 2);
 	else if (winnerName)
 		ctx.fillText(`${winnerName} ${i18n.t("wonGame")}`, width / 2, height / 2);
-	if (!(data.winner && data.round && isTournament))
+	if (!(winnerName && data.round && isTournament))
 	{
 		goodBye?.classList.remove("hidden");
 		await sleep(3000);
@@ -1249,7 +1236,7 @@ async function configureLobbyUI(gameMode: string): Promise<void> {
 		lobbyTournamentOptions.classList.add('flex');
 		initTournamentPlayerInputs();
 	} else if (lobbyTournamentOptions) {
-		lobbyTournamentOptions.classList.add('hidden');
+		lobbyTournamentOptions.classList.add('hidden');:
 	}
 	
 	// Show/hide online group options
