@@ -175,7 +175,6 @@ fastify.decorate("authenticate", async function (request, reply) {
 		}
 		db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(Date.now(), request.user.id);
 	} catch (err) {
-		// console.error('JWT verification failed:', err); // Log the error for debugging
 		metrics.recordAuthFailure('verification_failed');
 		return reply.status(401).send({ error: 'Unauthorized' });
 	}

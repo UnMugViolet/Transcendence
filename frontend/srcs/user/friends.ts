@@ -282,7 +282,7 @@ export async function loadFriends() {
       img.className = "w-8 h-8 rounded-full object-cover";
       img.style.objectPosition = "center";
 
-        // Badge en ligne
+        // Online status badge
       const onlineBadge = document.createElement("span");
       onlineBadge.className = friend.online === 'true'
         ? "w-2 h-2 bg-green-500 rounded-full inline-block"
@@ -298,7 +298,6 @@ export async function loadFriends() {
       li.appendChild(left);
       friendsList.appendChild(li);
 
-      // Ouvre une fenêtre de chat en bas de l'écran au clic
       li.addEventListener("click", () => {
       openChatWindow(friend.friend_id, friend.friend_name, friend.friend_pfp);
       });

@@ -152,12 +152,12 @@ function timeAgo(timestamp: number): string {
 
 function recentGameWidget(stats: UserStats, myId: number): string {
   return `
-    <div id="recentGamesCard" class="bg-black w-full bg-opacity-40 rounded-xl px-4 py-2 mx-auto relative">
+    <div id="recentGamesCard" class="bg-black bg-opacity-40 rounded-xl px-4 py-3 mx-auto w-full max-w-2xl md:max-w-3xl lg:max-w-4xl relative">
       <div class="flex justify-between items-start mb-3">
-        <h2 data-i18n="recentGames" class="text-lg font-semibold text-amber-100"></h2>
+        <h2 data-i18n="recentGames" class="text-lg md:text-xl lg:text-2xl font-semibold text-amber-100"></h2>
       </div>
 
-      <div class="space-y-3 overflow-y-scroll max-h-20 pr-2">
+      <div class="space-y-3 overflow-y-auto max-h-48 md:max-h-64 lg:max-h-80 pr-2">
         ${stats.recentGames.map(game => {
           return `
             <div class="flex flex-col bg-black bg-opacity-30 rounded-lg p-3">
