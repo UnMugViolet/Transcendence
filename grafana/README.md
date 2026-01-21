@@ -70,7 +70,7 @@ The script creates the following users:
 
 You can also create users manually through the Grafana UI:
 
-1. Login as admin at http://localhost:10100
+1. Login as admin at https://localhost:10100
 2. Go to **Configuration** → **Users**
 3. Click **New user**
 4. Fill in the details and select the appropriate role
@@ -80,7 +80,7 @@ You can also create users manually through the Grafana UI:
 
 ```bash
 # Create a new user
-curl -X POST http://localhost:10100/api/admin/users \
+curl -X POST https://localhost:10100/api/admin/users \
   -H "Content-Type: application/json" \
   -u "admin:your_admin_password" \
   -d '{
@@ -92,7 +92,7 @@ curl -X POST http://localhost:10100/api/admin/users \
   }'
 
 # Update user role
-curl -X PATCH http://localhost:10100/api/org/users/{userId} \
+curl -X PATCH https://localhost:10100/api/org/users/{userId} \
   -H "Content-Type: application/json" \
   -u "admin:your_admin_password" \
   -d '{
