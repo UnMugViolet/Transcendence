@@ -73,8 +73,7 @@ export function movePlayer(game, data) {
 			game.team2up = data.up;
 			game.team2down = data.down;
 		}
-	}
-	if (data.team === game.team1) {
+	} else if (data.team === game.team1) {
 		game.team1up = data.up;
 		game.team1down = data.down;
 		// updatePaddle(game, 'paddle1Y', data.up, data.down, PADDLE_SPEED);
