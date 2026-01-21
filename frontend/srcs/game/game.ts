@@ -1236,7 +1236,7 @@ async function configureLobbyUI(gameMode: string): Promise<void> {
 		lobbyTournamentOptions.classList.add('flex');
 		initTournamentPlayerInputs();
 	} else if (lobbyTournamentOptions) {
-		lobbyTournamentOptions.classList.add('hidden');:
+		lobbyTournamentOptions.classList.add('hidden');
 	}
 	
 	// Show/hide online group options
