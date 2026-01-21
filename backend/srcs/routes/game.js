@@ -568,6 +568,15 @@ async function gameRoutes(fastify) {
 			return reply.status(404).send({ error: 'Party not found' });
 		}
 
+		const game = games.get(party.id);
+		let isPlaying = true;
+		if (party.type === 'Tournament' && game) {
+			if (partyPlayer.team === (game.team1 || game.team2))
+				isPlaying = true;
+			else
+				isPlaying = false;
+		}
+
 		// Mark player as left
 		partyPlayerQueries.updateStatus(userId, party.id, 'left');
 		sendSysMessage(party.id, 'playerLeft', { playerName: user.name });
@@ -593,7 +602,7 @@ async function gameRoutes(fastify) {
 			// Refresh the parties lists
 			parties = partyQueries.findByStatus('active');
 			partiesPaused = partyQueries.findByStatus('paused');
-		} else if (party.status === 'active' || party.status === 'paused') {
+		} else if ((party.status === 'active' || party.status === 'paused') && isPlaying) {
 			// For multiplayer games, handle end game logic
 			partyQueries.updateStatus(party.id, 'active');
 			partiesPaused = partyQueries.findByStatus('paused');
