@@ -602,7 +602,7 @@ async function gameRoutes(fastify) {
 			// Refresh the parties lists
 			parties = partyQueries.findByStatus('active');
 			partiesPaused = partyQueries.findByStatus('paused');
-		} else if ((party.status === 'active' || party.status === 'paused') && isPlaying) {
+		} else if ((party.status === 'active' || party.status === 'paused')) {
 			// For multiplayer games, handle end game logic
 			partyQueries.updateStatus(party.id, 'active');
 			partiesPaused = partyQueries.findByStatus('paused');
@@ -616,7 +616,10 @@ async function gameRoutes(fastify) {
 				games.set(party.id, game);
 			}
 			
-			handleEndGame(party.id, games.get(party.id), party.type, games, tournament);
+			if (isPlaying)
+				handleEndGame(party.id, games.get(party.id), party.type, games, tournament);
+			else
+				tournament[party.id][partyPlayer.team] = 0;
 		}
 
 		sendJoinNotificationToParty(party.id);

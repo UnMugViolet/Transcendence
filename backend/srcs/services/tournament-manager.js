@@ -34,7 +34,12 @@ export function findNextMatchPlayers(tournamentData, maxTeams = 8) {
 			}
         }
     }
-
+	if (!p1)
+		return { round: 0, p1: 0, p2: 0 };
+	if (!p2) {
+		tournamentData[p1]--;
+		return findNextMatchPlayers(tournamentData, maxTeams);
+	}
     return { round, p1, p2 };
 }
 
@@ -95,6 +100,8 @@ export function setupNextMatch(partyId, tournamentData) {
 	if (isOffline) {
 		return { round, p1, p2, afk: -1, left: -1, p1Name, p2Name };
 	}
+
+	const playerStates = checkPlayerStates(p1Info, p2Info);
 
 	return { 
 		round, 
