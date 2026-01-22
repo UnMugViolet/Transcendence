@@ -71,7 +71,7 @@ export async function handleEndGame(partyId, game, mode, games, tournament) {
 				score1: game.score1,
 				score2: game.score2,
 				created: game.created
-			});
+			}, teamLoser);
 		}
 	}
 	catch (err) {

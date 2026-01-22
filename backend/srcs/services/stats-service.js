@@ -75,7 +75,7 @@ export function getUserStats(userId) {
 }
 
 
-export function saveMatchToHistory(partyId, game) {
+export function saveMatchToHistory(partyId, game, loserteam) {
   const players = partyPlayerQueries.findByPartyId(partyId);
 
   if (players.length < 2) {
@@ -100,9 +100,7 @@ export function saveMatchToHistory(partyId, game) {
   }
 
   const winnerId =
-    p1Score > p2Score ? p1.user_id :
-    p2Score > p1Score ? p2.user_id :
-    null;
+    loserteam === game.team1 ? p2.user_id : p1.user_id;
   
   const duration = game.created
     ? Math.floor((Date.now() - game.created) / 1000)
