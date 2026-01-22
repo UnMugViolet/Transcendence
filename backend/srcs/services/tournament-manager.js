@@ -159,7 +159,16 @@ export function sendNextGameMessage(party, game, tournamentData) {
 		? localTournamentPlayerQueries.findByPartyId(party.id)
 		: partyPlayerQueries.findByPartyId(party.id);
 	const { round, p1, p2 } = findNextMatchPlayers(tournamentData, players.length);
-	
+	let p3 = p1;
+	if ((p1 === game.team1 || p1 === game.team2) && (p2 === game.team1 || p2 === game.team2))
+	{
+		for (let i = 1; i <= players.length; i++) {
+			if (tournamentData[i] === round && i != p1 && i != p2) {
+				p3 = i;
+				break;
+			}
+		}
+	}
 	console.log(`Round# : ${round}`);
 	console.log(`Data : ${JSON.stringify(tournamentData)}`);
 	
@@ -170,7 +179,7 @@ export function sendNextGameMessage(party, game, tournamentData) {
 			p1Name = p1 ? localTournamentPlayerQueries.getAliasByPartyAndTeam(party.id, p1) : '';
 			p2Name = p2 ? localTournamentPlayerQueries.getAliasByPartyAndTeam(party.id, p2) : '';
 		} else {
-			p1Name = p1 ? userQueries.getNameById(partyPlayerQueries.getUserIdByPartyAndTeam(party.id, p1)) : '';
+			p1Name = p3 ? userQueries.getNameById(partyPlayerQueries.getUserIdByPartyAndTeam(party.id, p3)) : '';
 			p2Name = p2 ? userQueries.getNameById(partyPlayerQueries.getUserIdByPartyAndTeam(party.id, p2)) : '';
 		}
 		

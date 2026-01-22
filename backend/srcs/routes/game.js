@@ -571,7 +571,7 @@ async function gameRoutes(fastify) {
 		const game = games.get(party.id);
 		let isPlaying = true;
 		if (party.type === 'Tournament' && game) {
-			if (partyPlayer.team === (game.team1 || game.team2))
+			if (partyPlayer.team === game.team1 || partyPlayer.team === game.team2)
 				isPlaying = true;
 			else
 				isPlaying = false;
