@@ -1355,6 +1355,7 @@ globalThis.addEventListener("keydown", (event) => {
 	
 	// Player 2 controls (Arrow keys) - only in offline mode, or when user is team 2
 	if (event.key === "ArrowUp") {
+		event.preventDefault();
 		if (mode === '1v1Offline' || mode === 'OfflineTournament') {
 			upPlayer2 = true;
 		} else if (team === 2) {
@@ -1362,6 +1363,7 @@ globalThis.addEventListener("keydown", (event) => {
 		}
 	}
 	if (event.key === "ArrowDown") {
+		event.preventDefault();
 		if (mode === '1v1Offline' || mode === 'OfflineTournament') {
 			downPlayer2 = true;
 		} else if (team === 2) {
