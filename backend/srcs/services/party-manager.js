@@ -24,7 +24,7 @@ export function handlePause(partyId, userId, games) {
 	sendPauseMessage(partyId, userId);
 }
 
-export async function setTeam(partyId, games, team1 = null, team2 = null, player2Name = null) {
+export async function setTeam(partyId, games, team1 = null, team2 = null, round,  player2Name = null) {
 	if (!games.has(partyId)) {
 		const { createGame } = await import('./game-logic.js');
 		games.set(partyId, createGame());
@@ -34,7 +34,8 @@ export async function setTeam(partyId, games, team1 = null, team2 = null, player
 	const party = partyQueries.findById(partyId);
 	game.mode = party.type;
 	game.partyType = party.type; // Store party type for game loop optimization
-	
+	game.round = round;
+
 	if (party.type === 'Tournament' || party.type === 'OfflineTournament') {
 		console.log(`set teams to ${team1} and ${team2} for tournament`);
 		game.team1 = team1;
@@ -60,6 +61,7 @@ export async function handleEndGame(partyId, game, mode, games, tournament) {
 	updatePlayerStatuses(partyId, teamLoser, isOfflineTournament);
 	const winnerName = getWinnerName(partyId, game, teamLoser, isOfflineTournament);
 	console.log("winnerName: ", winnerName);
+	console.log("round: ", game.round);
 	game.started = false;
 	try {
 		// Only save match history for registered users (not offline tournament)
@@ -70,7 +72,8 @@ export async function handleEndGame(partyId, game, mode, games, tournament) {
 				team2: game.team2,
 				score1: game.score1,
 				score2: game.score2,
-				created: game.created
+				created: game.created,
+				round: game.round
 			}, teamLoser);
 		}
 	}
@@ -83,6 +86,7 @@ export async function handleEndGame(partyId, game, mode, games, tournament) {
 	if (mode === 'Tournament' || mode === 'OfflineTournament') {
 		const { setupNextMatch } = await import('./tournament-manager.js');
 		info = setupNextMatch(partyId, tournament[partyId]);
+		game.round = info.round;
 		game.score1 = 0;
 		game.score2 = 0;
 	}
@@ -167,7 +171,7 @@ async function cleanupFinishedGame(partyId, games, isOfflineTournament = false) 
 }
 
 async function handleNextRound(partyId, info, games) {
-	setTeam(partyId, games, info.p1, info.p2);
+	setTeam(partyId, games, info.p1, info.p2, info.round);
 	await sleep(3000);
 	
 	if (info.afk !== -1) {

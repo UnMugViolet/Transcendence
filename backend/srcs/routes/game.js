@@ -299,7 +299,7 @@ async function gameRoutes(fastify) {
 			if (info.afk !== -1) {
 				handlePause(party.id, info.afk, games);
 			}
-			await setTeam(party.id, games, info.p1, info.p2);
+			await setTeam(party.id, games, info.p1, info.p2, info.round);
 		}
 
 		// Clear pause state and start game
@@ -311,7 +311,7 @@ async function gameRoutes(fastify) {
 		let p1 = 1;
 		let p2 = 2;
 		if (!info) {
-			await setTeam(party.id, games, null, null, request.body.Player2Name);
+			await setTeam(party.id, games, null, null, 0, request.body.Player2Name);
 			await broadcastStartMessage(party.id, false, games, pauses);
 		} else {
 			p1 = info.p1;
@@ -416,7 +416,7 @@ async function gameRoutes(fastify) {
 		
 		// Setup first match
 		const info = setupNextMatch(party.id, tournament[party.id]);
-		await setTeam(party.id, games, info.p1, info.p2);
+		await setTeam(party.id, games, info.p1, info.p2, info.round);
 
 		// Clear any pause state
 		if (pauses.has(party.id)) {

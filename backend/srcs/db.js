@@ -76,6 +76,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS match_history (
 	created_at INTEGER NOT NULL,
 	duration INTEGER,
 	party_id INTEGER,
+	round INTEGER,
 	mode TEXT,
 	FOREIGN KEY (p1_id) REFERENCES users(id),
 	FOREIGN KEY (p2_id) REFERENCES users(id),

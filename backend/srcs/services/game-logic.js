@@ -41,6 +41,7 @@ export function createGame() {
 		team2up: false,
 		team2down:false,
 		Player2Name: null,
+		round: 0,
 		mode: null
 	};
 }
