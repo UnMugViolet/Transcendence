@@ -33,29 +33,29 @@ const authResponseSchema = {
 
 async function authRoutes(fastify) {
 	// DEBUG endpoint - should be removed or protected in production
-	fastify.get('/token', {
-		schema: {
-			description: 'Debug endpoint to list all refresh tokens (remove in production)',
-			tags: ['Auth'],
-			response: {
-				200: {
-					type: 'array',
-					items: {
-						type: 'object',
-						properties: {
-							user_id: { type: 'integer' },
-							token: { type: 'string' },
-							user_agent: { type: 'string' },
-							timeout: { type: 'integer' },
-							last_used_at: { type: 'integer' }
-						}
-					}
-				}
-			}
-		}
-	}, async () => {
-		return db.prepare('SELECT * FROM refresh_tokens').all();
-	});
+	// fastify.get('/token', {
+	// 	schema: {
+	// 		description: 'Debug endpoint to list all refresh tokens (remove in production)',
+	// 		tags: ['Auth'],
+	// 		response: {
+	// 			200: {
+	// 				type: 'array',
+	// 				items: {
+	// 					type: 'object',
+	// 					properties: {
+	// 						user_id: { type: 'integer' },
+	// 						token: { type: 'string' },
+	// 						user_agent: { type: 'string' },
+	// 						timeout: { type: 'integer' },
+	// 						last_used_at: { type: 'integer' }
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }, async () => {
+	// 	return db.prepare('SELECT * FROM refresh_tokens').all();
+	// });
 
 	async function genKey(id, name, stayConnect, userAgent, role) {
 		const accessToken = fastify.jwt.sign({ 
